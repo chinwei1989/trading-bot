@@ -73,7 +73,10 @@ If the network is unavailable, a deterministic local fallback is used.
 Controls:
 
 - `Weather: Auto` — cycle sunny / cloudy / rain manually.
-- URL override for screenshots: `?hour=22&weather=rain`
+- `Background: Auto` — switch the scene to a full-black background.
+- The title panel has a `-` / `+` button to collapse or expand the Agent Office overlay.
+- The `Tilt` slider raises/lowers the camera elevation; dragging the scene also orbits and tilts.
+- URL override for screenshots: `?hour=22&weather=rain&bg=black`
 
 The scene updates the phase every minute.
 
