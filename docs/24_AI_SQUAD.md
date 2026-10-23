@@ -1,102 +1,150 @@
-# 24 — AI Squad Memory (Stage 1)
+# 24 — AI Squad Memory
 
 **Saved:** 24 Oct 2026  
-**Status:** built, tested, paper-only. The squad is not scheduled and is not approved for live capital.  
-**Stage 1 roster:** **trend analyst → risk critic → chair** (three typed Jev calls).
+**Status:** seven-agent squad built and tested; paper-only; not scheduled.
+**Model:** all seven agents currently use **Jev** typed calls. No other LLM is used.
 
-This document is the persistent project memory for the AI squad decision. Do not add the remaining agents until the user has reviewed stage 1 and explicitly asked for the expansion.
-
----
-
-## 1. Durable decisions
-
-- The deterministic quant lane stays separate and unchanged:
-  `strategies → meta allocator → deterministic risk → paper broker`.
-- The AI squad is a **separate paper account** under `artifacts/ai_squad/`.
-- The squad does **not** control the deterministic account and has **no live execution path**.
-- Every agent has one narrow job. Agents share structured memos through a blackboard; they do not chat freely.
-- The risk critic can **veto** or **reduce** a proposal. Code enforces the veto before the existing policy layer.
-- The existing deterministic policy still owns sizing, gross/net caps, cash, turnover, and confidence gating.
-- No agent receives broker credentials.
-- Stage 1 uses Jev only. Hosted API cost is three calls per cycle; no local model is required.
-- Fallback is `none`: an AI outage fails closed and holds existing positions.
+This document is the persistent project memory for the AI squad decision. The
+squad is a separate paper lane. It cannot touch the deterministic quant account
+and has no live execution path.
 
 ---
 
-## 2. Stage 1 architecture
+## 1. The hierarchy
 
 ```text
-point-in-time market context
-        │
-        ▼
-┌──────────────────┐
-│ trend_analyst    │  typed choices per asset: long / flat
-└────────┬─────────┘
-         │ memo: trend
-         ▼
-┌──────────────────┐
-│ risk_critic      │  typed choices: approve / reduce / veto
-└────────┬─────────┘
-         │ memo: risk
-         ▼
-┌──────────────────┐
-│ chair            │  final regime + long / flat per asset
-└────────┬─────────┘
-         │
-         ▼
-deterministic squad guardrail (veto/reduction enforcement)
-         │
-         ▼
-AgentDecision → deterministic policy → risk → paper broker
+DETERMINISTIC QUANT LANE — Python only, no LLM
+data -> trend/XSMOM/breakout/reversal -> meta allocator
+     -> deterministic risk -> paper broker
+
+AI SQUAD LANE — separate paper account
+data
+  -> macro_analyst
+  -> trend_analyst
+  -> xsmom_analyst
+  -> sentiment_analyst
+  -> risk_critic
+  -> execution_analyst
+  -> chair
+  -> deterministic squad guardrail
+  -> deterministic policy/risk
+  -> separate paper broker
 ```
 
-### Shared blackboard
+### Is Jev the decision maker?
+
+Jev is the **model behind every AI agent**. Each agent is a separate,
+role-scoped Jev request with its own typed questions. The chair is the AI agent
+that emits the final portfolio decision.
+
+But the chair is **not** the final authority on capital:
+
+- the deterministic squad guardrail enforces risk vetoes and execution blocks;
+- the deterministic policy owns sizing, gross/net caps, cash, turnover, and
+  confidence gating;
+- the deterministic risk checks can still reject the targets;
+- the paper broker is the only execution path.
+
+The deterministic quant lane does not call Jev at all.
+
+### Will we use other LLM providers?
+
+Not in this build. All seven roles use `JevProvider.ask()`.
+
+That is intentional: Jev returns typed choices, is cheap at this scale, and
+avoids free-form agent chat. A future version could assign a different model to
+one role (for example, a local model for sentiment), but that should be a
+separate experiment with the same blackboard and policy controls. It is not
+needed for the current squad.
+
+---
+
+## 2. Roster
+
+| Stage | Agent | Job | Output |
+|---|---|---|---|
+| 1 | `macro_analyst` | Macro/regime backdrop | `risk_on / neutral / risk_off` |
+| 2 | `trend_analyst` | Time-series trend | per-asset `long / flat` |
+| 3 | `xsmom_analyst` | Cross-sectional relative strength | per-asset leader/follower choice |
+| 4 | `sentiment_analyst` | Sentiment from a supplied feed | `supportive / neutral / negative / unavailable` |
+| 5 | `risk_critic` | Attack the proposals | per-asset `approve / reduce / veto` |
+| 6 | `execution_analyst` | Liquidity and feasibility | per-asset `allow / reduce / block` |
+| 7 | `chair` | Synthesise every memo | final regime + per-asset `long / flat` |
+
+The sentiment agent **abstains without an LLM call** when
+`data/normalized/sentiment.parquet` is absent. The macro, trend, XSMOM, risk,
+execution, and chair agents always run.
+
+---
+
+## 3. Shared blackboard
 
 Each run writes:
 
 ```text
 artifacts/ai_squad/squad/<run_id>/
-  01_trend.json
-  02_risk.json
-  03_chair.json
+  01_macro.json
+  02_trend.json
+  03_xsmom.json
+  04_sentiment.json
+  05_risk.json
+  06_execution.json
+  07_chair.json
   manifest.json
 ```
 
-Each memo contains the agent name, model, typed choices, per-choice confidence, usage, latency, and raw typed answers. The risk memo receives the trend memo; the chair receives both. The model never gets a free-form group chat.
+Each memo contains:
 
-### Guardrails
+- agent and stage;
+- model ID, usage, latency;
+- regime or summary;
+- typed choices and per-choice confidence;
+- notes;
+- raw typed answers.
+
+Later agents receive the earlier memos in their Jev state under `squad.memos`.
+There is no free-form group chat, no hidden chain-of-thought sharing, and no
+tool access.
+
+---
+
+## 4. Guardrails
 
 - Missing risk answer → **veto** (fail closed).
+- Missing execution answer → **block** (fail closed).
 - Missing chair answer → **flat**.
 - Risk `veto` → final action is flat.
-- Risk `reduce` → chair confidence is halved; the policy layer may still reject it.
-- Risk `risk_off` + chair `risk_on` → regime is downgraded to `neutral`.
+- Execution `block` → final action is flat.
+- Risk or execution `reduce` → chair confidence is halved for each reduction;
+  the policy layer may still reject the action.
+- Macro, risk, or execution stress downgrades a chair `risk_on` regime to
+  `neutral`.
 - Shorts are flattened unless policy explicitly allows them.
-- When the squad is deliberately flat or a risk veto exists, the decision sets
-  `force_rebalance`; this stops the generic “low confidence means hold current”
-  rule from silently ignoring a veto. The existing turnover cap can still stage
-  the exit rather than forcing an unlimited one-day liquidation.
+- Risk vetoes and execution blocks set `force_rebalance`, so the generic
+  “low confidence means hold current” rule cannot silently ignore them. The
+  turnover cap may stage the exit rather than force an unlimited one-day
+  liquidation.
+- Sentiment is advisory only; it cannot size, veto, or execute.
 
 ---
 
-## 3. Files
+## 5. Cost and latency
 
-| File | Purpose |
-|---|---|
-| `src/tradingbot/ai/squad.py` | Three agents, blackboard, typed-question prompts, guardrail |
-| `src/tradingbot/ai/providers.py` | `JevProvider.ask()` generic typed-question adapter; `squad` provider registration |
-| `config/ai_squad.yaml` | Separate $10,000 paper account and `artifacts/ai_squad/` paths |
-| `tests/test_ai_squad.py` | Veto, reduction, memos, fail-closed, provider registration |
-| `docs/24_AI_SQUAD.md` | This memory note |
+The squad makes **six to seven Jev calls per cycle**:
 
-The artifact directory is configurable with `agent.artifacts_dir`. The default remains `artifacts/ai`, so the existing single-provider Jev pipeline and dashboard are unchanged.
+- six when sentiment data is unavailable;
+- seven when a sentiment feed exists.
+
+Everything else uses the same point-in-time context. Jev pricing is per input
+token; a few thousand tokens per call is a fraction of a cent per day. The
+blocker is evidence quality, not API cost.
 
 ---
 
-## 4. Commands
+## 6. Commands
 
 ```powershell
-# Decision only; three Jev calls; no orders
+# Decision only; no orders
 uv run python -m tradingbot --config config/ai_squad.yaml ai-run --dry-run
 
 # A real squad paper cycle
@@ -112,35 +160,31 @@ uv run python -m tradingbot --config config/ai_squad.yaml ai-status
 powershell -ExecutionPolicy Bypass -File scripts/run_ai_squad.ps1 -DryRun
 ```
 
-No scheduled task has been registered. The existing `TradingBotAIPaper` task still runs the single-provider Jev lane at 07:15. The squad account starts empty and must accumulate its own paper days.
+No scheduled task has been registered. The existing `TradingBotAIPaper` task
+still runs the single-provider Jev lane at 07:15. The squad account must
+accumulate its own paper days.
 
-**Smoke run:** one real three-call dry run completed on 24 Oct 2026 (`jev-1.14.0`, no orders). The trend analyst and chair chose flat for all eight assets; the risk critic approved. The run produced `01_trend.json`, `02_risk.json`, `03_chair.json`, and `manifest.json`. This confirms the typed three-stage wiring, not trading skill.
+**Stage 1 history:** the original three-agent version (`trend -> risk -> chair`)
+completed one real three-call dry run on 24 Oct 2026. The full seven-agent
+version replaced it after the user asked to build the rest.
 
----
-
-## 5. What is deliberately not built yet
-
-The user asked to start with three agents and be asked before building the rest. Do not add these without explicit approval:
-
-- Macro/regime analyst
-- Sentiment/news analyst
-- Cross-sectional momentum analyst
-- Execution/TCA agent
-- Any master agent with broker access
-- Any live execution path
-
-The next expansion should be evaluated against the three-agent squad, not just against the deterministic baseline. Suggested comparison:
-
-| Variant | Purpose |
-|---|---|
-| Single Jev (`config/ai_agent.yaml`) | Existing baseline |
-| Three-agent squad (`config/ai_squad.yaml`) | Stage 1 |
-| Future five-agent squad | Only after stage 1 has enough paper evidence |
-
-Metrics to compare: paper days, return, Sharpe, max drawdown, turnover, TCA, risk-veto rate, fallback rate, latency, token cost, calibration, and agreement across agents.
+**Full-roster smoke run:** 24 Oct 2026 completed with `jev-1.14.0`; sentiment
+abstained because no feed exists, so six Jev calls were made and all seven memos
+were written. The chair chose flat, risk issued several vetoes, and execution
+blocked several assets. No orders were sent. This validates orchestration, not
+trading skill.
 
 ---
 
-## 6. Promotion boundary
+## 7. What remains intentionally absent
 
-The squad is **research/paper only**. It cannot influence live capital. The live gate remains `NO_GO`, and AI live execution is not implemented. No result from the squad should change the deterministic strategy freeze or the 56-day evidence window.
+- No live execution path.
+- No broker credentials for any agent.
+- No autonomous web browsing or shell access.
+- No master LLM that can bypass policy.
+- No real X/news feed; the sentiment agent reads only a prepared snapshot.
+- No per-agent model routing yet; all agents use Jev.
+- No automatic promotion from squad paper to live.
+
+The deterministic strategy freeze and the 56-day evidence window are unchanged.
+The live gate remains `NO_GO`.

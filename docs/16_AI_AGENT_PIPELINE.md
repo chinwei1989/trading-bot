@@ -208,12 +208,16 @@ All views are read-only. The dashboard has no order controls and no config mutat
 
 ---
 
-## 9. Three-agent squad (stage 1)
+## 9. Seven-agent squad
 
-The AI lane now has an optional separate three-agent paper account:
-`trend_analyst -> risk_critic -> chair`. It uses the same typed Jev contract,
-writes per-agent memos to a shared blackboard, and still passes through this
-pipeline's deterministic policy and risk checks. It is deliberately separate
+The AI lane now has an optional separate seven-agent paper account:
+
+`macro -> trend -> XSMOM -> sentiment -> risk -> execution -> chair`
+
+Every specialist is a role-scoped Jev typed call. Each writes a memo to a
+shared blackboard, and the chair receives all six prior memos. The squad still
+passes through this pipeline's deterministic policy and risk checks; risk
+vetoes and execution blocks are enforced by code. It is deliberately separate
 from the single-provider Jev account so the designs can be compared. See
 `docs/24_AI_SQUAD.md` and `config/ai_squad.yaml`.
 

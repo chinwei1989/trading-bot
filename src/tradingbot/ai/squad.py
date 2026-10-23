@@ -1,20 +1,20 @@
-"""A three-agent, typed-decision squad for the separate AI paper lane.
+"""A seven-agent, typed-decision squad for the separate AI paper lane.
 
-The squad is deliberately small and structured:
+Every specialist is a separate, role-scoped Jev call. They do not chat freely
+and they do not call tools. Each writes a typed memo to a shared blackboard;
+later agents receive the memos produced before them.
 
-1. ``trend_analyst`` proposes long/flat exposure from the supplied state.
-2. ``risk_critic`` reviews those proposals and may approve, reduce, or veto.
-3. ``chair`` synthesises both memos and returns the final typed decision.
+1. ``macro_analyst`` classifies the macro/regime backdrop.
+2. ``trend_analyst`` proposes trend exposure.
+3. ``xsmom_analyst`` proposes relative-strength exposure.
+4. ``sentiment_analyst`` classifies sentiment, or abstains when no feed exists.
+5. ``risk_critic`` approves, reduces, or vetoes the proposals.
+6. ``execution_analyst`` checks liquidity/feasibility and may block.
+7. ``chair`` synthesises every memo into the final typed decision.
 
-Each stage is a separate Jev request with a narrow question set. The agents do
-not chat freely and do not call tools. Their memos are written to a shared
-blackboard under ``artifacts/<ai_dir>/squad/<run_id>/``. The existing
-deterministic policy, risk checks, order manager, and paper broker remain the
-only path to an order.
-
-This module is paper-only by construction: it produces a typed
-:class:`~tradingbot.ai.decision.AgentDecision`; it never receives broker
-credentials and never executes an order.
+The deterministic policy, risk checks, order manager, and paper broker remain
+the only path to an order. Risk vetoes and execution blocks are enforced by
+code before the policy layer. This module is paper-only by construction.
 """
 
 from __future__ import annotations
@@ -143,6 +143,25 @@ def _choice(
     return value, _clamp_confidence(answer.get("confidence"), 0.0)
 
 
+def _asset_choices(
+    answers: dict[str, Any],
+    assets: list[str],
+    *,
+    prefix: str,
+    allowed: set[str],
+    default: str,
+) -> tuple[dict[str, str], dict[str, float]]:
+    choices: dict[str, str] = {}
+    confidences: dict[str, float] = {}
+    for asset in assets:
+        choice, confidence = _choice(
+            answers, f"{prefix}{asset}", allowed, default
+        )
+        choices[asset] = choice
+        confidences[asset] = confidence
+    return choices, confidences
+
+
 def _memo(
     *,
     agent: str,
@@ -182,8 +201,34 @@ def _memo(
     )
 
 
+def _abstention(
+    *,
+    agent: str,
+    stage: str,
+    as_of: str,
+    assets: list[str],
+    value: str,
+    regime: str,
+    notes: str,
+) -> AgentMemo:
+    return AgentMemo(
+        agent=agent,
+        stage=stage,
+        as_of=as_of,
+        model="none",
+        regime=regime,
+        confidence=0.0,
+        choices={asset: value for asset in assets},
+        choice_confidence={asset: 0.0 for asset in assets},
+        notes=notes,
+        usage={},
+        latency_ms=0.0,
+        answers={},
+    )
+
+
 class SquadProvider:
-    """Three typed Jev calls, one bounded paper decision.
+    """Seven typed Jev calls, one bounded paper decision.
 
     The provider is intentionally a ``DecisionProvider`` so the existing AI
     pipeline can own state, policy, risk, execution, reports, and audit.
@@ -218,6 +263,45 @@ class SquadProvider:
             raise ProviderError("squad agent returned no answers")
         return answers, meta
 
+    def _stage_context(
+        self,
+        context: dict[str, Any],
+        *,
+        stage: str,
+        memos: dict[str, AgentMemo] | None = None,
+    ) -> dict[str, Any]:
+        state = dict(context)
+        squad: dict[str, Any] = {"stage": stage}
+        if memos:
+            squad["memos"] = {
+                name: memo.to_dict() for name, memo in memos.items()
+            }
+        state["squad"] = squad
+        return state
+
+    def _macro_questions(self) -> dict[str, dict[str, Any]]:
+        return {
+            "macro_regime": {
+                "type": "choice",
+                "instructions": (
+                    "You are the macro/regime analyst. Classify the broad "
+                    "risk backdrop using only the supplied macro and market "
+                    "state. Do not select assets, propose weights, or size."
+                ),
+                "criteria": {
+                    "risk_on": (
+                        "Macro and breadth are supportive, volatility is "
+                        "contained, and risk appetite is healthy."
+                    ),
+                    "neutral": "Evidence is mixed; no strong risk signal.",
+                    "risk_off": (
+                        "Macro, breadth, or volatility is defensive; capital "
+                        "preservation should dominate."
+                    ),
+                },
+            }
+        }
+
     def _trend_questions(self, assets: list[str]) -> dict[str, dict[str, Any]]:
         criteria = {
             "long": (
@@ -239,8 +323,8 @@ class SquadProvider:
                 "type": "choice",
                 "instructions": (
                     "You are the trend analyst. Classify the broad crypto trend "
-                    "using only the supplied state. Do not propose portfolio "
-                    "weights or make risk decisions."
+                    "using only the supplied state and prior memos. Do not "
+                    "propose portfolio weights or make risk decisions."
                 ),
                 "criteria": {
                     "risk_on": "Broad uptrend with positive medium-term momentum.",
@@ -254,11 +338,76 @@ class SquadProvider:
                 "type": "choice",
                 "instructions": (
                     f"You are the trend analyst. Choose the trend exposure for "
-                    f"{asset} using only the supplied state. This is a research "
-                    "signal, not an order. Do not consider execution or position "
-                    "sizing."
+                    f"{asset} using only the supplied state and prior memos. This "
+                    "is a research signal, not an order. Do not consider "
+                    "execution or position sizing."
                 ),
                 "criteria": criteria,
+            }
+        return questions
+
+    def _xsmom_questions(self, assets: list[str]) -> dict[str, dict[str, Any]]:
+        criteria = {
+            "long": (
+                "The asset is among the strongest relative-strength names and "
+                "has positive medium-term momentum."
+            ),
+            "flat": (
+                "The asset is not a relative-strength leader, or its momentum "
+                "is too weak or too noisy. Prefer flat outside the leaders."
+            ),
+        }
+        if self.config.policy.allow_short:
+            criteria["short"] = (
+                "The asset is among the weakest relative-strength names and "
+                "has negative medium-term momentum."
+            )
+        questions: dict[str, dict[str, Any]] = {
+            "xs_regime": {
+                "type": "choice",
+                "instructions": (
+                    "You are the cross-sectional momentum analyst. Classify "
+                    "whether relative-strength breadth is broadly positive, "
+                    "mixed, or broadly negative. Use only the supplied state."
+                ),
+                "criteria": {
+                    "risk_on": "Most assets show positive relative strength.",
+                    "neutral": "Leadership is mixed or narrow.",
+                    "risk_off": "Most assets show weak relative strength.",
+                },
+            }
+        }
+        for asset in assets:
+            questions[f"xs_{asset}"] = {
+                "type": "choice",
+                "instructions": (
+                    f"You are the cross-sectional momentum analyst. Compare "
+                    f"{asset} with the other assets in the universe. Choose long "
+                    "only for relative-strength leaders; choose flat for the "
+                    "rest. Do not use absolute trend alone and do not size."
+                ),
+                "criteria": criteria,
+            }
+        return questions
+
+    def _sentiment_questions(self, assets: list[str]) -> dict[str, dict[str, Any]]:
+        questions: dict[str, dict[str, Any]] = {}
+        for asset in assets:
+            questions[f"sentiment_{asset}"] = {
+                "type": "choice",
+                "instructions": (
+                    f"You are the sentiment analyst. Classify recent public "
+                    f"sentiment for {asset} using only the supplied sentiment "
+                    "snapshot. If data is missing, stale, or insufficient, "
+                    "choose unavailable. Do not infer sentiment from price and "
+                    "do not propose weights."
+                ),
+                "criteria": {
+                    "supportive": "Recent sentiment is clearly constructive.",
+                    "neutral": "Recent sentiment is mixed or muted.",
+                    "negative": "Recent sentiment is clearly negative.",
+                    "unavailable": "No reliable sentiment evidence is available.",
+                },
             }
         return questions
 
@@ -268,9 +417,9 @@ class SquadProvider:
                 "type": "choice",
                 "instructions": (
                     "You are the risk critic. Classify the overall risk backdrop "
-                    "using only the supplied state and the trend memo. Be "
-                    "defensive when volatility, drawdown, correlation, breadth, "
-                    "or macro evidence is poor."
+                    "using the supplied state and all prior memos. Be defensive "
+                    "when volatility, drawdown, correlation, breadth, macro, or "
+                    "sentiment evidence is poor."
                 ),
                 "criteria": {
                     "risk_on": "Risk is contained and the backdrop supports exposure.",
@@ -283,14 +432,14 @@ class SquadProvider:
             questions[f"risk_{asset}"] = {
                 "type": "choice",
                 "instructions": (
-                    f"You are the risk critic reviewing the trend analyst's "
-                    f"proposal for {asset}. Approve, reduce, or veto the proposed "
-                    "exposure. Veto when the evidence is contradictory, "
-                    "concentration or volatility is unacceptable, or the proposal "
-                    "would add correlated risk. A veto is binding."
+                    f"You are the risk critic reviewing the specialist proposals "
+                    f"for {asset}. Approve, reduce, or veto the proposed exposure. "
+                    "Veto when the evidence is contradictory, concentration or "
+                    "volatility is unacceptable, or the proposal would add "
+                    "correlated risk. A veto is binding."
                 ),
                 "criteria": {
-                    "approve": "The proposed trend exposure is acceptable.",
+                    "approve": "The proposed exposure is acceptable.",
                     "reduce": (
                         "Exposure is acceptable only at a reduced size because of "
                         "volatility, correlation, drawdown, or weak breadth."
@@ -300,20 +449,61 @@ class SquadProvider:
             }
         return questions
 
+    def _execution_questions(self, assets: list[str]) -> dict[str, dict[str, Any]]:
+        questions: dict[str, dict[str, Any]] = {
+            "execution_regime": {
+                "type": "choice",
+                "instructions": (
+                    "You are the execution/TCA analyst. Judge the operational "
+                    "environment using volume, volatility, current positions, "
+                    "turnover limits, and the prior risk memo. Do not predict "
+                    "returns."
+                ),
+                "criteria": {
+                    "normal": "Liquidity and turnover conditions are workable.",
+                    "stressed": (
+                        "Liquidity, volatility, or turnover conditions are poor; "
+                        "execution should be cautious."
+                    ),
+                },
+            }
+        }
+        for asset in assets:
+            questions[f"execution_{asset}"] = {
+                "type": "choice",
+                "instructions": (
+                    f"You are the execution/TCA analyst reviewing {asset}. "
+                    "Judge whether the proposed exposure is operationally "
+                    "feasible. Use volume, volatility, current weight, and "
+                    "turnover constraints. Allow, reduce, or block. Block when "
+                    "liquidity or evidence is unreliable. You cannot place orders."
+                ),
+                "criteria": {
+                    "allow": "Execution is feasible at the proposed exposure.",
+                    "reduce": (
+                        "Execution is feasible only at reduced size because of "
+                        "liquidity, volatility, or turnover."
+                    ),
+                    "block": "Execution is not acceptable; do not add the exposure.",
+                },
+            }
+        return questions
+
     def _chair_questions(self, assets: list[str]) -> dict[str, dict[str, Any]]:
         criteria = {
-            "long": "Hold a long exposure after considering both memos.",
-            "flat": "Hold no exposure after considering both memos.",
+            "long": "Hold a long exposure after considering every memo.",
+            "flat": "Hold no exposure after considering every memo.",
         }
         if self.config.policy.allow_short:
-            criteria["short"] = "Hold a short exposure after considering both memos."
+            criteria["short"] = "Hold a short exposure after considering every memo."
         questions: dict[str, dict[str, Any]] = {
             "regime": {
                 "type": "choice",
                 "instructions": (
-                    "You are the chair of a three-agent paper-trading squad. "
-                    "Synthesise the trend and risk memos into one market regime. "
-                    "The risk critic's veto is binding. Do not invent assets."
+                    "You are the chair of a seven-agent paper-trading squad. "
+                    "Synthesise every memo into one market regime. The risk "
+                    "critic's veto and the execution analyst's block are "
+                    "binding. Do not invent assets."
                 ),
                 "criteria": {
                     "risk_on": "The combined evidence supports normal risk.",
@@ -327,9 +517,9 @@ class SquadProvider:
                 "type": "choice",
                 "instructions": (
                     f"You are the chair. Choose the final paper exposure for "
-                    f"{asset}. Use the trend memo and the risk critic's review. "
-                    "If the risk critic vetoes the asset, choose flat. If the "
-                    "risk critic asks for a reduction, prefer flat unless the "
+                    f"{asset}. Use every memo. If the risk critic vetoes the "
+                    "asset or the execution analyst blocks it, choose flat. If "
+                    "either asks for a reduction, prefer flat unless the "
                     "evidence is strong. Do not size the position; the "
                     "deterministic policy layer owns sizing and caps."
                 ),
@@ -337,22 +527,10 @@ class SquadProvider:
             }
         return questions
 
-    def _stage_context(
-        self,
-        context: dict[str, Any],
-        *,
-        stage: str,
-        trend: AgentMemo | None = None,
-        risk: AgentMemo | None = None,
-    ) -> dict[str, Any]:
-        state = dict(context)
-        squad: dict[str, Any] = {"stage": stage}
-        if trend is not None:
-            squad["trend_memo"] = trend.to_dict()
-        if risk is not None:
-            squad["risk_memo"] = risk.to_dict()
-        state["squad"] = squad
-        return state
+    @staticmethod
+    def _sentiment_available(context: dict[str, Any]) -> bool:
+        block = context.get("sentiment")
+        return isinstance(block, dict) and bool(block.get("available"))
 
     def decide(self, context: dict[str, Any]) -> AgentDecision:
         assets = list(context.get("universe", []))
@@ -368,24 +546,52 @@ class SquadProvider:
             else root / self.config.artifacts_dir
         )
         board = SquadBlackboard(artifacts_dir)
+        memos: dict[str, AgentMemo] = {}
+        metas: dict[str, dict[str, Any]] = {}
 
-        trend_context = self._stage_context(context, stage="trend")
-        trend_answers, trend_meta = self._ask(
-            trend_context, self._trend_questions(assets)
+        # 1. Macro / regime.
+        macro_answers, macro_meta = self._ask(
+            self._stage_context(context, stage="macro"),
+            self._macro_questions(),
         )
-        trend_choices: dict[str, str] = {}
-        trend_conf: dict[str, float] = {}
-        for asset in assets:
-            choice, confidence = _choice(
-                trend_answers,
-                f"trend_{asset}",
-                {"long", "flat", "short"},
-                "flat",
-            )
-            if choice == "short" and not self.config.policy.allow_short:
-                choice = "flat"
-            trend_choices[asset] = choice
-            trend_conf[asset] = confidence
+        macro_regime, macro_regime_conf = _choice(
+            macro_answers,
+            "macro_regime",
+            {"risk_on", "neutral", "risk_off"},
+            "neutral",
+        )
+        macro_memo = _memo(
+            agent="macro_analyst",
+            stage="macro",
+            as_of=as_of_iso,
+            answers=macro_answers,
+            meta=macro_meta,
+            choices={"regime": macro_regime},
+            choice_confidence={"regime": macro_regime_conf},
+            regime=macro_regime,
+            notes="Macro backdrop only; no asset selection or sizing.",
+        )
+        memos["macro"] = macro_memo
+        metas["macro"] = macro_meta
+        board.write_memo(1, macro_memo)
+
+        # 2. Trend.
+        trend_answers, trend_meta = self._ask(
+            self._stage_context(context, stage="trend", memos=memos),
+            self._trend_questions(assets),
+        )
+        trend_choices, trend_conf = _asset_choices(
+            trend_answers,
+            assets,
+            prefix="trend_",
+            allowed={"long", "flat", "short"},
+            default="flat",
+        )
+        if not self.config.policy.allow_short:
+            trend_choices = {
+                asset: "flat" if choice == "short" else choice
+                for asset, choice in trend_choices.items()
+            }
         trend_regime, _ = _choice(
             trend_answers,
             "trend_regime",
@@ -403,25 +609,104 @@ class SquadProvider:
             regime=trend_regime,
             notes="Trend signal only; no sizing or execution.",
         )
-        board.write_memo(1, trend_memo)
+        memos["trend"] = trend_memo
+        metas["trend"] = trend_meta
+        board.write_memo(2, trend_memo)
 
-        risk_context = self._stage_context(
-            context, stage="risk", trend=trend_memo
+        # 3. Cross-sectional momentum.
+        xs_answers, xs_meta = self._ask(
+            self._stage_context(context, stage="xsmom", memos=memos),
+            self._xsmom_questions(assets),
         )
-        risk_answers, risk_meta = self._ask(
-            risk_context, self._risk_questions(assets)
+        xs_choices, xs_conf = _asset_choices(
+            xs_answers,
+            assets,
+            prefix="xs_",
+            allowed={"long", "flat", "short"},
+            default="flat",
         )
-        risk_choices: dict[str, str] = {}
-        risk_conf: dict[str, float] = {}
-        for asset in assets:
-            choice, confidence = _choice(
-                risk_answers,
-                f"risk_{asset}",
-                {"approve", "reduce", "veto"},
-                "veto",
+        if not self.config.policy.allow_short:
+            xs_choices = {
+                asset: "flat" if choice == "short" else choice
+                for asset, choice in xs_choices.items()
+            }
+        xs_regime, _ = _choice(
+            xs_answers,
+            "xs_regime",
+            {"risk_on", "neutral", "risk_off"},
+            "neutral",
+        )
+        xs_memo = _memo(
+            agent="xsmom_analyst",
+            stage="xsmom",
+            as_of=as_of_iso,
+            answers=xs_answers,
+            meta=xs_meta,
+            choices=xs_choices,
+            choice_confidence=xs_conf,
+            regime=xs_regime,
+            notes="Relative-strength signal only; no sizing or execution.",
+        )
+        memos["xsmom"] = xs_memo
+        metas["xsmom"] = xs_meta
+        board.write_memo(3, xs_memo)
+
+        # 4. Sentiment. Abstain without a feed; no paid call for empty data.
+        if self._sentiment_available(context):
+            sent_answers, sent_meta = self._ask(
+                self._stage_context(context, stage="sentiment", memos=memos),
+                self._sentiment_questions(assets),
             )
-            risk_choices[asset] = choice
-            risk_conf[asset] = confidence
+            sent_choices, sent_conf = _asset_choices(
+                sent_answers,
+                assets,
+                prefix="sentiment_",
+                allowed={"supportive", "neutral", "negative", "unavailable"},
+                default="unavailable",
+            )
+            sent_memo = _memo(
+                agent="sentiment_analyst",
+                stage="sentiment",
+                as_of=as_of_iso,
+                answers=sent_answers,
+                meta=sent_meta,
+                choices=sent_choices,
+                choice_confidence=sent_conf,
+                regime="neutral",
+                notes=(
+                    "Sentiment is advisory only. It cannot size, veto, or "
+                    "execute."
+                ),
+            )
+            metas["sentiment"] = sent_meta
+        else:
+            sent_memo = _abstention(
+                agent="sentiment_analyst",
+                stage="sentiment",
+                as_of=as_of_iso,
+                assets=assets,
+                value="unavailable",
+                regime="unavailable",
+                notes=(
+                    "No sentiment feed is available; the agent abstained "
+                    "without an LLM call."
+                ),
+            )
+        memos["sentiment"] = sent_memo
+        board.write_memo(4, sent_memo)
+
+        # 5. Risk critic.
+        risk_answers, risk_meta = self._ask(
+            self._stage_context(context, stage="risk", memos=memos),
+            self._risk_questions(assets),
+        )
+        risk_choices, risk_conf = _asset_choices(
+            risk_answers,
+            assets,
+            prefix="risk_",
+            allowed={"approve", "reduce", "veto"},
+            default="veto",
+        )
         risk_regime, _ = _choice(
             risk_answers,
             "risk_regime",
@@ -439,13 +724,50 @@ class SquadProvider:
             regime=risk_regime,
             notes="Risk review only; vetoes are enforced by the squad guardrail.",
         )
-        board.write_memo(2, risk_memo)
+        memos["risk"] = risk_memo
+        metas["risk"] = risk_meta
+        board.write_memo(5, risk_memo)
 
-        chair_context = self._stage_context(
-            context, stage="chair", trend=trend_memo, risk=risk_memo
+        # 6. Execution / TCA critic.
+        exec_answers, exec_meta = self._ask(
+            self._stage_context(context, stage="execution", memos=memos),
+            self._execution_questions(assets),
         )
+        exec_choices, exec_conf = _asset_choices(
+            exec_answers,
+            assets,
+            prefix="execution_",
+            allowed={"allow", "reduce", "block"},
+            default="block",
+        )
+        exec_regime, _ = _choice(
+            exec_answers,
+            "execution_regime",
+            {"normal", "stressed"},
+            "stressed",
+        )
+        exec_memo = _memo(
+            agent="execution_analyst",
+            stage="execution",
+            as_of=as_of_iso,
+            answers=exec_answers,
+            meta=exec_meta,
+            choices=exec_choices,
+            choice_confidence=exec_conf,
+            regime=exec_regime,
+            notes=(
+                "Execution review only; blocks are enforced by the squad "
+                "guardrail. This agent cannot place orders."
+            ),
+        )
+        memos["execution"] = exec_memo
+        metas["execution"] = exec_meta
+        board.write_memo(6, exec_memo)
+
+        # 7. Chair: final synthesis.
         chair_answers, chair_meta = self._ask(
-            chair_context, self._chair_questions(assets)
+            self._stage_context(context, stage="chair", memos=memos),
+            self._chair_questions(assets),
         )
         chair_regime, _ = _choice(
             chair_answers,
@@ -453,7 +775,11 @@ class SquadProvider:
             {"risk_on", "neutral", "risk_off"},
             "neutral",
         )
-        if risk_regime == "risk_off" and chair_regime == "risk_on":
+        if chair_regime == "risk_on" and (
+            macro_regime == "risk_off"
+            or risk_regime == "risk_off"
+            or exec_regime == "stressed"
+        ):
             chair_regime = "neutral"
 
         actions: list[AssetDecision] = []
@@ -466,14 +792,27 @@ class SquadProvider:
                 action = "flat"
                 confidence = 0.0
             risk_choice = risk_choices.get(asset, "veto")
+            exec_choice = exec_choices.get(asset, "block")
+            reductions = 0
+            if risk_choice == "reduce":
+                reductions += 1
+            if exec_choice == "reduce":
+                reductions += 1
             reason = "chair synthesis"
-            if risk_choice == "veto":
+            if risk_choice == "veto" or exec_choice == "block":
                 action = "flat"
                 confidence = 0.0
-                reason = "risk critic veto"
-            elif risk_choice == "reduce":
-                confidence *= 0.5
-                reason = "chair synthesis; risk critic requested reduced size"
+                blockers = []
+                if risk_choice == "veto":
+                    blockers.append("risk critic veto")
+                if exec_choice == "block":
+                    blockers.append("execution critic block")
+                reason = " + ".join(blockers)
+            elif reductions:
+                confidence *= 0.5**reductions
+                reason = (
+                    "chair synthesis; risk/execution requested reduced size"
+                )
             actions.append(
                 AssetDecision(
                     asset=asset,
@@ -497,32 +836,39 @@ class SquadProvider:
             choice_confidence=chair_conf,
             regime=chair_regime,
             notes=(
-                "Final synthesis. Risk vetoes and reductions are enforced by "
-                "deterministic code before the policy layer."
+                "Final synthesis. Risk vetoes and execution blocks are enforced "
+                "by deterministic code before the policy layer."
             ),
         )
-        board.write_memo(3, chair_memo)
+        memos["chair"] = chair_memo
+        metas["chair"] = chair_meta
+        board.write_memo(7, chair_memo)
 
-        model = str(chair_meta.get("model") or trend_meta.get("model") or self.config.model)
+        model = str(chair_meta.get("model") or macro_meta.get("model") or self.config.model)
         board.write_manifest(
             as_of=as_of_iso,
             provider=self.name,
             model=model,
-            agents=["trend_analyst", "risk_critic", "chair"],
+            agents=[
+                "macro_analyst",
+                "trend_analyst",
+                "xsmom_analyst",
+                "sentiment_analyst",
+                "risk_critic",
+                "execution_analyst",
+                "chair",
+            ],
         )
 
         total_usage = {"input_tokens": 0, "output_tokens": 0}
-        for meta in (trend_meta, risk_meta, chair_meta):
+        for meta in metas.values():
             usage = dict(meta.get("usage", {}))
             total_usage["input_tokens"] += int(usage.get("input_tokens", 0))
             total_usage["output_tokens"] += int(usage.get("output_tokens", 0))
         total_latency = sum(
-            float(meta.get("latency_ms", 0.0))
-            for meta in (trend_meta, risk_meta, chair_meta)
+            float(meta.get("latency_ms", 0.0)) for meta in metas.values()
         )
-        confidence = (
-            sum(actionable) / len(actionable) if actionable else 0.0
-        )
+        confidence = sum(actionable) / len(actionable) if actionable else 0.0
         relative_board = (
             board.directory.relative_to(root)
             if board.directory.is_relative_to(root)
@@ -531,23 +877,21 @@ class SquadProvider:
         request = {
             "provider": self.name,
             "stages": {
-                "trend": trend_meta.get("request", {}),
-                "risk": risk_meta.get("request", {}),
-                "chair": chair_meta.get("request", {}),
+                stage: meta.get("request", {}) for stage, meta in metas.items()
             },
         }
         response = {
             "provider": self.name,
             "model": model,
             "stages": {
-                "trend": trend_meta.get("response", {}),
-                "risk": risk_meta.get("response", {}),
-                "chair": chair_meta.get("response", {}),
+                stage: meta.get("response", {}) for stage, meta in metas.items()
             },
         }
-        force_rebalance = any(
-            choice == "veto" for choice in risk_choices.values()
-        ) or all(action.action == "flat" for action in actions)
+        force_rebalance = (
+            any(choice == "veto" for choice in risk_choices.values())
+            or any(choice == "block" for choice in exec_choices.values())
+            or all(action.action == "flat" for action in actions)
+        )
         return AgentDecision(
             as_of=as_of,
             provider=self.name,
@@ -557,9 +901,9 @@ class SquadProvider:
             actions=actions,
             force_rebalance=force_rebalance,
             notes=(
-                "3-agent typed squad: trend_analyst -> risk_critic -> chair. "
-                "Risk vetoes force an explicit rebalance before policy caps. "
-                f"Blackboard: {relative_board}."
+                "7-agent typed squad: macro -> trend -> xsmom -> sentiment -> "
+                "risk -> execution -> chair. Risk vetoes and execution blocks "
+                f"force a rebalance. Blackboard: {relative_board}."
             ),
             usage=total_usage,
             latency_ms=total_latency,
@@ -570,9 +914,7 @@ class SquadProvider:
                 "run_id": board.run_id,
                 "blackboard": str(relative_board),
                 "memos": {
-                    "trend": trend_memo.to_dict(),
-                    "risk": risk_memo.to_dict(),
-                    "chair": chair_memo.to_dict(),
+                    name: memo.to_dict() for name, memo in memos.items()
                 },
             },
         )

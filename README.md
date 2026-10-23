@@ -232,7 +232,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Separate AI-agent paper pipeline:** own config, account, journal, performance, reports, and audit trail; deterministic policy retains veto power; see `docs/16_AI_AGENT_PIPELINE.md`
 - **Jev evaluation:** optional TypeSafe typed-decision provider; hosted/paid, no key means fail closed; see `docs/17_JEV_EVALUATION.md`
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
-- **Three-agent AI squad (stage 1):** separate paper account; trend analyst → risk critic → chair, typed memos on a shared blackboard, deterministic risk veto; see `docs/24_AI_SQUAD.md`
+- **Seven-agent AI squad:** separate paper account; macro → trend → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
@@ -345,7 +345,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_ai_pipeline.ps1
 # Optional separate daily task (07:15), after configuring a provider:
 powershell -ExecutionPolicy Bypass -File scripts/register_ai_campaign.ps1
 
-# Three-agent AI squad paper lane (stage 1: trend -> risk -> chair)
+# Seven-agent AI squad paper lane
+# macro -> trend -> XSMOM -> sentiment -> risk -> execution -> chair
 # Separate $10,000 account under artifacts/ai_squad; no scheduler yet.
 uv run python -m tradingbot --config config/ai_squad.yaml ai-run --dry-run
 uv run python -m tradingbot --config config/ai_squad.yaml ai-run

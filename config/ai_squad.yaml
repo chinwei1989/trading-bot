@@ -1,14 +1,17 @@
-# Separate three-agent AI squad paper lane (stage 1).
+# Separate seven-agent AI squad paper lane.
 #
 # This account is intentionally separate from the single-provider Jev account
 # in config/ai_agent.yaml so the two designs can be compared without mixing
 # paper performance. It is paper-only. It has no broker credentials and no
 # live execution path.
 #
-# Stage 1 roster:
-#   trend_analyst -> risk_critic -> chair
-# Do not add macro, sentiment, or execution agents without an explicit review
-# and a fresh paper evaluation. See docs/24_AI_SQUAD.md.
+# Roster:
+#   macro_analyst -> trend_analyst -> xsmom_analyst -> sentiment_analyst
+#   -> risk_critic -> execution_analyst -> chair
+#
+# All specialists are role-scoped typed Jev calls. The chair produces the final
+# typed decision; deterministic policy and risk checks retain veto power.
+# See docs/24_AI_SQUAD.md.
 
 data:
   source: binance

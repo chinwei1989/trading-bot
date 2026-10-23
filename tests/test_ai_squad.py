@@ -13,8 +13,18 @@ def _context() -> dict:
         "as_of": "2026-10-24T00:00:00+00:00",
         "universe": ["BTC", "ETH"],
         "assets": {
-            "BTC": {"trend_up": True, "return_60d": 0.2, "vol_60d": 0.4},
-            "ETH": {"trend_up": True, "return_60d": 0.1, "vol_60d": 0.6},
+            "BTC": {
+                "trend_up": True,
+                "return_60d": 0.2,
+                "vol_60d": 0.4,
+                "volume_z_20d": 0.8,
+            },
+            "ETH": {
+                "trend_up": True,
+                "return_60d": 0.1,
+                "vol_60d": 0.6,
+                "volume_z_20d": -1.2,
+            },
         },
         "portfolio": {
             "cash": 10_000.0,
@@ -23,6 +33,20 @@ def _context() -> dict:
             "current_weights": {"BTC": 0.0, "ETH": 0.0},
         },
         "market": {"breadth_above_sma200": 0.75, "data_age_days": 1},
+        "macro": {
+            "available": True,
+            "risk_score": -0.2,
+            "interpretation": "risk_on",
+            "series": {"VIXCLS": {"last": 15.0, "z_1y": -0.5}},
+        },
+        "sentiment": {
+            "available": True,
+            "window_days": 7,
+            "assets": {
+                "BTC": {"mean": 0.4, "count": 12},
+                "ETH": {"mean": 0.0, "count": 7},
+            },
+        },
         "constraints": {},
     }
 
@@ -51,15 +75,32 @@ class FakeSquadLLM:
 
     def __init__(self, answers: dict[str, dict] | None = None):
         self.answers = answers or {
+            "macro": {
+                "macro_regime": {"choice": "risk_on", "confidence": 0.8},
+            },
             "trend": {
                 "trend_regime": {"choice": "risk_on", "confidence": 0.8},
                 "trend_BTC": {"choice": "long", "confidence": 0.9},
                 "trend_ETH": {"choice": "long", "confidence": 0.8},
             },
+            "xsmom": {
+                "xs_regime": {"choice": "risk_on", "confidence": 0.8},
+                "xs_BTC": {"choice": "long", "confidence": 0.85},
+                "xs_ETH": {"choice": "flat", "confidence": 0.7},
+            },
+            "sentiment": {
+                "sentiment_BTC": {"choice": "supportive", "confidence": 0.7},
+                "sentiment_ETH": {"choice": "neutral", "confidence": 0.6},
+            },
             "risk": {
                 "risk_regime": {"choice": "neutral", "confidence": 0.7},
                 "risk_BTC": {"choice": "veto", "confidence": 0.9},
-                "risk_ETH": {"choice": "reduce", "confidence": 0.8},
+                "risk_ETH": {"choice": "approve", "confidence": 0.8},
+            },
+            "execution": {
+                "execution_regime": {"choice": "normal", "confidence": 0.8},
+                "execution_BTC": {"choice": "allow", "confidence": 0.8},
+                "execution_ETH": {"choice": "reduce", "confidence": 0.7},
             },
             "chair": {
                 "regime": {"choice": "risk_on", "confidence": 0.8},
@@ -72,10 +113,18 @@ class FakeSquadLLM:
     def ask(self, context: dict, questions: dict) -> tuple[dict, dict]:
         self.calls.append((context, questions))
         keys = set(questions)
-        if "trend_BTC" in keys:
+        if "macro_regime" in keys:
+            stage = "macro"
+        elif "trend_BTC" in keys:
             stage = "trend"
+        elif "xs_BTC" in keys:
+            stage = "xsmom"
+        elif "sentiment_BTC" in keys:
+            stage = "sentiment"
         elif "risk_BTC" in keys:
             stage = "risk"
+        elif "execution_BTC" in keys:
+            stage = "execution"
         else:
             stage = "chair"
         return self.answers[stage], {
@@ -87,7 +136,7 @@ class FakeSquadLLM:
         }
 
 
-def test_three_agent_squad_writes_blackboard_and_enforces_risk_veto(tmp_path: Path) -> None:
+def test_full_squad_writes_blackboard_and_enforces_guardrails(tmp_path: Path) -> None:
     llm = FakeSquadLLM()
     provider = SquadProvider(_config(), llm=llm, root=tmp_path)
     decision = provider.decide(_context())
@@ -101,43 +150,77 @@ def test_three_agent_squad_writes_blackboard_and_enforces_risk_veto(tmp_path: Pa
     assert actions["ETH"].action == "long"
     assert actions["ETH"].confidence == 0.45
     assert decision.force_rebalance is True
-    assert decision.usage == {"input_tokens": 300, "output_tokens": 30}
-    assert decision.latency_ms == 37.5
+    assert decision.usage == {"input_tokens": 700, "output_tokens": 70}
+    assert decision.latency_ms == 87.5
     assert decision.raw["run_id"]
 
     board = tmp_path / "artifacts" / "ai_squad" / "squad" / str(decision.raw["run_id"])
-    assert (board / "01_trend.json").exists()
-    assert (board / "02_risk.json").exists()
-    assert (board / "03_chair.json").exists()
+    for name in (
+        "01_macro.json",
+        "02_trend.json",
+        "03_xsmom.json",
+        "04_sentiment.json",
+        "05_risk.json",
+        "06_execution.json",
+        "07_chair.json",
+        "manifest.json",
+    ):
+        assert (board / name).exists(), name
+
     manifest = (board / "manifest.json").read_text(encoding="utf-8")
-    assert "trend_analyst" in manifest
+    assert "macro_analyst" in manifest
+    assert "xsmom_analyst" in manifest
+    assert "sentiment_analyst" in manifest
+    assert "execution_analyst" in manifest
     assert "risk_critic" in manifest
     assert "chair" in manifest
 
-    # Each stage sees the memos produced by the earlier stages.
-    assert len(llm.calls) == 3
-    risk_state = llm.calls[1][0]
-    chair_state = llm.calls[2][0]
-    assert risk_state["squad"]["trend_memo"]["agent"] == "trend_analyst"
-    assert chair_state["squad"]["trend_memo"]["agent"] == "trend_analyst"
-    assert chair_state["squad"]["risk_memo"]["agent"] == "risk_critic"
-    assert chair_state["squad"]["risk_memo"]["choices"]["BTC"] == "veto"
+    assert len(llm.calls) == 7
+    risk_state = llm.calls[4][0]
+    exec_state = llm.calls[5][0]
+    chair_state = llm.calls[6][0]
+    assert set(risk_state["squad"]["memos"]) == {
+        "macro",
+        "trend",
+        "xsmom",
+        "sentiment",
+    }
+    assert set(exec_state["squad"]["memos"]) == {
+        "macro",
+        "trend",
+        "xsmom",
+        "sentiment",
+        "risk",
+    }
+    assert set(chair_state["squad"]["memos"]) == {
+        "macro",
+        "trend",
+        "xsmom",
+        "sentiment",
+        "risk",
+        "execution",
+    }
+    assert chair_state["squad"]["memos"]["risk"]["choices"]["BTC"] == "veto"
+
+
+def test_execution_block_flattens_a_chair_long(tmp_path: Path) -> None:
+    answers = FakeSquadLLM().answers
+    answers["risk"]["risk_BTC"] = {"choice": "approve", "confidence": 0.8}
+    answers["risk"]["risk_ETH"] = {"choice": "approve", "confidence": 0.8}
+    answers["execution"]["execution_BTC"] = {"choice": "allow", "confidence": 0.8}
+    answers["execution"]["execution_ETH"] = {"choice": "block", "confidence": 0.9}
+    provider = SquadProvider(_config(), llm=FakeSquadLLM(answers), root=tmp_path)
+    decision = provider.decide(_context())
+    actions = decision.action_map()
+    assert actions["BTC"].action == "long"
+    assert actions["ETH"].action == "flat"
+    assert actions["ETH"].reason == "execution critic block"
+    assert decision.force_rebalance is True
 
 
 def test_squad_fails_closed_when_risk_answers_are_missing(tmp_path: Path) -> None:
-    answers = {
-        "trend": {
-            "trend_regime": {"choice": "risk_on", "confidence": 0.8},
-            "trend_BTC": {"choice": "long", "confidence": 0.9},
-            "trend_ETH": {"choice": "long", "confidence": 0.8},
-        },
-        "risk": {},
-        "chair": {
-            "regime": {"choice": "risk_on", "confidence": 0.8},
-            "BTC": {"choice": "long", "confidence": 0.9},
-            "ETH": {"choice": "long", "confidence": 0.9},
-        },
-    }
+    answers = FakeSquadLLM().answers
+    answers["risk"] = {}
     provider = SquadProvider(_config(), llm=FakeSquadLLM(answers), root=tmp_path)
     decision = provider.decide(_context())
     assert {action.asset: action.action for action in decision.actions} == {
@@ -146,6 +229,22 @@ def test_squad_fails_closed_when_risk_answers_are_missing(tmp_path: Path) -> Non
     }
     assert all(action.reason == "risk critic veto" for action in decision.actions)
     assert decision.force_rebalance is True
+
+
+def test_sentiment_abstains_without_a_feed(tmp_path: Path) -> None:
+    context = _context()
+    context["sentiment"] = {"available": False}
+    llm = FakeSquadLLM()
+    provider = SquadProvider(_config(), llm=llm, root=tmp_path)
+    decision = provider.decide(context)
+    assert len(llm.calls) == 6
+    board = tmp_path / "artifacts" / "ai_squad" / "squad" / str(decision.raw["run_id"])
+    import json
+
+    memo = json.loads((board / "04_sentiment.json").read_text(encoding="utf-8"))
+    assert memo["model"] == "none"
+    assert set(memo["choices"].values()) == {"unavailable"}
+    assert "without an LLM call" in memo["notes"]
 
 
 def test_squad_requires_a_key_when_no_llm_is_injected(
