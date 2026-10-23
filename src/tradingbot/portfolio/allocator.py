@@ -135,6 +135,7 @@ def combine_sleeves(
     rows: list[dict[str, Any]] = []
     budgets_by_date: list[dict[str, Any]] = []
     last_budgets = base
+    last_combined = np.zeros(len(assets))
     for ts in rebalance:
         i = date_to_index.get(ts)
         if i is None:
@@ -158,6 +159,18 @@ def combine_sleeves(
         combined = np.zeros(len(assets))
         for name in names:
             combined += budgets[name] * daily[name].select(assets).to_numpy()[i]
+
+        if params.max_asset_vol is not None:
+            hist = ret_np[max(0, i - max(params.vol_window, 20) + 1) : i + 1]
+            asset_vol = np.nanstd(hist, axis=0) * np.sqrt(periods_per_year)
+            combined = np.where(asset_vol > params.max_asset_vol, 0.0, combined)
+
+        if params.no_trade_band > 0:
+            change = np.abs(combined - last_combined)
+            keep = (change < params.no_trade_band) & (combined != 0.0)
+            combined = np.where(keep, last_combined, combined)
+        last_combined = combined
+
         for j, asset in enumerate(assets):
             rows.append({"timestamp": ts, "asset": asset, "weight": float(combined[j])})
         budgets_by_date.append({"timestamp": ts, **budgets})

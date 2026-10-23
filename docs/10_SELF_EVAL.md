@@ -42,10 +42,11 @@ Full generated report: `artifacts/SELF_EVAL.md` (regenerate with `uv run python 
 | Scheduled daily paper campaign | Registered at 07:00/07:15/07:20 local |
 | Campaign health check (`TradingBotHealth`) | Registered at 07:30 local; fresh-row verification |
 | Monthly delisted-inclusive PIT pipeline | Working; v2 uses quote volume, OOS DSR 0.28 |
+| Meta v2 turnover bands + sleeve ablation | Working; no variant passes DSR |
 | Binance funding/basis carry research lane | Working; OOS DSR 0.00, not added |
 | FRED macro downloader | Implemented (requires `FRED_API_KEY`) |
 | CLI: download, backtest, walkforward, paper, ai-run, ai-status, check, validate-data | Working |
-| Tests | **106 passing** |
+| Tests | **107 passing** |
 | Lint / type check | `ruff` pass, `mypy src` pass |
 
 A `live` command now exists but is locked behind `--confirm-live`, `LIVE_TRADING=YES`, a non-paper broker, and `sandbox=false` for ccxt. It has not been exercised against a real broker because no keys are configured.

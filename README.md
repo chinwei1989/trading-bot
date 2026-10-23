@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **106 tests passing**, `ruff` pass, `mypy src` pass
+- **107 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -243,6 +243,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
 - **Full monthly PIT sample:** 87 delisted-inclusive assets, 763 monthly membership rows; meta OOS Sharpe 0.42, DSR 0.48, PBO 0.46, still NO_GO
 - **PIT v2:** actual quote-volume ranking, quarterly hysteresis, 111 assets; meta OOS Sharpe 0.48, DSR 0.28, PBO 0.04, still NO_GO
+- **Meta v2:** turnover bands and sleeve ablation; best OOS Sharpe 0.75 but PBO 0.63, or lower-Sharpe core with DSR <=0.34; no promotion
 - **Funding data:** public Binance funding-rate downloader + summary; 58,193 events through 23 Oct 2026
 - **Hard live gate:** `live-gate` returns NO_GO until DSR/PBO, paper days, TCA, data, keys, and environment all pass
 
@@ -307,6 +308,11 @@ uv run python -m tradingbot --config config/pit_full.yaml walkforward --strategy
 uv run python scripts/build_pit_v2.py --candidate-n 40 --target-n 20 --workers 8
 uv run python -m tradingbot --config config/pit_v2.yaml backtest
 uv run python -m tradingbot --config config/pit_v2.yaml walkforward --strategy meta
+
+# Turnover-aware meta ablation
+uv run python -m tradingbot --config config/pit_v2_meta_v2.yaml walkforward --strategy meta
+uv run python -m tradingbot --config config/pit_v2_no_rev.yaml walkforward --strategy meta
+uv run python -m tradingbot --config config/pit_v2_core.yaml walkforward --strategy meta
 
 # Two-leg funding/basis carry research
 uv run python -m tradingbot --config config/futures.yaml download

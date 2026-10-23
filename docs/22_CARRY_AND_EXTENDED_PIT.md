@@ -145,7 +145,30 @@ bias is solved.
 
 ---
 
-## 4. Full monthly PIT pipeline
+## 4. Meta v2: turnover bands and sleeve ablation
+
+Three PIT-v2 meta variants were run:
+
+- `config/pit_v2_meta_v2.yaml` ? all four sleeves, monthly rebalance, 2% no-trade band
+- `config/pit_v2_no_rev.yaml` ? trend + breakout + XSMOM
+- `config/pit_v2_core.yaml` ? trend + XSMOM
+
+All use a 1.5 annualized asset-volatility cap and a 15% single-asset cap.
+
+| Variant | OOS Sharpe | OOS max DD | Turnover | DSR | PBO |
+|---|---:|---:|---:|---:|---:|
+| All four | 0.75 | -25.4% | 4.9? | 0.43 | 0.63 |
+| No reversal | 0.51 | -34.1% | 6.6? | 0.34 | 0.12 |
+| Core | 0.51 | -37.8% | 7.8? | 0.31 | 0.06 |
+
+Turnover is now in the intended 5?8? range. However, no variant passes DSR.
+The all-four variant has the best Sharpe but an unacceptable PBO; the core
+variant has low PBO but weaker performance. Do not promote any of them to paper
+or live.
+
+---
+
+## 5. Full monthly PIT pipeline
 
 `scripts/build_pit_full.py` now builds a monthly, delisted-inclusive membership
 file from the Binance Vision archive:
@@ -229,7 +252,7 @@ review are complete. It is deliberately separate from the scheduled campaigns.
 
 ---
 
-## 4. Gate impact
+## 6. Gate impact
 
 No change:
 

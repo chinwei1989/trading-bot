@@ -5,6 +5,7 @@ import pytest
 
 from tradingbot.backtest.validation import (
     deflated_sharpe,
+    meta_param_grid,
     pbo_cscv,
     trend_param_grid,
     xsmom_param_grid,
@@ -44,3 +45,10 @@ def test_pbo_requires_multiple_strategies() -> None:
     assert pbo_cscv(np.zeros((100, 1))) == 1.0
     with pytest.raises(ValueError):
         pbo_cscv(np.zeros(100))
+
+
+def test_meta_grid_respects_sleeve_ablation() -> None:
+    grid = meta_param_grid({"trend": 0.6, "xsmom": 0.4})
+    assert grid
+    assert all(set(item["sleeves"]) == {"trend", "xsmom"} for item in grid)
+    assert all(abs(sum(item["sleeves"].values()) - 1.0) < 1e-9 for item in grid)

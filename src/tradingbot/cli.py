@@ -229,7 +229,10 @@ def cmd_walkforward(args: argparse.Namespace) -> int:
     }
     if config.strategy.name not in grids:
         raise SystemExit(f"walk-forward is not configured for {config.strategy.name}")
-    grid = grids[config.strategy.name]()
+    if config.strategy.name == "meta":
+        grid = meta_param_grid(config.strategy.meta.sleeves)
+    else:
+        grid = grids[config.strategy.name]()
     result = walk_forward(
         bars,
         config.strategy,

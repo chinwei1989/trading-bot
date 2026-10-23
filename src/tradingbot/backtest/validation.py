@@ -348,30 +348,29 @@ def reversal_param_grid() -> list[dict[str, Any]]:
     ]
 
 
-def meta_param_grid() -> list[dict[str, Any]]:
+def meta_param_grid(configured: dict[str, float] | None = None) -> list[dict[str, Any]]:
+    names = [name for name, weight in (configured or {}).items() if weight > 0]
+    all_sleeves = {"trend", "breakout", "reversal", "xsmom"}
+    if names and set(names) != all_sleeves:
+        if len(names) == 1:
+            return [{"sleeves": {names[0]: 1.0}}]
+        if len(names) == 2:
+            return [
+                {"sleeves": {names[0]: 0.60, names[1]: 0.40}},
+                {"sleeves": {names[0]: 0.50, names[1]: 0.50}},
+                {"sleeves": {names[0]: 0.40, names[1]: 0.60}},
+            ]
+        return [
+            {"sleeves": {name: 1.0 / len(names) for name in names}},
+            {
+                "sleeves": {
+                    names[0]: 0.40,
+                    **{name: 0.60 / (len(names) - 1) for name in names[1:]},
+                }
+            },
+        ]
     return [
-        {
-            "sleeves": {
-                "trend": 0.40,
-                "breakout": 0.30,
-                "reversal": 0.15,
-                "xsmom": 0.15,
-            }
-        },
-        {
-            "sleeves": {
-                "trend": 0.30,
-                "breakout": 0.30,
-                "reversal": 0.20,
-                "xsmom": 0.20,
-            }
-        },
-        {
-            "sleeves": {
-                "trend": 0.50,
-                "breakout": 0.25,
-                "reversal": 0.10,
-                "xsmom": 0.15,
-            }
-        },
+        {"sleeves": {"trend": 0.40, "breakout": 0.30, "reversal": 0.15, "xsmom": 0.15}},
+        {"sleeves": {"trend": 0.30, "breakout": 0.30, "reversal": 0.20, "xsmom": 0.20}},
+        {"sleeves": {"trend": 0.50, "breakout": 0.25, "reversal": 0.10, "xsmom": 0.15}},
     ]

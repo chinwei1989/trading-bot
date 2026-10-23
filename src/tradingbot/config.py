@@ -124,6 +124,8 @@ class MetaParams(BaseModel):
     vol_window: int = 60
     vol_target: bool = True
     correlation_penalty: bool = True
+    no_trade_band: float = 0.0
+    max_asset_vol: float | None = None
 
 
 class CombinedParams(BaseModel):
