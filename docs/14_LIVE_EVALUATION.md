@@ -168,3 +168,6 @@ The paper campaign is now running daily. Treat the first 8 weeks as an operation
 - It does not fix the strategy's weak DSR/PBO. It only measures whether live behavior matches the backtest.
 
 The next research step remains funding/carry, delisted assets, and a macro regime overlay.
+
+
+Deployment and dashboard access gating: `docs/23_DEPLOYMENT.md`.

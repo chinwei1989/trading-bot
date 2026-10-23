@@ -10,7 +10,9 @@ and the AI-agent campaign are separate accounts with separate artifacts.
 
 from __future__ import annotations
 
+import hmac
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -519,6 +521,22 @@ def _render_both() -> None:
 
 
 st.set_page_config(page_title="Trading Bot — Multi-Sleeve + AI", layout="wide")
+
+# Optional access gate for hosted deployments. Local use is unchanged when the
+# environment variable is absent. Set DASHBOARD_PASSWORD in the host's secret
+# manager; never commit it.
+_expected_password = os.getenv("DASHBOARD_PASSWORD")
+if _expected_password and not st.session_state.get("dashboard_authenticated"):
+    st.title("Trading Bot — restricted dashboard")
+    st.caption("Read-only. Enter the dashboard password to continue.")
+    _entered = st.text_input("Dashboard password", type="password")
+    if st.button("Unlock"):
+        if hmac.compare_digest(_entered, _expected_password):
+            st.session_state.dashboard_authenticated = True
+            st.rerun()
+        st.error("Invalid password.")
+    st.stop()
+
 st.title("Trading Bot — Multi-Sleeve + AI Agent")
 st.caption(
     "Read-only. Separate paper sleeves plus an isolated AI agent. No order controls. "
@@ -530,15 +548,36 @@ view = st.sidebar.radio(
     ["Both", "Deterministic", "AI agent", "3D Office"],
     index=0,
 )
-if view == "Deterministic":
-    _render_deterministic()
-elif view == "AI agent":
-    _render_ai()
-elif view == "3D Office":
-    try:
-        components.html(build_office_html(ROOT), height=900, scrolling=False)
-    except Exception as exc:
-        st.error(f"Could not build the 3D office: {type(exc).__name__}: {exc}")
-        st.code("uv run python scripts/build_office3d.py")
+refresh_label = st.sidebar.selectbox(
+    "Auto-refresh",
+    ["Off", "30 seconds", "60 seconds", "5 minutes"],
+    index=0,
+)
+st.sidebar.caption("Auto-refresh only reloads read data; it never places orders.")
+
+
+def _render_selected(selected: str) -> None:
+    if selected == "Deterministic":
+        _render_deterministic()
+    elif selected == "AI agent":
+        _render_ai()
+    elif selected == "3D Office":
+        try:
+            components.html(build_office_html(ROOT), height=900, scrolling=False)
+        except Exception as exc:
+            st.error(f"Could not build the 3D office: {type(exc).__name__}: {exc}")
+            st.code("uv run python scripts/build_office3d.py")
+    else:
+        _render_both()
+
+
+if refresh_label == "Off":
+    _render_selected(view)
 else:
-    _render_both()
+    seconds = {"30 seconds": 30, "60 seconds": 60, "5 minutes": 300}[refresh_label]
+
+    @st.fragment(run_every=f"{seconds}s")
+    def _live_view() -> None:
+        _render_selected(view)
+
+    _live_view()
