@@ -127,7 +127,7 @@ def apply_policy(
     }
     notes: list[str] = []
 
-    if decision.confidence < policy.min_confidence:
+    if decision.confidence < policy.min_confidence and not decision.force_rebalance:
         notes.append(
             f"overall confidence {decision.confidence:.2f} below "
             f"{policy.min_confidence:.2f}; holding current weights"

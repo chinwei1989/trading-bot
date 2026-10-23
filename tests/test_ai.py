@@ -128,6 +128,23 @@ def test_policy_holds_on_low_confidence() -> None:
     assert any("holding current" in note for note in result.notes)
 
 
+def test_policy_force_rebalance_honours_explicit_flat() -> None:
+    decision = AgentDecision(
+        as_of=datetime(2026, 10, 22, tzinfo=UTC),
+        confidence=0.0,
+        force_rebalance=True,
+        actions=[
+            AssetDecision(asset="BTC", action="flat", confidence=0.9),
+            AssetDecision(asset="ETH", action="flat", confidence=0.9),
+        ],
+    )
+    context = _context()
+    context["portfolio"]["current_weights"] = {"BTC": 0.15, "ETH": 0.05}
+    result = apply_policy(decision, context, _policy())
+    assert result.target_weights["BTC"] == 0.0
+    assert result.target_weights["ETH"] == 0.0
+
+
 def test_policy_risk_off_reduces_gross() -> None:
     decision = AgentDecision(
         as_of=datetime(2026, 10, 22, tzinfo=UTC),

@@ -72,6 +72,10 @@ Each memo contains the agent name, model, typed choices, per-choice confidence, 
 - Risk `reduce` → chair confidence is halved; the policy layer may still reject it.
 - Risk `risk_off` + chair `risk_on` → regime is downgraded to `neutral`.
 - Shorts are flattened unless policy explicitly allows them.
+- When the squad is deliberately flat or a risk veto exists, the decision sets
+  `force_rebalance`; this stops the generic “low confidence means hold current”
+  rule from silently ignoring a veto. The existing turnover cap can still stage
+  the exit rather than forcing an unlimited one-day liquidation.
 
 ---
 

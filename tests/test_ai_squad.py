@@ -100,6 +100,7 @@ def test_three_agent_squad_writes_blackboard_and_enforces_risk_veto(tmp_path: Pa
     assert actions["BTC"].reason == "risk critic veto"
     assert actions["ETH"].action == "long"
     assert actions["ETH"].confidence == 0.45
+    assert decision.force_rebalance is True
     assert decision.usage == {"input_tokens": 300, "output_tokens": 30}
     assert decision.latency_ms == 37.5
     assert decision.raw["run_id"]
@@ -144,6 +145,7 @@ def test_squad_fails_closed_when_risk_answers_are_missing(tmp_path: Path) -> Non
         "ETH": "flat",
     }
     assert all(action.reason == "risk critic veto" for action in decision.actions)
+    assert decision.force_rebalance is True
 
 
 def test_squad_requires_a_key_when_no_llm_is_injected(

@@ -545,6 +545,9 @@ class SquadProvider:
                 "chair": chair_meta.get("response", {}),
             },
         }
+        force_rebalance = any(
+            choice == "veto" for choice in risk_choices.values()
+        ) or all(action.action == "flat" for action in actions)
         return AgentDecision(
             as_of=as_of,
             provider=self.name,
@@ -552,8 +555,10 @@ class SquadProvider:
             regime=chair_regime,  # type: ignore[arg-type]
             confidence=_clamp_confidence(confidence),
             actions=actions,
+            force_rebalance=force_rebalance,
             notes=(
                 "3-agent typed squad: trend_analyst -> risk_critic -> chair. "
+                "Risk vetoes force an explicit rebalance before policy caps. "
                 f"Blackboard: {relative_board}."
             ),
             usage=total_usage,

@@ -50,6 +50,11 @@ class AgentDecision(BaseModel):
     confidence: float = Field(default=0.5, ge=0.0, le=1.0)
     actions: list[AssetDecision] = Field(default_factory=list)
     target_weights: dict[str, float] | None = None
+    # A provider can deliberately choose flat (or a risk critic can veto an
+    # asset) even when the aggregate confidence is low. Without this flag the
+    # deterministic policy treats low confidence as "hold current", which
+    # would silently ignore a risk veto on an existing position.
+    force_rebalance: bool = False
     notes: str = ""
     usage: dict[str, int] = Field(default_factory=dict)
     latency_ms: float = 0.0
