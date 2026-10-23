@@ -187,6 +187,43 @@ This fails the live gate. The monthly membership also creates high turnover
 (21.1 annualized), so the next iteration should add liquidity-aware buffers and
 lower-turnover membership transitions before considering it for allocation.
 
+### PIT v2: actual quote volume + hysteresis
+
+`scripts/build_pit_v2.py` is the lower-turnover successor. It downloads the
+monthly 1-day ZIPs for a size-based candidate shortlist, ranks by **actual quote
+volume**, lags membership by one month, rebalances quarterly, and applies
+entry/exit hysteresis.
+
+```powershell
+uv run python scripts/build_pit_v2.py --candidate-n 40 --target-n 20 --workers 8
+uv run python -m tradingbot --config config/pit_v2.yaml backtest
+uv run python -m tradingbot --config config/pit_v2.yaml walkforward --strategy meta
+```
+
+Outputs:
+
+- `config/pit_universe_v2.csv`
+- `data/normalized/bars_pit_v2.parquet`
+- `config/pit_v2.yaml`
+
+The selection uses month `M-1` volume for month `M`, so there is no same-month
+look-ahead.
+
+V2 result: **1620 membership rows, 111 unique assets, 20 names per month**.
+
+| Metric | Full sample | Walk-forward OOS |
+|---|---:|---:|
+| Sharpe | 0.68 | **0.48** |
+| Total return | 635% | 34.8% |
+| Max drawdown | -59.6% | **-29.5%** |
+| DSR | ? | **0.28** |
+| PBO | ? | **0.04** |
+| Turnover (annual) | 21.5 | **16.7** |
+
+V2 still fails the live gate. Quote-volume ranking and hysteresis reduced the
+archive-size distortion, but turnover remained high and OOS performance fell
+short. Do not add it to meta.
+
 Do not use this universe for live/paper until the walk-forward and data-quality
 review are complete. It is deliberately separate from the scheduled campaigns.
 

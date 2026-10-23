@@ -242,6 +242,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Carry research lane:** two-leg spot/perp funding/basis backtest + walk-forward; full-sample looks strong, OOS DSR 0.00 / PBO 0.57, so not added to meta
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
 - **Full monthly PIT sample:** 87 delisted-inclusive assets, 763 monthly membership rows; meta OOS Sharpe 0.42, DSR 0.48, PBO 0.46, still NO_GO
+- **PIT v2:** actual quote-volume ranking, quarterly hysteresis, 111 assets; meta OOS Sharpe 0.48, DSR 0.28, PBO 0.04, still NO_GO
 - **Funding data:** public Binance funding-rate downloader + summary; 58,193 events through 23 Oct 2026
 - **Hard live gate:** `live-gate` returns NO_GO until DSR/PBO, paper days, TCA, data, keys, and environment all pass
 
@@ -301,6 +302,11 @@ uv run python -m tradingbot --config config/pit_extended.yaml backtest
 uv run python scripts/build_pit_full.py --top-n 10 --workers 8
 uv run python -m tradingbot --config config/pit_full.yaml backtest
 uv run python -m tradingbot --config config/pit_full.yaml walkforward --strategy meta
+
+# PIT v2: actual quote-volume ranking + quarterly hysteresis
+uv run python scripts/build_pit_v2.py --candidate-n 40 --target-n 20 --workers 8
+uv run python -m tradingbot --config config/pit_v2.yaml backtest
+uv run python -m tradingbot --config config/pit_v2.yaml walkforward --strategy meta
 
 # Two-leg funding/basis carry research
 uv run python -m tradingbot --config config/futures.yaml download
