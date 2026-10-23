@@ -243,7 +243,8 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
 - **Full monthly PIT sample:** 87 delisted-inclusive assets, 763 monthly membership rows; meta OOS Sharpe 0.42, DSR 0.48, PBO 0.46, still NO_GO
 - **PIT v2:** actual quote-volume ranking, quarterly hysteresis, 111 assets; meta OOS Sharpe 0.48, DSR 0.28, PBO 0.04, still NO_GO
-- **Meta v2:** turnover bands and sleeve ablation; best OOS Sharpe 0.75 but PBO 0.63, or lower-Sharpe core with DSR <=0.34; no promotion
+- **Meta v2:** turnover bands and sleeve ablation; best OOS Sharpe 0.75 but PBO 0.63; no promotion
+- **Meta Lite:** $100M volume floor, top-10 universe; XSMOM-only OOS Sharpe 0.73 / DSR 0.74, but DSR still below 0.95; no promotion
 - **Funding data:** public Binance funding-rate downloader + summary; 58,193 events through 23 Oct 2026
 - **Hard live gate:** `live-gate` returns NO_GO until DSR/PBO, paper days, TCA, data, keys, and environment all pass
 
@@ -313,6 +314,11 @@ uv run python -m tradingbot --config config/pit_v2.yaml walkforward --strategy m
 uv run python -m tradingbot --config config/pit_v2_meta_v2.yaml walkforward --strategy meta
 uv run python -m tradingbot --config config/pit_v2_no_rev.yaml walkforward --strategy meta
 uv run python -m tradingbot --config config/pit_v2_core.yaml walkforward --strategy meta
+
+# Meta Lite: $100M monthly volume floor, top 10
+uv run python scripts/build_pit_v2.py --target-n 10 --min-volume 100000000 --entry-rank 10 --exit-rank 15 --universe-output config/pit_universe_lite.csv --bars-output data/normalized/bars_pit_lite.parquet --config-output config/pit_lite.yaml
+uv run python -m tradingbot --config config/pit_lite_core.yaml backtest
+uv run python -m tradingbot --config config/pit_lite_core.yaml walkforward --strategy meta
 
 # Two-leg funding/basis carry research
 uv run python -m tradingbot --config config/futures.yaml download

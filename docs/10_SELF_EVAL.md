@@ -43,6 +43,7 @@ Full generated report: `artifacts/SELF_EVAL.md` (regenerate with `uv run python 
 | Campaign health check (`TradingBotHealth`) | Registered at 07:30 local; fresh-row verification |
 | Monthly delisted-inclusive PIT pipeline | Working; v2 uses quote volume, OOS DSR 0.28 |
 | Meta v2 turnover bands + sleeve ablation | Working; no variant passes DSR |
+| Meta Lite volume floor + narrow sleeves | Working; XSMOM DSR 0.74, still below gate |
 | Binance funding/basis carry research lane | Working; OOS DSR 0.00, not added |
 | FRED macro downloader | Implemented (requires `FRED_API_KEY`) |
 | CLI: download, backtest, walkforward, paper, ai-run, ai-status, check, validate-data | Working |

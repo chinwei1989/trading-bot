@@ -145,7 +145,32 @@ bias is solved.
 
 ---
 
-## 4. Meta v2: turnover bands and sleeve ablation
+## 4. Meta Lite: volume floor and narrow sleeve tests
+
+`config/pit_lite.yaml` adds an absolute **$100M monthly quote-volume floor**,
+caps the universe at 10 names, and uses the turnover-aware meta allocator.
+
+- Membership: **810 rows**, **51 unique assets**
+- Rebalance: monthly
+- No-trade band: 2%
+- Max asset weight: 15%
+- Max annualized asset vol: 1.5
+
+Standalone tests:
+
+| Variant | OOS Sharpe | OOS Max DD | Turnover | DSR | PBO |
+|---|---:|---:|---:|---:|---:|
+| Trend only | 0.36 | -31.2% | 6.3? | 0.26 | 1.00 |
+| XSMOM only | 0.73 | -27.6% | 8.3? | 0.74 | 1.00 |
+| Trend + XSMOM | 0.59 | -26.1% | 6.9? | 0.32 | 0.42 |
+| Trend + XSMOM, 2? costs | 0.55 | -27.0% | 6.9? | 0.29 | 0.44 |
+
+XSMOM-only is the strongest OOS result, but a one-strategy walk-forward makes
+PBO uninformative and DSR is still below 0.95. No variant is promoted.
+
+---
+
+## 5. Meta v2: turnover bands and sleeve ablation
 
 Three PIT-v2 meta variants were run:
 
@@ -168,7 +193,7 @@ or live.
 
 ---
 
-## 5. Full monthly PIT pipeline
+## 6. Full monthly PIT pipeline
 
 `scripts/build_pit_full.py` now builds a monthly, delisted-inclusive membership
 file from the Binance Vision archive:
@@ -252,7 +277,7 @@ review are complete. It is deliberately separate from the scheduled campaigns.
 
 ---
 
-## 6. Gate impact
+## 7. Gate impact
 
 No change:
 

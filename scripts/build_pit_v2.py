@@ -109,6 +109,7 @@ def _membership(
     *,
     candidate_n: int,
     target_n: int,
+    min_volume: float,
     entry_rank: int,
     exit_rank: int,
     rebalance_months: int,
@@ -131,7 +132,7 @@ def _membership(
                 (
                     (symbol, volumes.get(symbol, {}).get(previous, 0.0))
                     for symbol, _ in candidates
-                    if volumes.get(symbol, {}).get(previous, 0.0) > 0
+                    if volumes.get(symbol, {}).get(previous, 0.0) >= min_volume
                 ),
                 key=lambda item: item[1],
                 reverse=True,
@@ -167,10 +168,14 @@ def main() -> int:
     parser.add_argument("--end", default="2026-09")
     parser.add_argument("--candidate-n", type=int, default=40)
     parser.add_argument("--target-n", type=int, default=20)
+    parser.add_argument("--min-volume", type=float, default=0.0)
     parser.add_argument("--entry-rank", type=int, default=20)
     parser.add_argument("--exit-rank", type=int, default=30)
     parser.add_argument("--rebalance-months", type=int, default=3)
     parser.add_argument("--workers", type=int, default=8)
+    parser.add_argument("--universe-output", default="config/pit_universe_v2.csv")
+    parser.add_argument("--bars-output", default="data/normalized/bars_pit_v2.parquet")
+    parser.add_argument("--config-output", default="config/pit_v2.yaml")
     parser.add_argument("--skip-download", action="store_true")
     args = parser.parse_args()
 
@@ -241,6 +246,7 @@ def main() -> int:
         months,
         candidate_n=args.candidate_n,
         target_n=args.target_n,
+        min_volume=args.min_volume,
         entry_rank=args.entry_rank,
         exit_rank=args.exit_rank,
         rebalance_months=args.rebalance_months,
@@ -249,14 +255,14 @@ def main() -> int:
         pl.col("effective_date") >= date.fromisoformat(f"{args.start}-01")
     )
     selected = {month: assets for month, assets in selected.items() if month >= args.start}
-    membership_path = save_membership(membership, ROOT / "config/pit_universe_v2.csv")
+    membership_path = save_membership(membership, ROOT / args.universe_output)
     unique = sorted({s for symbols in selected.values() for s in symbols})
     print(f"months: {len(months)}, membership rows: {membership.height}, unique: {len(unique)}")
     print(membership_path)
     if args.skip_download:
         return 0
 
-    existing_path = ROOT / "data/normalized/bars_pit_full.parquet"
+    existing_path = ROOT / "data/normalized/bars_pit_v2.parquet"
     existing = load_bars(existing_path) if existing_path.exists() else pl.DataFrame()
     have = set(existing["asset"].unique().to_list()) if not existing.is_empty() else set()
     missing = [s for s in unique if s not in have]
@@ -284,26 +290,27 @@ def main() -> int:
         ["timestamp", "asset"]
     )
     bars = bars.filter(pl.col("timestamp").dt.date() < datetime.now(UTC).date())
-    bars_path = save_bars(bars, ROOT / "data/normalized/bars_pit_v2.parquet")
+    bars_path = save_bars(bars, ROOT / args.bars_output)
     print(f"bars: {bars_path} ({bars.height:,} rows)")
 
     meta = yaml.safe_load((ROOT / "config/meta.yaml").read_text(encoding="utf-8"))
     meta["data"]["symbols"] = unique
     meta["data"]["start"] = "2017-08"
-    meta["data"]["bars_path"] = "data/normalized/bars_pit_v2.parquet"
-    meta["data"]["universe_path"] = "config/pit_universe_v2.csv"
-    meta["backtest"]["output_dir"] = "artifacts/pit_v2"
+    meta["data"]["bars_path"] = args.bars_output
+    meta["data"]["universe_path"] = args.universe_output
+    output_dir = f"artifacts/{Path(args.config_output).stem}"
+    meta["backtest"]["output_dir"] = output_dir
     for key, value in {
-        "state_path": "artifacts/pit_v2/paper_state.json",
-        "journal_path": "artifacts/pit_v2/orders.sqlite",
-        "order_state_path": "artifacts/pit_v2/order_state.sqlite",
-        "performance_path": "artifacts/pit_v2/performance.jsonl",
-        "heartbeat_path": "artifacts/pit_v2/heartbeat.json",
+        "state_path": f"{output_dir}/paper_state.json",
+        "journal_path": f"{output_dir}/orders.sqlite",
+        "order_state_path": f"{output_dir}/order_state.sqlite",
+        "performance_path": f"{output_dir}/performance.jsonl",
+        "heartbeat_path": f"{output_dir}/heartbeat.json",
     }.items():
         meta["broker"][key] = value
-    meta["risk"]["state_path"] = "artifacts/pit_v2/risk_state.json"
-    meta["risk"]["kill_switch_file"] = "artifacts/pit_v2/KILL"
-    cfg_path = ROOT / "config/pit_v2.yaml"
+    meta["risk"]["state_path"] = f"{output_dir}/risk_state.json"
+    meta["risk"]["kill_switch_file"] = f"{output_dir}/KILL"
+    cfg_path = ROOT / args.config_output
     cfg_path.write_text(yaml.safe_dump(meta, sort_keys=False), encoding="utf-8")
     print(f"config: {cfg_path}")
     return 0
