@@ -67,7 +67,11 @@ def _last_prices(bars: pl.DataFrame) -> dict[str, float]:
     return {str(row["asset"]): float(row["close"]) for row in last.iter_rows(named=True)}
 
 
-def _archive_for_reset(root: Path, config: AppConfig) -> None:
+def _ai_dir(root: Path, config: AppConfig) -> Path:
+    return _resolve(root, config.agent.artifacts_dir)
+
+
+def _archive_for_reset(root: Path, config: AppConfig, ai_dir: Path) -> None:
     stamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     paths = [
         _resolve(root, config.broker.state_path),
@@ -75,7 +79,7 @@ def _archive_for_reset(root: Path, config: AppConfig) -> None:
         _resolve(root, config.broker.order_state_path),
         _resolve(root, config.broker.performance_path),
         _resolve(root, config.broker.heartbeat_path),
-        root / "artifacts" / "ai" / "decisions.jsonl",
+        ai_dir / "decisions.jsonl",
     ]
     for path in paths:
         if path.exists():
@@ -188,6 +192,7 @@ def run_ai_cycle(
         raise PermissionError(
             "AI pipeline is paper-only; broker must be name=paper and paper=true"
         )
+    ai_dir = _ai_dir(root, config)
 
     bars_path = _resolve(root, config.data.bars_path)
     if not bars_path.exists():
@@ -206,7 +211,7 @@ def run_ai_cycle(
 
     state_path = _resolve(root, config.broker.state_path)
     if reset:
-        _archive_for_reset(root, config)
+        _archive_for_reset(root, config, ai_dir)
 
     broker = PaperBroker(
         cash=config.broker.initial_cash,
@@ -235,6 +240,8 @@ def run_ai_cycle(
 
     alerts: list[str] = []
     requested_provider = provider_override or config.agent.provider
+    if requested_provider == "squad":
+        context["_squad_root"] = str(root)
     provider = _provider_for(config, provider_override)
     try:
         decision = provider.decide(context)
@@ -288,7 +295,10 @@ def run_ai_cycle(
                 "error": alert,
             }
             report_json, _ = write_report(
-                root, report=error_report, markdown=_markdown(error_report)
+                root,
+                report=error_report,
+                markdown=_markdown(error_report),
+                ai_dir=ai_dir,
             )
             append_decision(
                 root,
@@ -311,6 +321,7 @@ def run_ai_cycle(
                     "n_orders": 0,
                     "error": alert,
                 },
+                ai_dir=ai_dir,
             )
             write_heartbeat(
                 _resolve(root, config.broker.heartbeat_path),
@@ -420,6 +431,7 @@ def run_ai_cycle(
             for order in orders
         ],
         fallback=decision.fallback,
+        ai_dir=ai_dir,
     )
 
     report: dict[str, Any] = {
@@ -454,7 +466,9 @@ def run_ai_cycle(
         "alerts": alerts,
         "audit_path": str(audit_path.relative_to(root)) if audit_path.is_relative_to(root) else str(audit_path),
     }
-    report_json, _ = write_report(root, report=report, markdown=_markdown(report))
+    report_json, _ = write_report(
+        root, report=report, markdown=_markdown(report), ai_dir=ai_dir
+    )
     append_decision(
         root,
         {
@@ -477,6 +491,7 @@ def run_ai_cycle(
             "dry_run": dry_run,
             "n_orders": len(orders),
         },
+        ai_dir=ai_dir,
     )
 
     if not dry_run:
@@ -534,9 +549,12 @@ def run_ai_cycle(
     )
 
 
-def read_ai_report(root: Path | None = None) -> dict[str, Any] | None:
+def read_ai_report(
+    root: Path | None = None,
+    ai_dir: Path | None = None,
+) -> dict[str, Any] | None:
     root = root or Path.cwd()
-    path = root / "artifacts" / "ai" / "reports" / "latest.json"
+    path = (ai_dir or root / "artifacts" / "ai") / "reports" / "latest.json"
     if not path.exists():
         return None
     try:

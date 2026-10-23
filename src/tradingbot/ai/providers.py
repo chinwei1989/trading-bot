@@ -88,6 +88,49 @@ class JevProvider:
             }
         return questions
 
+    def ask(
+        self,
+        context: dict[str, Any],
+        questions: dict[str, dict[str, Any]],
+    ) -> tuple[dict[str, Any], dict[str, Any]]:
+        """Ask Jev a caller-defined typed question set.
+
+        The multi-agent squad uses this to give each specialist a narrow
+        question set. Jev still returns typed choices, not generated chat.
+        """
+        if not self.api_key:
+            raise ProviderUnavailable(
+                f"{self.config.api_key_env} is not set; Jev is not configured"
+            )
+        payload = {
+            "model": self.config.model,
+            "state": context,
+            "questions": questions,
+        }
+        started = time.perf_counter()
+        client = self.client or httpx.Client(timeout=self.config.timeout_seconds)
+        close_client = self.client is None
+        try:
+            response = self._post(client, payload)
+        finally:
+            if close_client:
+                client.close()
+        latency_ms = (time.perf_counter() - started) * 1000.0
+        data = response.json()
+        answers = data.get("answers")
+        if not isinstance(answers, dict):
+            raise ProviderError("Jev response has no answers object")
+        return answers, {
+            "model": str(data.get("model", self.config.model)),
+            "usage": {
+                "input_tokens": int(data.get("usage", {}).get("input_tokens", 0)),
+                "output_tokens": int(data.get("usage", {}).get("output_tokens", 0)),
+            },
+            "latency_ms": latency_ms,
+            "request": payload,
+            "response": data,
+        }
+
     def decide(self, context: dict[str, Any]) -> AgentDecision:
         if not self.api_key:
             raise ProviderUnavailable(
@@ -363,6 +406,10 @@ def _parse_json_object(content: str) -> dict[str, Any]:
 def build_provider(config: AgentConfig) -> DecisionProvider:
     if config.provider == "jev":
         return JevProvider(config)
+    if config.provider == "squad":
+        from tradingbot.ai.squad import SquadProvider
+
+        return SquadProvider(config)
     if config.provider == "openai_compatible":
         return OpenAICompatibleProvider(config)
     if config.provider == "deterministic":

@@ -457,7 +457,8 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
 def cmd_ai_evaluate(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     scorecard = build_scorecard(config, ROOT)
-    json_path, md_path = write_scorecard(scorecard, ROOT)
+    ai_dir = _path(config, config.agent.artifacts_dir)
+    json_path, md_path = write_scorecard(scorecard, ROOT, ai_dir=ai_dir)
     print(f"AI scorecard: {format_scorecard(scorecard)}")
     for note in scorecard.get("notes", []):
         print(f"  note: {note}")
@@ -468,7 +469,8 @@ def cmd_ai_evaluate(args: argparse.Namespace) -> int:
 
 def cmd_ai_status(args: argparse.Namespace) -> int:
     config = load_config(args.config)
-    report = read_ai_report(ROOT)
+    ai_dir = _path(config, config.agent.artifacts_dir)
+    report = read_ai_report(ROOT, ai_dir=ai_dir)
     print(f"AI config: {args.config}")
     print(f"  provider: {config.agent.provider}")
     print(f"  model: {config.agent.model}")
@@ -829,7 +831,7 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true", help="decide and report without orders")
     p.add_argument(
         "--provider",
-        choices=["jev", "openai_compatible", "deterministic"],
+        choices=["jev", "squad", "openai_compatible", "deterministic"],
         default=None,
         help="override the configured decision provider",
     )

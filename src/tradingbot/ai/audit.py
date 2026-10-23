@@ -17,6 +17,10 @@ def _json_default(value: Any) -> str:
     return value.isoformat() if isinstance(value, datetime) else str(value)
 
 
+def _ai_dir(root: Path, ai_dir: Path | None) -> Path:
+    return ai_dir if ai_dir is not None else root / "artifacts" / "ai"
+
+
 def write_audit(
     root: Path,
     *,
@@ -29,8 +33,9 @@ def write_audit(
     policy: dict[str, Any],
     orders: list[dict[str, Any]],
     fallback: bool,
+    ai_dir: Path | None = None,
 ) -> Path:
-    out_dir = root / "artifacts" / "ai" / "audit"
+    out_dir = _ai_dir(root, ai_dir) / "audit"
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
     path = out_dir / f"{stamp}_{provider}.json"
@@ -56,9 +61,13 @@ def write_audit(
     return path
 
 
-def append_decision(root: Path, payload: dict[str, Any]) -> Path:
+def append_decision(
+    root: Path,
+    payload: dict[str, Any],
+    ai_dir: Path | None = None,
+) -> Path:
     """Append one decision to the AI decision history for evaluation."""
-    out = root / "artifacts" / "ai" / "decisions.jsonl"
+    out = _ai_dir(root, ai_dir) / "decisions.jsonl"
     out.parent.mkdir(parents=True, exist_ok=True)
     record = {"created_at": datetime.now(UTC).isoformat(), **payload}
     with out.open("a", encoding="utf-8") as handle:
@@ -71,8 +80,9 @@ def write_report(
     *,
     report: dict[str, Any],
     markdown: str,
+    ai_dir: Path | None = None,
 ) -> tuple[Path, Path]:
-    out_dir = root / "artifacts" / "ai" / "reports"
+    out_dir = _ai_dir(root, ai_dir) / "reports"
     out_dir.mkdir(parents=True, exist_ok=True)
     json_path = out_dir / "latest.json"
     json_path.write_text(

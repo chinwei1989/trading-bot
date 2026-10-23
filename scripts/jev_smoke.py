@@ -32,7 +32,9 @@ def main() -> int:
     parser.add_argument("--config", default="config/ai_agent.yaml")
     parser.add_argument("--runs", type=int, default=10)
     parser.add_argument(
-        "--provider", choices=["jev", "openai_compatible", "deterministic"], default=None
+        "--provider",
+        choices=["jev", "squad", "openai_compatible", "deterministic"],
+        default=None,
     )
     args = parser.parse_args()
 

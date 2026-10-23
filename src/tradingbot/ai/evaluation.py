@@ -26,8 +26,8 @@ def _resolve(root: Path, value: Path) -> Path:
     return value if value.is_absolute() else root / value
 
 
-def _load_decisions(root: Path) -> list[dict[str, Any]]:
-    path = root / "artifacts" / "ai" / "decisions.jsonl"
+def _load_decisions(ai_dir: Path) -> list[dict[str, Any]]:
+    path = ai_dir / "decisions.jsonl"
     if not path.exists():
         return []
     rows: list[dict[str, Any]] = []
@@ -220,7 +220,8 @@ def _provider_stats(decisions: list[dict[str, Any]]) -> dict[str, Any]:
 
 def build_scorecard(config: AppConfig, root: Path) -> dict[str, Any]:
     perf = load_performance(_resolve(root, config.broker.performance_path))
-    decisions = _load_decisions(root)
+    ai_dir = _resolve(root, config.agent.artifacts_dir)
+    decisions = _load_decisions(ai_dir)
     bars_path = _resolve(root, config.data.bars_path)
     bars = load_bars(bars_path) if bars_path.exists() else pl.DataFrame()
     metrics = _metrics_from_performance(perf, config.backtest.periods_per_year)
@@ -267,8 +268,12 @@ def build_scorecard(config: AppConfig, root: Path) -> dict[str, Any]:
     return scorecard
 
 
-def write_scorecard(scorecard: dict[str, Any], root: Path) -> tuple[Path, Path]:
-    out = root / "artifacts" / "ai" / "reports"
+def write_scorecard(
+    scorecard: dict[str, Any],
+    root: Path,
+    ai_dir: Path | None = None,
+) -> tuple[Path, Path]:
+    out = (ai_dir or root / "artifacts" / "ai") / "reports"
     out.mkdir(parents=True, exist_ok=True)
     json_path = out / "scorecard.json"
     json_path.write_text(json.dumps(scorecard, indent=2, default=str), encoding="utf-8")

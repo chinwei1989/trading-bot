@@ -208,7 +208,18 @@ All views are read-only. The dashboard has no order controls and no config mutat
 
 ---
 
-## 9. What is deliberately not here
+## 9. Three-agent squad (stage 1)
+
+The AI lane now has an optional separate three-agent paper account:
+`trend_analyst -> risk_critic -> chair`. It uses the same typed Jev contract,
+writes per-agent memos to a shared blackboard, and still passes through this
+pipeline's deterministic policy and risk checks. It is deliberately separate
+from the single-provider Jev account so the designs can be compared. See
+`docs/24_AI_SQUAD.md` and `config/ai_squad.yaml`.
+
+---
+
+## 10. What is deliberately not here
 
 - No autonomous web browsing or shell access for the trading model.
 - No live execution.

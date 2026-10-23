@@ -1,0 +1,94 @@
+# Separate three-agent AI squad paper lane (stage 1).
+#
+# This account is intentionally separate from the single-provider Jev account
+# in config/ai_agent.yaml so the two designs can be compared without mixing
+# paper performance. It is paper-only. It has no broker credentials and no
+# live execution path.
+#
+# Stage 1 roster:
+#   trend_analyst -> risk_critic -> chair
+# Do not add macro, sentiment, or execution agents without an explicit review
+# and a fresh paper evaluation. See docs/24_AI_SQUAD.md.
+
+data:
+  source: binance
+  market: spot
+  interval: 1d
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+    - SOLUSDT
+    - XRPUSDT
+    - ADAUSDT
+    - DOGEUSDT
+    - LINKUSDT
+  start: "2020-01"
+  end: null
+  bars_path: data/normalized/bars.parquet
+  raw_dir: data/raw
+  use_cache: true
+  verify_checksums: true
+  include_recent: true
+  recent_limit: 30
+
+backtest:
+  initial_capital: 10000
+  cost_bps: 10
+  slippage_bps: 5
+  periods_per_year: 365
+  execution_lag: 1
+  risk_free_rate: 0.0
+  output_dir: artifacts/ai_squad
+
+risk:
+  max_gross: 0.8
+  max_net: 0.8
+  max_asset_weight: 0.20
+  max_drawdown: 0.30
+  min_cash_weight: 0.20
+  kill_switch_file: artifacts/ai_squad/KILL
+  state_path: artifacts/ai_squad/risk_state.json
+  auto_kill_on_drawdown: true
+
+broker:
+  name: paper
+  paper: true
+  exchange: kraken
+  sandbox: true
+  quote_currency: USDT
+  allow_short: false
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/ai_squad/orders.sqlite
+  order_state_path: artifacts/ai_squad/order_state.sqlite
+  state_path: artifacts/ai_squad/paper_state.json
+  performance_path: artifacts/ai_squad/performance.jsonl
+  heartbeat_path: artifacts/ai_squad/heartbeat.json
+
+agent:
+  enabled: true
+  provider: squad
+  model: jev-latest
+  artifacts_dir: artifacts/ai_squad
+  endpoint: https://api.typesafe.ai/v1/systemone
+  api_key_env: TYPESAFE_API_KEY
+  timeout_seconds: 30
+  max_retries: 2
+  temperature: 0.0
+  max_tokens: 1200
+  fallback: none
+  paper_only: true
+  include_macro: true
+  include_sentiment: true
+  policy:
+    max_gross: 0.80
+    max_asset_weight: 0.20
+    min_cash_weight: 0.20
+    max_turnover: 0.50
+    min_confidence: 0.55
+    target_vol: 0.15
+    risk_off_gross: 0.25
+    allow_short: false
+
+seed: 7

@@ -180,8 +180,11 @@ class AgentPolicyConfig(BaseModel):
 
 class AgentConfig(BaseModel):
     enabled: bool = False
-    provider: Literal["jev", "openai_compatible", "deterministic"] = "deterministic"
+    provider: Literal["jev", "squad", "openai_compatible", "deterministic"] = (
+        "deterministic"
+    )
     model: str = "jev-latest"
+    artifacts_dir: Path = Path("artifacts/ai")
     endpoint: str = "https://api.typesafe.ai/v1/systemone"
     api_key_env: str = "TYPESAFE_API_KEY"
     timeout_seconds: float = 30.0
