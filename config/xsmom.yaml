@@ -1,0 +1,85 @@
+# Crypto cross-sectional momentum sleeve.
+# Separate state/journal/heartbeat paths so it can run alongside the trend sleeve.
+
+data:
+  source: binance
+  market: spot
+  interval: 1d
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+    - SOLUSDT
+    - XRPUSDT
+    - ADAUSDT
+    - DOGEUSDT
+    - LINKUSDT
+  start: "2020-01"
+  end: null
+  bars_path: data/normalized/bars.parquet
+  raw_dir: data/raw
+  use_cache: true
+  verify_checksums: true
+  include_recent: true
+  recent_limit: 30
+
+strategy:
+  name: xsmom
+  trend:
+    lookback: 200
+    vol_window: 60
+    target_vol: 0.15
+    max_weight: 0.25
+    long_short: false
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+  xsmom:
+    lookback: 60
+    skip: 7
+    top_quantile: 0.30
+    bottom_quantile: 0.30
+    long_short: true
+    max_weight: 0.15
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+    target_vol: 0.20
+    vol_window: 30
+    min_assets: 5
+
+backtest:
+  initial_capital: 10000
+  cost_bps: 10
+  slippage_bps: 5
+  periods_per_year: 365
+  execution_lag: 1
+  risk_free_rate: 0.0
+  output_dir: artifacts
+
+risk:
+  max_gross: 1.0
+  max_net: 1.0
+  max_asset_weight: 0.25
+  max_drawdown: 0.35
+  min_cash_weight: 0.0
+  kill_switch_file: artifacts/KILL_XSMOM
+  state_path: artifacts/risk_state_xsmom.json
+  auto_kill_on_drawdown: true
+
+broker:
+  name: paper
+  paper: true
+  exchange: kraken
+  sandbox: true
+  quote_currency: USDT
+  allow_short: false
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/orders_xsmom.sqlite
+  order_state_path: artifacts/order_state_xsmom.sqlite
+  state_path: artifacts/paper_state_xsmom.json
+  performance_path: artifacts/performance_xsmom.jsonl
+  heartbeat_path: artifacts/heartbeat_xsmom.json
+
+seed: 7

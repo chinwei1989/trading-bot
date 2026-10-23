@@ -1,0 +1,86 @@
+# LIVE US equities/ETFs — requires Alpaca keys and paper=false.
+# This file is intentionally explicit. Do not run it until you have completed
+# paper trading and the validation gates in docs/10_SELF_EVAL.md.
+# Start with small capital and keep withdrawals disabled on the API key.
+
+data:
+  source: alpaca
+  market: spot
+  interval: 1d
+  symbols:
+    - SPY
+    - QQQ
+    - IWM
+    - TLT
+    - GLD
+    - AAPL
+    - MSFT
+    - NVDA
+  start: "2015-01"
+  end: null
+  bars_path: data/normalized/bars_alpaca.parquet
+  raw_dir: data/raw
+  use_cache: true
+  verify_checksums: false
+  include_recent: false
+
+strategy:
+  name: trend
+  trend:
+    lookback: 200
+    vol_window: 60
+    target_vol: 0.10
+    max_weight: 0.20
+    long_short: false
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+  xsmom:
+    lookback: 60
+    skip: 7
+    top_quantile: 0.30
+    bottom_quantile: 0.30
+    long_short: false
+    max_weight: 0.15
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+    target_vol: 0.15
+    vol_window: 30
+    min_assets: 5
+
+backtest:
+  initial_capital: 10000
+  cost_bps: 2
+  slippage_bps: 3
+  periods_per_year: 252
+  execution_lag: 1
+  risk_free_rate: 0.0
+  output_dir: artifacts
+
+risk:
+  max_gross: 1.0
+  max_net: 1.0
+  max_asset_weight: 0.20
+  max_drawdown: 0.15
+  min_cash_weight: 0.0
+  kill_switch_file: artifacts/KILL_LIVE_ALPACA
+  state_path: artifacts/risk_state_live_alpaca.json
+  auto_kill_on_drawdown: true
+
+broker:
+  name: alpaca
+  paper: false
+  exchange: kraken
+  sandbox: false
+  quote_currency: USD
+  allow_short: false
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/orders_live_alpaca.sqlite
+  order_state_path: artifacts/order_state_live_alpaca.sqlite
+  state_path: artifacts/paper_state_live_alpaca.json
+  performance_path: artifacts/performance_live_alpaca.jsonl
+  heartbeat_path: artifacts/heartbeat_live_alpaca.json
+
+seed: 7

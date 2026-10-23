@@ -1,0 +1,81 @@
+[build-system]
+requires = ["setuptools>=75", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tradingbot"
+version = "0.1.0"
+description = "Research and execution platform for systematic crypto and US equity strategies"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+authors = [{ name = "tradingbot" }]
+dependencies = [
+  "polars>=1.12,<3.0",
+  "pandas>=2.2,<3.0",
+  "pyarrow>=17.0,<27",
+  "duckdb>=1.1,<3.0",
+  "numpy>=2.0,<3.0",
+  "scipy>=1.14",
+  "statsmodels>=0.14",
+  "arch>=7.2",
+  "scikit-learn>=1.5",
+  "lightgbm>=4.5",
+  "xgboost>=2.1",
+  "optuna>=4.0",
+  "mlflow>=2.17",
+  "quantstats>=0.0.86",
+  "matplotlib>=3.9",
+  "plotly>=5.24",
+  "pydantic>=2.9",
+  "pydantic-settings>=2.6",
+  "python-dotenv>=1.0",
+  "pyyaml>=6.0",
+  "httpx>=0.27",
+  "tenacity>=9.0",
+  "structlog>=24.4",
+  "exchange-calendars>=4.5",
+  "pandas-market-calendars>=4.10",
+  "ccxt>=4.4",
+  "alpaca-py>=0.33",
+  # riskfolio-lib pulls in vectorbt (Commons Clause). For commercial use, remove it and use skfolio.
+  "riskfolio-lib>=6.0,<8.0",
+  "skfolio>=0.7,<2.0",
+]
+
+[project.scripts]
+tradingbot = "tradingbot.cli:main"
+
+[project.optional-dependencies]
+nautilus = ["nautilus_trader==1.231.0"]
+ml = ["transformers>=4.46", "torch>=2.5", "shap>=0.46"]
+dashboard = ["streamlit>=1.40"]
+dev = ["pytest>=8.3", "hypothesis>=6.112", "ruff>=0.7", "mypy>=1.13", "ipykernel>=6.29", "jupyterlab>=4.2"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = false
+warn_unused_ignores = true
+warn_redundant_casts = true
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+markers = [
+  "slow: long-running tests",
+  "integration: requires network or broker credentials",
+]
+
+[tool.uv]
+# Keep the project environment isolated from Freqtrade/Nautilus experiments.

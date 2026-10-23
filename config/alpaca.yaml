@@ -1,0 +1,84 @@
+# US equities/ETFs configuration (requires Alpaca keys).
+# Use a separate bars_path so crypto and stock data never mix.
+
+data:
+  source: alpaca
+  market: spot
+  interval: 1d
+  symbols:
+    - SPY
+    - QQQ
+    - IWM
+    - TLT
+    - GLD
+    - AAPL
+    - MSFT
+    - NVDA
+  start: "2015-01"
+  end: null
+  bars_path: data/normalized/bars_alpaca.parquet
+  raw_dir: data/raw
+  use_cache: true
+  verify_checksums: false
+  include_recent: false
+
+strategy:
+  name: trend
+  trend:
+    lookback: 200
+    vol_window: 60
+    target_vol: 0.10
+    max_weight: 0.25
+    long_short: false
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+  xsmom:
+    lookback: 60
+    skip: 7
+    top_quantile: 0.30
+    bottom_quantile: 0.30
+    long_short: true
+    max_weight: 0.15
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+    target_vol: 0.15
+    vol_window: 30
+    min_assets: 5
+
+backtest:
+  initial_capital: 10000
+  cost_bps: 2
+  slippage_bps: 3
+  periods_per_year: 252
+  execution_lag: 1
+  risk_free_rate: 0.0
+  output_dir: artifacts
+
+risk:
+  max_gross: 1.0
+  max_net: 1.0
+  max_asset_weight: 0.25
+  max_drawdown: 0.20
+  min_cash_weight: 0.0
+  kill_switch_file: artifacts/KILL
+  state_path: artifacts/risk_state_alpaca.json
+  auto_kill_on_drawdown: true
+
+broker:
+  name: alpaca
+  paper: true
+  exchange: kraken
+  sandbox: true
+  quote_currency: USD
+  allow_short: false
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/orders_alpaca.sqlite
+  order_state_path: artifacts/order_state_alpaca.sqlite
+  state_path: artifacts/paper_state_alpaca.json
+  performance_path: artifacts/performance_alpaca.jsonl
+  heartbeat_path: artifacts/heartbeat_alpaca.json
+
+seed: 7

@@ -1,0 +1,79 @@
+# 10+ year long-history research config (Yahoo Finance).
+# BTC-USD and LTC-USD both have data from 2014. Yahoo is not exchange-grade;
+# use this for long-horizon research, not live execution.
+
+data:
+  source: yahoo
+  market: spot
+  interval: 1d
+  symbols:
+    - BTC-USD
+    - LTC-USD
+  start: "2014-01"
+  end: null
+  bars_path: data/normalized/bars_long_history.parquet
+  raw_dir: data/raw
+  use_cache: true
+  verify_checksums: false
+  include_recent: false
+
+strategy:
+  name: trend
+  trend:
+    lookback: 200
+    vol_window: 60
+    target_vol: 0.15
+    max_weight: 0.50
+    long_short: false
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+  xsmom:
+    lookback: 60
+    skip: 7
+    top_quantile: 0.50
+    bottom_quantile: 0.50
+    long_short: false
+    max_weight: 0.50
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+    target_vol: 0.15
+    vol_window: 30
+    min_assets: 2
+
+backtest:
+  initial_capital: 10000
+  cost_bps: 10
+  slippage_bps: 5
+  periods_per_year: 365
+  execution_lag: 1
+  risk_free_rate: 0.0
+  output_dir: artifacts/long_history
+
+risk:
+  max_gross: 1.0
+  max_net: 1.0
+  max_asset_weight: 0.50
+  max_drawdown: 0.40
+  min_cash_weight: 0.0
+  kill_switch_file: artifacts/KILL_LONG_HISTORY
+  state_path: artifacts/risk_state_long_history.json
+  auto_kill_on_drawdown: true
+
+broker:
+  name: paper
+  paper: true
+  exchange: kraken
+  sandbox: true
+  quote_currency: USD
+  allow_short: false
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/orders_long_history.sqlite
+  order_state_path: artifacts/order_state_long_history.sqlite
+  state_path: artifacts/paper_state_long_history.json
+  performance_path: artifacts/performance_long_history.jsonl
+  heartbeat_path: artifacts/heartbeat_long_history.json
+
+seed: 7

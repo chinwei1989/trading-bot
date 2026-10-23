@@ -1,0 +1,115 @@
+# Separate AI-agent paper pipeline.
+# This account and all artifact paths are intentionally different from the
+# deterministic campaign in config/base.yaml and config/xsmom.yaml.
+# Paper only. Do not point this config at a live broker.
+
+data:
+  source: binance
+  market: spot
+  interval: 1d
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+    - SOLUSDT
+    - XRPUSDT
+    - ADAUSDT
+    - DOGEUSDT
+    - LINKUSDT
+  start: "2020-01"
+  end: null
+  bars_path: data/normalized/bars.parquet
+  raw_dir: data/raw
+  use_cache: true
+  verify_checksums: true
+  include_recent: true
+  recent_limit: 30
+
+strategy:
+  name: trend
+  trend:
+    lookback: 200
+    vol_window: 60
+    target_vol: 0.15
+    max_weight: 0.20
+    long_short: false
+    rebalance: W
+    max_gross: 0.8
+    vol_target: true
+  xsmom:
+    lookback: 60
+    skip: 7
+    top_quantile: 0.30
+    bottom_quantile: 0.30
+    long_short: false
+    max_weight: 0.15
+    rebalance: W
+    max_gross: 0.8
+    vol_target: true
+    target_vol: 0.20
+    vol_window: 30
+    min_assets: 5
+
+backtest:
+  initial_capital: 10000
+  cost_bps: 10
+  slippage_bps: 5
+  periods_per_year: 365
+  execution_lag: 1
+  risk_free_rate: 0.0
+  output_dir: artifacts/ai
+
+risk:
+  max_gross: 0.8
+  max_net: 0.8
+  max_asset_weight: 0.20
+  max_drawdown: 0.30
+  min_cash_weight: 0.20
+  kill_switch_file: artifacts/ai/KILL
+  state_path: artifacts/ai/risk_state.json
+  auto_kill_on_drawdown: true
+
+broker:
+  name: paper
+  paper: true
+  exchange: kraken
+  sandbox: true
+  quote_currency: USDT
+  allow_short: false
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/ai/orders.sqlite
+  order_state_path: artifacts/ai/order_state.sqlite
+  state_path: artifacts/ai/paper_state.json
+  performance_path: artifacts/ai/performance.jsonl
+  heartbeat_path: artifacts/ai/heartbeat.json
+
+agent:
+  enabled: true
+  # Jev is TypeSafe's typed System One decision model. It is a hosted,
+  # paid API. Set TYPESAFE_API_KEY to use it. No key -> labelled fallback.
+  provider: jev
+  model: jev-latest
+  endpoint: https://api.typesafe.ai/v1/systemone
+  api_key_env: TYPESAFE_API_KEY
+  timeout_seconds: 30
+  max_retries: 2
+  temperature: 0.0
+  max_tokens: 1200
+  # Fail closed by default. An AI outage must not silently become a
+  # different strategy. Use --provider deterministic only for a labelled demo.
+  fallback: none
+  paper_only: true
+  include_macro: true
+  include_sentiment: true
+  policy:
+    max_gross: 0.80
+    max_asset_weight: 0.20
+    min_cash_weight: 0.20
+    max_turnover: 0.50
+    min_confidence: 0.55
+    target_vol: 0.15
+    risk_off_gross: 0.25
+    allow_short: false
+
+seed: 7

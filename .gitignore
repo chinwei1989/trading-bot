@@ -1,0 +1,49 @@
+# Environment
+.venv/
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+
+# Data and artifacts (never commit)
+data/raw/
+data/normalized/
+data/features/
+data/reference/
+artifacts/
+mlruns/
+models/
+*.parquet
+*.duckdb
+*.sqlite
+*.db
+*.zip
+*.csv
+
+# Logs and secrets
+logs/
+*.log
+*.pem
+*.key
+secrets/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# WSL / Docker
+.docker/

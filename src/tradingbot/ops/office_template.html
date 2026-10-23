@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Agent Office - Open-Plan Trading Floor</title>
+  <style>
+    :root {
+      --bg: #070b16;
+      --panel: rgba(10, 16, 30, 0.88);
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --active: #34d399;
+      --idle: #38bdf8;
+      --warning: #fbbf24;
+      --error: #f87171;
+      --offline: #64748b;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg); color: var(--text); }
+    body { font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+    #app { position: fixed; inset: 0; }
+    canvas { display: block; }
+    .panel {
+      position: fixed; z-index: 10; background: var(--panel); border: 1px solid var(--line);
+      border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    }
+    #titlePanel { top: 18px; left: 18px; padding: 18px 20px; max-width: 460px; }
+    #titlePanel h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+    #titlePanel .sub { margin-top: 6px; color: var(--muted); font-size: 12px; }
+    #titlePanel .stamp { margin-top: 9px; color: #64748b; font-size: 11px; }
+    #floorTag { margin-top: 12px; color: #cbd5e1; font-size: 12px; font-weight: 600; }
+    #floorTag span { color: var(--muted); font-weight: 400; }
+    #squads { margin-top: 8px; color: #94a3b8; font-size: 10px; line-height: 1.7; }
+    #squads b { color: #e2e8f0; font-weight: 600; }
+    #competition { margin-top: 10px; padding-top: 9px; border-top: 1px solid var(--line); font-size: 11px; }
+    #competition .team { display: flex; justify-content: space-between; gap: 12px; padding: 3px 0; color: #cbd5e1; }
+    #competition .team b { color: #fff; }
+    #competition .leader { color: var(--active); font-weight: 700; }
+    .pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
+    .pill { font-size: 11px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+    .pill b { color: var(--text); font-weight: 600; }
+    #controls { top: 18px; right: 18px; display: flex; gap: 8px; padding: 8px; }
+    button {
+      border: 1px solid var(--line); background: rgba(30, 41, 59, 0.7); color: var(--text);
+      border-radius: 10px; padding: 8px 11px; font-size: 11px; cursor: pointer;
+      transition: background .15s ease, border-color .15s ease;
+    }
+    button:hover { background: rgba(51, 65, 85, 0.9); border-color: rgba(148,163,184,.4); }
+    #info {
+      top: 88px; right: 18px; width: 350px; padding: 18px;
+      transform: translateX(390px); opacity: 0; pointer-events: none;
+      transition: transform .22s ease, opacity .22s ease;
+    }
+    #info.show { transform: translateX(0); opacity: 1; pointer-events: auto; }
+    #info .close { position: absolute; top: 12px; right: 12px; padding: 4px 8px; }
+    #info .role { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    #info .status { display: inline-flex; align-items: center; gap: 6px; font-size: 11px; margin-top: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    #info .metric { font-size: 28px; font-weight: 700; margin-top: 14px; letter-spacing: -.03em; }
+    #info .detail { color: var(--muted); font-size: 12px; line-height: 1.55; margin-top: 8px; }
+    #info .speech { margin-top: 14px; padding: 10px 12px; border-left: 2px solid var(--line); color: #cbd5e1; font-size: 12px; line-height: 1.5; }
+    #info .kv { display: grid; grid-template-columns: 1fr auto; gap: 7px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 12px; }
+    #info .kv span:nth-child(odd) { color: var(--muted); }
+    #info .kv span:nth-child(even) { color: var(--text); text-align: right; }
+    #info .spark { width: 100%; height: 64px; margin-top: 12px; border-radius: 8px; background: rgba(15,23,42,.7); }
+    #legend { left: 18px; bottom: 18px; padding: 12px 14px; display: flex; gap: 14px; align-items: center; font-size: 11px; color: var(--muted); }
+    #legend .item { display: flex; align-items: center; gap: 6px; }
+    #hint { left: 50%; bottom: 18px; transform: translateX(-50%); padding: 8px 12px; font-size: 11px; color: var(--muted); white-space: nowrap; }
+    #floorNav { left: 50%; bottom: 58px; transform: translateX(-50%); display: flex; gap: 6px; padding: 7px; }
+    #floorNav button.active { background: rgba(56, 189, 248, .18); border-color: rgba(56,189,248,.7); color: #e0f2fe; }
+    #error { display: none; position: fixed; inset: 0; z-index: 30; place-items: center; background: var(--bg); padding: 32px; text-align: center; }
+    #error.show { display: grid; }
+    #error h2 { color: var(--error); }
+    #error code { color: #fbbf24; }
+    @media (max-width: 760px) {
+      #info { width: calc(100vw - 36px); right: 18px; top: 150px; }
+      #titlePanel { max-width: calc(100vw - 36px); }
+      #floorNav { bottom: 54px; max-width: calc(100vw - 36px); overflow-x: auto; }
+      #hint { display: none; }
+      #legend { flex-wrap: wrap; max-width: calc(100vw - 36px); }
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <div id="titlePanel" class="panel">
+    <h1 id="title">The Agent Office</h1>
+    <div class="sub" id="subtitle">A paper-trading floor</div>
+    <div class="stamp" id="stamp"></div>
+    <div id="environment" style="margin-top:7px;color:#cbd5e1;font-size:11px;"></div>
+    <div id="floorTag"></div>
+    <div id="squads"></div>
+    <div id="competition"></div>
+    <div class="pills" id="pills"></div>
+  </div>
+
+  <div id="controls" class="panel">
+    <button id="toggleOrbit">Start orbit</button>
+    <button id="toggleLabels">Hide labels</button>
+    <button id="toggleWeather">Weather: Auto</button>
+    <button id="resetView">Reset view</button>
+  </div>
+
+  <div id="floorNav" class="panel"></div>
+
+  <div id="info" class="panel">
+    <button class="close" id="closeInfo">✕</button>
+    <div id="infoName" style="font-size:20px;font-weight:700;"></div>
+    <div id="infoRole" class="role"></div>
+    <div class="status"><span id="infoDot" class="dot"></span><span id="infoStatus"></span></div>
+    <div id="infoMetric" class="metric"></div>
+    <div id="infoDetail" class="detail"></div>
+    <div id="infoSpeech" class="speech"></div>
+    <canvas id="infoSpark" class="spark" width="600" height="128"></canvas>
+    <div class="kv" id="infoKv"></div>
+  </div>
+
+  <div id="legend" class="panel">
+    <span class="item"><span class="dot" style="background:var(--active)"></span> active</span>
+    <span class="item"><span class="dot" style="background:var(--idle)"></span> idle</span>
+    <span class="item"><span class="dot" style="background:var(--warning)"></span> warning</span>
+    <span class="item"><span class="dot" style="background:var(--error)"></span> error</span>
+    <span class="item"><span class="dot" style="background:var(--offline)"></span> offline</span>
+  </div>
+  <div id="hint" class="panel">drag to orbit · scroll to zoom · click a person · hide labels for a clean view</div>
+  <div id="error"><div><h2>3D engine failed to load</h2><p id="errorText">Check the browser console.</p></div></div>
+
+  <script>
+__THREE_JS__
+  </script>
+  <script>
+__ORBIT_JS__
+  </script>
+  <script>
+(() => {
+  "use strict";
+  const DATA = __OFFICE_DATA__;
+  const COLORS = {
+    active: "#34d399", idle: "#38bdf8", warning: "#fbbf24",
+    error: "#f87171", offline: "#64748b",
+  };
+  if (!window.THREE || !THREE.OrbitControls) {
+    document.getElementById("error").classList.add("show");
+    document.getElementById("errorText").innerHTML =
+      "The local Three.js bundle did not load. Rebuild with <code>scripts/build_office3d.py</code>.";
+    return;
+  }
+
+  const app = document.getElementById("app");
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xdcefff);
+  scene.fog = new THREE.Fog(0xdcefff, 50, 105);
+
+  const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 200);
+  camera.position.set(0, 9.5, 25);
+
+  const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 0.95;
+  app.appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(0, 2, 0.8);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.minDistance = 10;
+  controls.maxDistance = 42;
+  controls.maxPolarAngle = Math.PI / 2.04;
+  controls.autoRotate = false;
+  controls.autoRotateSpeed = 0.25;
+
+  const hemi = new THREE.HemisphereLight(0xffffff, 0xc9a77c, 0.9);
+  scene.add(hemi);
+  const ambient = new THREE.AmbientLight(0xffffff, 0.28);
+  scene.add(ambient);
+  const sun = new THREE.DirectionalLight(0xfff1d2, 1.65);
+  sun.position.set(-14, 28, -16);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.camera.left = -24;
+  sun.shadow.camera.right = 24;
+  sun.shadow.camera.top = 28;
+  sun.shadow.camera.bottom = -22;
+  sun.shadow.camera.near = 0.5;
+  sun.shadow.camera.far = 100;
+  sun.shadow.bias = -0.0004;
+  scene.add(sun);
+  const fill = new THREE.DirectionalLight(0xbfe3ff, 0.46);
+  fill.position.set(16, 14, 20);
+  scene.add(fill);
+  const allLight = new THREE.DirectionalLight(0xffffff, 1.2);
+  allLight.position.set(0, 35, 22);
+  allLight.visible = false;
+  scene.add(allLight);
+
+  function mat(color, opts = {}) {
+    return new THREE.MeshStandardMaterial({
+      color, roughness: opts.roughness ?? 0.68, metalness: opts.metalness ?? 0.05,
+      emissive: opts.emissive ?? 0x000000, emissiveIntensity: opts.emissiveIntensity ?? 0.0,
+      transparent: opts.transparent ?? false, opacity: opts.opacity ?? 1.0,
+      side: opts.side ?? THREE.FrontSide,
+    });
+  }
+  function box(w, h, d, color, x, y, z, opts = {}) {
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(color, opts));
+    mesh.position.set(x, y, z);
+    mesh.castShadow = opts.castShadow ?? true;
+    mesh.receiveShadow = opts.receiveShadow ?? true;
+    return mesh;
+  }
+  function cylinder(rt, rb, h, color, x, y, z, opts = {}) {
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, opts.segments ?? 16), mat(color, opts));
+    mesh.position.set(x, y, z);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    return mesh;
+  }
+  function statusColor(status) { return COLORS[status] || COLORS.offline; }
+
+  function makeScreenTexture(agent) {
+    const c = document.createElement("canvas"); c.width = 512; c.height = 320;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#0b1220"; ctx.fillRect(0, 0, 512, 320);
+    ctx.strokeStyle = statusColor(agent.status); ctx.lineWidth = 5; ctx.strokeRect(10, 10, 492, 300);
+    ctx.fillStyle = statusColor(agent.status); ctx.beginPath(); ctx.arc(42, 46, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#e2e8f0"; ctx.font = "bold 30px Inter, sans-serif"; ctx.fillText(agent.role, 64, 55);
+    ctx.fillStyle = "#94a3b8"; ctx.font = "22px Inter, sans-serif"; ctx.fillText(agent.metric, 34, 105);
+    ctx.fillStyle = "#64748b"; ctx.font = "18px Inter, sans-serif"; ctx.fillText(String(agent.detail).slice(0, 46), 34, 140);
+    const values = agent.spark && agent.spark.length > 1 ? agent.spark : [1, 1];
+    let min = Math.min(...values), max = Math.max(...values);
+    if (max - min < 1e-9) { min -= 0.5; max += 0.5; }
+    ctx.strokeStyle = agent.accent; ctx.lineWidth = 3; ctx.beginPath();
+    values.forEach((v, i) => {
+      const x = 34 + (i / Math.max(1, values.length - 1)) * 444;
+      const y = 285 - ((v - min) / (max - min)) * 105;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+    ctx.fillStyle = "#475569"; ctx.font = "16px Inter, sans-serif"; ctx.fillText("PAPER ACCOUNT", 34, 305);
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  function makeLabel(agent) {
+    const c = document.createElement("canvas"); c.width = 512; c.height = 180;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, 512, 180);
+    ctx.fillStyle = "rgba(8, 14, 26, 0.9)";
+    ctx.strokeStyle = statusColor(agent.status); ctx.lineWidth = 3;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(6, 6, 500, 168, 20); else ctx.rect(6, 6, 500, 168);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = statusColor(agent.status); ctx.beginPath(); ctx.arc(38, 46, 10, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "#f8fafc"; ctx.font = "bold 36px Inter, sans-serif"; ctx.fillText(agent.name, 60, 57);
+    ctx.fillStyle = "#cbd5e1"; ctx.font = "22px Inter, sans-serif"; ctx.fillText(agent.role, 32, 98);
+    ctx.fillStyle = agent.accent; ctx.font = "bold 24px Inter, sans-serif"; ctx.fillText(agent.metric, 32, 137);
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    sprite.scale.set(2.15, 0.75, 1);
+    return sprite;
+  }
+
+  function makeRoomLabel(title, subtitle, x, _y, z, color) {
+    const cssColor = typeof color === "number" ? `#${color.toString(16).padStart(6, "0")}` : color;
+    const c = document.createElement("canvas"); c.width = 640; c.height = 160;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, 640, 160);
+    ctx.fillStyle = "rgba(7, 13, 25, 0.88)";
+    ctx.strokeStyle = cssColor; ctx.lineWidth = 4;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(4, 4, 632, 152, 18); else ctx.rect(4, 4, 632, 152);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = cssColor; ctx.font = "bold 44px Inter, sans-serif"; ctx.fillText(title, 28, 66);
+    ctx.fillStyle = "#94a3b8"; ctx.font = "22px Inter, sans-serif"; ctx.fillText(subtitle, 28, 108);
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+    const mesh = new THREE.Mesh(
+      new THREE.PlaneGeometry(4.4, 1.1),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, side: THREE.DoubleSide })
+    );
+    mesh.rotation.x = -Math.PI / 2;
+    mesh.rotation.z = 0;
+    mesh.position.set(x, 0.135, z);
+    return mesh;
+  }
+
+  function createPerson(agent) {
+    const standing = !!agent.standing;
+    const g = new THREE.Group();
+    const shirt = new THREE.MeshStandardMaterial({ color: new THREE.Color(agent.shirt), roughness: 0.7 });
+    const skin = new THREE.MeshStandardMaterial({ color: new THREE.Color(agent.skin), roughness: 0.8 });
+    const hair = new THREE.MeshStandardMaterial({ color: new THREE.Color(agent.hair), roughness: 0.95 });
+    const bodyY = standing ? 1.12 : 0.92;
+    const headY = standing ? 1.93 : 1.62;
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, standing ? 0.95 : 0.72, 16), shirt);
+    body.position.y = bodyY; body.castShadow = true; g.add(body);
+    const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.14, 12), skin);
+    neck.position.y = headY - 0.23; g.add(neck);
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 24, 18), skin);
+    head.position.y = headY; head.castShadow = true; g.add(head);
+    const hairMesh = new THREE.Mesh(new THREE.SphereGeometry(0.26, 20, 12), hair);
+    hairMesh.scale.set(1.03, 0.62, 1.03); hairMesh.position.set(0, headY + 0.1, -0.035); g.add(hairMesh);
+    for (const ex of [-0.085, 0.085]) {
+      const eye = new THREE.Mesh(new THREE.SphereGeometry(0.022, 8, 6), mat(0x0b1220, { roughness: 0.3 }));
+      eye.position.set(ex, headY + 0.03, 0.225); g.add(eye);
+    }
+    const armGeo = new THREE.CylinderGeometry(0.06, 0.07, 0.52, 10);
+    const armL = new THREE.Mesh(armGeo, shirt); armL.position.set(-0.34, bodyY + 0.04, 0.24); armL.rotation.set(-1.0, 0, -0.25); g.add(armL);
+    const armR = new THREE.Mesh(armGeo, shirt); armR.position.set(0.34, bodyY + 0.04, 0.24); armR.rotation.set(-1.0, 0, 0.25); g.add(armR);
+    for (const [x, arm] of [[-0.34, armL], [0.34, armR]]) {
+      const hand = new THREE.Mesh(new THREE.SphereGeometry(0.075, 12, 8), skin);
+      hand.position.set(x, arm.position.y - 0.27, arm.position.z + 0.02); g.add(hand);
+    }
+    const legGeo = new THREE.CylinderGeometry(0.085, 0.09, 0.74, 10);
+    const legL = new THREE.Mesh(legGeo, mat(0x1e293b));
+    legL.position.set(-0.18, 0.4, 0.02); legL.castShadow = true; g.add(legL);
+    const legR = new THREE.Mesh(legGeo, mat(0x1e293b));
+    legR.position.set(0.18, 0.4, 0.02); legR.castShadow = true; g.add(legR);
+    if (agent.headset) {
+      const band = new THREE.Mesh(new THREE.TorusGeometry(0.27, 0.018, 8, 24, Math.PI), mat(0x67e8f9, { emissive: 0x0891b2, emissiveIntensity: 0.6 }));
+      band.position.set(0, headY + 0.11, 0.03); band.rotation.x = Math.PI / 2; g.add(band);
+      const mic = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.2, 0.035), mat(0x67e8f9, { emissive: 0x0891b2, emissiveIntensity: 0.8 }));
+      mic.position.set(0.21, headY - 0.06, 0.17); g.add(mic);
+    }
+    if (agent.badge) {
+      const badge = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.02, 16), mat(0xfacc15, { emissive: 0xca8a04, emissiveIntensity: 0.5 }));
+      badge.rotation.x = Math.PI / 2; badge.position.set(0.2, bodyY + 0.15, 0.32); g.add(badge);
+    }
+    if (agent.clipboard) {
+      const clip = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.38, 0.03), mat(0xe2e8f0));
+      clip.position.set(-0.44, bodyY - 0.03, 0.36); clip.rotation.z = -0.25; g.add(clip);
+    }
+    return { group: g, head, armL, armR, legL, legR, headY };
+  }
+
+  const agentObjects = [];
+  const agentGroups = [];
+  const byId = Object.fromEntries(DATA.agents.map((a) => [a.id, a]));
+
+  function createDesk(agent, parent, x, z) {
+    const g = new THREE.Group();
+    g.position.set(x, 0, z);
+    g.add(box(2.7, 0.12, 1.25, 0x9a6b4f, 0, 1.0, 0.3, { metalness: 0.05, roughness: 0.62 }));
+    for (const lx of [-1.1, 1.1]) for (const lz of [-0.12, 0.72]) {
+      g.add(box(0.09, 0.98, 0.09, 0x1e293b, lx, 0.5, lz, { metalness: 0.4 }));
+    }
+    g.add(box(2.3, 0.035, 0.1, new THREE.Color(agent.accent).getHex(), 0, 1.07, 0.93, {
+      emissive: new THREE.Color(agent.accent).getHex(), emissiveIntensity: 0.5, castShadow: false
+    }));
+    const monitor = new THREE.Group(); monitor.position.set(0, 1.55, 0.55);
+    monitor.add(box(1.38, 0.84, 0.07, 0x0b1220, 0, 0, 0, { metalness: 0.5, roughness: 0.3 }));
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 0.72), new THREE.MeshBasicMaterial({ map: makeScreenTexture(agent) }));
+    screen.position.set(0, 0, 0.041); monitor.add(screen);
+    monitor.add(box(0.08, 0.42, 0.08, 0x1e293b, 0, -0.58, -0.02, { metalness: 0.5 }));
+    monitor.add(box(0.58, 0.04, 0.32, 0x1e293b, 0, -0.79, -0.02, { metalness: 0.5 }));
+    monitor.rotation.y = -0.08; g.add(monitor);
+    g.add(box(1.16, 0.04, 0.34, 0x111827, 0, 1.09, 0.2));
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 9; j++) {
+      g.add(box(0.07, 0.018, 0.055, 0x334155, -0.48 + j * 0.12, 1.115, 0.13 + i * 0.09, { castShadow: false }));
+    }
+    g.add(cylinder(0.08, 0.07, 0.13, 0x94a3b8, 0.94, 1.12, 0.32, { metalness: 0.2 }));
+    const chair = new THREE.Group(); chair.position.set(0, 0, -0.95);
+    chair.add(box(0.72, 0.1, 0.72, new THREE.Color(agent.accent).getHex(), 0, 0.58, 0));
+    chair.add(box(0.72, 1.1, 0.1, new THREE.Color(agent.accent).getHex(), 0, 1.1, -0.34));
+    chair.add(box(0.08, 0.55, 0.08, 0x334155, 0, 0.27, 0, { metalness: 0.4 }));
+    g.add(chair);
+    const person = createPerson(agent);
+    person.group.position.set(x, 0, z - 0.86);
+    parent.add(person.group);
+    const label = makeLabel(agent); label.position.set(0, agent.standing ? 3.5 : 3.1, 0); person.group.add(label);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(0.5, 0.68, 32), new THREE.MeshBasicMaterial({
+      color: statusColor(agent.status), transparent: true, opacity: 0.8, side: THREE.DoubleSide
+    }));
+    ring.rotation.x = -Math.PI / 2; ring.position.set(0, 0.14, 0); person.group.add(ring);
+    parent.add(g);
+    const home = new THREE.Vector3(x, 0, z - 0.86);
+    const waypoints = (DATA.floors[agent.floor]?.waypoints || []).map((p) => new THREE.Vector3(p[0], 0, p[1]));
+    agentObjects.push({
+      agent, person, ring, label, group: g, phase: Math.random() * 5.0,
+      floor: agent.floor, home, waypoints, target: home.clone(),
+      waitUntil: 0, moveSpeed: 0.85,
+    });
+    agentGroups.push(person.group);
+    person.group.userData.agentId = agent.id;
+  }
+
+  function createMetaTable(agent, parent, x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(cylinder(1.7, 1.7, 0.12, 0x1b2a44, 0, 1.0, 0, { metalness: 0.2, roughness: 0.4 }));
+    g.add(cylinder(0.22, 0.22, 0.96, 0x1e293b, 0, 0.5, 0, { metalness: 0.5 }));
+    const base = new THREE.Mesh(new THREE.TorusGeometry(1.35, 0.035, 10, 64), new THREE.MeshBasicMaterial({ color: 0xe879f9, transparent: true, opacity: 0.8 }));
+    base.rotation.x = Math.PI / 2; base.position.y = 1.1; g.add(base);
+    const holo = new THREE.Mesh(new THREE.TorusGeometry(0.85, 0.02, 8, 48), new THREE.MeshBasicMaterial({ color: 0x67e8f9, transparent: true, opacity: 0.65 }));
+    holo.rotation.x = Math.PI / 2; holo.position.y = 1.42; g.add(holo);
+    for (let i = 0; i < 4; i++) {
+      const colors = [0x38bdf8, 0xfb923c, 0xf87171, 0x2dd4bf];
+      const h = 0.22 + i * 0.08;
+      g.add(box(0.13, h, 0.13, colors[i], -0.6 + i * 0.4, 1.12 + h / 2, -0.2, { emissive: colors[i], emissiveIntensity: 0.5 }));
+    }
+    const person = createPerson(agent);
+    person.group.position.set(x, 0, z - 1.6);
+    parent.add(person.group);
+    const label = makeLabel(agent); label.position.set(0, 3.4, 0); person.group.add(label);
+    const ring = new THREE.Mesh(new THREE.RingGeometry(1.8, 2.0, 48), new THREE.MeshBasicMaterial({
+      color: statusColor(agent.status), transparent: true, opacity: 0.55, side: THREE.DoubleSide
+    }));
+    ring.rotation.x = -Math.PI / 2; ring.position.y = 0.14; person.group.add(ring);
+    parent.add(g);
+    const home = new THREE.Vector3(x, 0, z - 1.6);
+    const waypoints = (DATA.floors[agent.floor]?.waypoints || []).map((p) => new THREE.Vector3(p[0], 0, p[1]));
+    agentObjects.push({
+      agent, person, ring, label, group: g, phase: Math.random() * 5.0,
+      floor: agent.floor, home, waypoints, target: home.clone(),
+      waitUntil: 0, moveSpeed: 0.65, meta: true,
+    });
+    agentGroups.push(person.group);
+    person.group.userData.agentId = agent.id;
+  }
+
+  function lowWall(parent, x, z, w, d, color = 0x334155, opacity = 0.28) {
+    parent.add(box(w, 1.2, d, color, x, 0.7, z, { transparent: true, opacity, metalness: 0.15, roughness: 0.2 }));
+    parent.add(box(w + 0.08, 0.05, d + 0.08, 0x94a3b8, x, 1.32, z, { metalness: 0.4, roughness: 0.35 }));
+  }
+
+  function roomFurniture(parent, room) {
+    if (room === "round") {
+      parent.add(cylinder(1.15, 1.15, 0.1, 0x31415d, 0, 1.0, 0));
+      parent.add(cylinder(0.15, 0.18, 0.95, 0x1e293b, 0, 0.5, 0));
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        const chair = new THREE.Group();
+        chair.position.set(Math.cos(a) * 1.7, 0, Math.sin(a) * 1.7);
+        chair.rotation.y = -a + Math.PI / 2;
+        chair.add(box(0.5, 0.08, 0.5, 0x1f2937, 0, 0.55, 0));
+        chair.add(box(0.5, 0.65, 0.08, 0x1f2937, 0, 0.9, -0.24));
+        parent.add(chair);
+      }
+    } else if (room === "meeting") {
+      parent.add(box(3.2, 0.12, 1.3, 0x26324c, 0, 1.0, 0));
+      for (const x of [-1.2, 1.2]) for (const z of [-0.45, 0.45]) parent.add(box(0.1, 0.95, 0.1, 0x1e293b, x, 0.5, z));
+      for (const side of [-1.0, 1.0]) for (let i = -1; i <= 1; i++) {
+        const chair = new THREE.Group(); chair.position.set(i * 1.0, 0, side * 1.15); chair.add(box(0.45, 0.08, 0.45, 0x1f2937, 0, 0.55, 0)); chair.add(box(0.45, 0.6, 0.08, 0x1f2937, 0, 0.88, -0.2)); parent.add(chair);
+      }
+    } else if (room === "couch") {
+      parent.add(box(2.1, 0.35, 0.8, 0x1f2937, 0, 0.45, 0));
+      parent.add(box(2.1, 0.95, 0.25, 0x1f2937, 0, 0.8, -0.42));
+      parent.add(box(0.25, 0.55, 0.8, 0x1f2937, -1.05, 0.6, 0));
+      parent.add(box(0.25, 0.55, 0.8, 0x1f2937, 1.05, 0.6, 0));
+    } else if (room === "bed") {
+      parent.add(box(2.2, 0.18, 1.6, 0x334155, 0, 0.7, 0));
+      parent.add(box(2.0, 0.35, 1.35, 0x64748b, 0, 0.95, 0));
+      parent.add(box(0.6, 0.18, 0.5, 0xdbeafe, -0.55, 1.15, -0.25));
+      parent.add(box(0.6, 0.18, 0.5, 0xdbeafe, 0.55, 1.15, -0.25));
+    }
+  }
+
+  function createReception(parent) {
+    parent.add(box(2.8, 0.12, 1.0, 0x2a3550, -9.4, 1.0, 5.4));
+    parent.add(box(2.8, 1.0, 0.14, 0x2a3550, -9.4, 1.5, 5.85));
+    parent.add(box(2.8, 0.05, 1.0, 0x38bdf8, -9.4, 1.07, 5.4, { emissive: 0x0ea5e9, emissiveIntensity: 0.7 }));
+    parent.add(box(3.5, 1.9, 0.16, 0x1d4ed8, -9.4, 2.6, -6.8, { emissive: 0x1d4ed8, emissiveIntensity: 0.25 }));
+    parent.add(roomFurnitureGroup(4.5, 6.2, 0.8, 0x1f2937));
+    parent.add(roomFurnitureGroup(-10.5, 6.6, -0.5, 0x1f2937));
+  }
+
+  function roomFurnitureGroup(x, z, rot, color) {
+    const g = new THREE.Group(); g.position.set(x, 0, z); g.rotation.y = rot;
+    g.add(box(1.8, 0.38, 0.75, color, 0, 0.48, 0));
+    g.add(box(1.8, 0.8, 0.22, color, 0, 0.82, -0.4));
+    g.add(box(0.22, 0.55, 0.75, color, -0.9, 0.62, 0));
+    g.add(box(0.22, 0.55, 0.75, color, 0.9, 0.62, 0));
+    return g;
+  }
+
+  function createPantry(parent) {
+    parent.add(box(4.0, 0.12, 1.0, 0x334155, -7.4, 1.0, -5.2));
+    parent.add(box(4.0, 0.9, 0.92, 0x1f2937, -7.4, 0.5, -5.2));
+    parent.add(box(1.2, 0.25, 0.8, 0x64748b, -8.5, 1.15, -5.2));
+    parent.add(cylinder(0.18, 0.16, 0.34, 0x0f172a, -6.4, 1.28, -5.2, { metalness: 0.5 }));
+    parent.add(box(0.35, 0.35, 0.12, 0x38bdf8, -6.4, 1.5, -5.0, { emissive: 0x0ea5e9, emissiveIntensity: 0.5 }));
+    for (let i = 0; i < 3; i++) {
+      parent.add(box(0.55, 0.55, 0.55, 0x1f2937, -8.8 + i * 1.1, 0.55, -3.4));
+      parent.add(box(0.55, 0.08, 0.55, 0x475569, -8.8 + i * 1.1, 0.85, -3.4));
+    }
+    parent.add(box(3.2, 0.1, 0.8, 0x334155, -7.3, 1.0, -1.0));
+    for (const x of [-8.2, -6.4]) for (const z of [-1.3, -0.7]) parent.add(box(0.1, 0.95, 0.1, 0x1e293b, x, 0.5, z));
+    for (const x of [-8.2, -6.4]) {
+      const chair = new THREE.Group(); chair.position.set(x, 0, 0.0); chair.add(box(0.45, 0.08, 0.45, 0x1f2937, 0, 0.55, 0)); chair.add(box(0.45, 0.58, 0.07, 0x1f2937, 0, 0.85, -0.22)); parent.add(chair);
+    }
+  }
+
+  function createEntertainment(parent) {
+    parent.add(box(3.2, 0.12, 0.3, 0x1e293b, 5.2, 1.1, -5.8));
+    parent.add(box(2.4, 1.35, 0.12, 0x0b1220, 5.2, 1.9, -5.8, { emissive: 0x1d4ed8, emissiveIntensity: 0.25 }));
+    parent.add(box(2.2, 1.15, 0.04, 0x0f172a, 5.2, 1.9, -5.72));
+    parent.add(box(3.4, 0.05, 2.0, 0x1e293b, 5.2, 0.02, -3.8));
+    parent.add(roomFurnitureGroup(5.2, -2.7, Math.PI, 0x1f2937));
+    parent.add(box(0.9, 0.35, 0.55, 0x334155, 1.7, 0.45, -4.0));
+    parent.add(box(0.9, 0.35, 0.55, 0x334155, 8.8, 0.45, -4.0));
+  }
+
+  function createElevator(parent) {
+    const g = new THREE.Group(); g.position.set(11.0, 0, -7.2);
+    g.add(box(1.35, 2.8, 0.3, 0x111827, 0, 1.4, 0, { metalness: 0.4, roughness: 0.3 }));
+    g.add(box(0.58, 2.5, 0.06, 0x0c4a6e, -0.3, 1.35, 0.19, { emissive: 0x0ea5e9, emissiveIntensity: 0.5 }));
+    g.add(box(0.58, 2.5, 0.06, 0x0c4a6e, 0.3, 1.35, 0.19, { emissive: 0x0ea5e9, emissiveIntensity: 0.5 }));
+    g.add(box(0.16, 0.22, 0.03, 0x22d3ee, 0.58, 1.6, 0.25, { emissive: 0x22d3ee, emissiveIntensity: 0.9, castShadow: false }));
+    parent.add(g);
+  }
+
+  function addPlant(parent, x, z, scale = 1) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(cylinder(0.24, 0.19, 0.42, 0x4b2e22, 0, 0.22, 0, { roughness: 0.9 }));
+    for (let i = 0; i < 7; i++) {
+      const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.3 * scale, 8, 6), mat(i % 2 ? 0x166534 : 0x15803d, { roughness: 0.85 }));
+      leaf.scale.set(0.55, 1.45, 0.35);
+      leaf.position.set(Math.cos(i * 1.7) * 0.27, 0.82 + (i % 3) * 0.16, Math.sin(i * 1.7) * 0.27);
+      leaf.rotation.z = Math.cos(i) * 0.45; leaf.castShadow = true; g.add(leaf);
+    }
+    parent.add(g);
+  }
+
+  function addBeanBag(parent, x, z, color) {
+    const bag = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 10), mat(color, { roughness: 0.95 }));
+    bag.scale.set(1.1, 0.62, 1.0); bag.position.set(x, 0.35, z); bag.castShadow = true; parent.add(bag);
+    const back = new THREE.Mesh(new THREE.SphereGeometry(0.42, 12, 8), mat(color, { roughness: 0.95 }));
+    back.scale.set(1.0, 0.85, 0.55); back.position.set(x, 0.72, z - 0.28); back.castShadow = true; parent.add(back);
+  }
+
+  function addFoosball(parent, x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(box(2.0, 0.12, 1.05, 0x1d4ed8, 0, 0.92, 0));
+    g.add(box(1.86, 0.08, 0.12, 0x93c5fd, 0, 0.98, 0));
+    for (const lx of [-0.82, 0.82]) for (const lz of [-0.4, 0.4]) g.add(box(0.08, 0.9, 0.08, 0x1e293b, lx, 0.46, lz));
+    for (let i = 0; i < 4; i++) {
+      g.add(cylinder(0.028, 0.028, 1.2, 0xdbeafe, 0, 1.13, -0.38 + i * 0.25, { metalness: 0.6 }));
+      for (const side of [-0.3, 0.3]) {
+        g.add(box(0.08, 0.2, 0.08, i % 2 ? 0xf87171 : 0x38bdf8, side, 1.27, -0.38 + i * 0.25));
+      }
+    }
+    parent.add(g);
+  }
+
+  function addSnackWall(parent, x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(box(3.2, 2.2, 0.28, 0x1e293b, 0, 1.5, 0, { metalness: 0.2 }));
+    const colors = [0xf97316, 0xfacc15, 0x22c55e, 0xec4899, 0x38bdf8, 0xa78bfa];
+    for (let row = 0; row < 3; row++) for (let col = 0; col < 6; col++) {
+      g.add(box(0.34, 0.3, 0.22, colors[(row + col) % colors.length], -1.3 + col * 0.52, 0.95 + row * 0.46, 0.2, { roughness: 0.7 }));
+    }
+    g.add(box(3.2, 0.06, 0.34, 0x94a3b8, 0, 0.28, 0.05, { metalness: 0.4 }));
+    parent.add(g);
+  }
+
+  function addNapPod(parent, x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    const pod = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, 1.7, 18, 1, true), mat(0x7c3aed, { transparent: true, opacity: 0.55, roughness: 0.25 }));
+    pod.rotation.z = Math.PI / 2; pod.position.y = 1.05; g.add(pod);
+    g.add(box(1.9, 0.25, 1.0, 0x312e81, 0, 0.55, 0));
+    g.add(box(0.75, 0.22, 0.5, 0xddd6fe, 0, 0.75, -0.1));
+    g.add(box(0.75, 0.22, 0.5, 0xddd6fe, 0, 0.75, 0.5));
+    parent.add(g);
+  }
+
+  function addTableTennis(parent, x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(box(2.6, 0.1, 1.35, 0x1d4ed8, 0, 0.86, 0));
+    g.add(box(2.6, 0.04, 1.35, 0x2563eb, 0, 0.93, 0));
+    g.add(box(0.05, 0.45, 1.4, 0xe2e8f0, 0, 1.16, 0));
+    for (const sx of [-1.1, 1.1]) for (const sz of [-0.52, 0.52]) {
+      g.add(box(0.08, 0.82, 0.08, 0x94a3b8, sx, 0.43, sz));
+    }
+    g.add(cylinder(0.045, 0.045, 0.04, 0xef4444, -0.95, 0.99, 0.35));
+    g.add(cylinder(0.045, 0.045, 0.04, 0x0f172a, 0.95, 0.99, -0.35));
+    g.add(new THREE.Mesh(new THREE.SphereGeometry(0.08, 10, 8), mat(0xfacc15)));
+    parent.add(g);
+  }
+
+  function addSwing(parent, x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(box(0.12, 3.3, 0.12, 0x475569, -0.9, 1.65, 0));
+    g.add(box(0.12, 3.3, 0.12, 0x475569, 0.9, 1.65, 0));
+    g.add(box(2.1, 0.12, 0.12, 0x475569, 0, 3.3, 0));
+    const ropeMat = new THREE.LineBasicMaterial({ color: 0x94a3b8 });
+    for (const dx of [-0.5, 0.5]) {
+      const geom = new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(dx, 3.25, 0), new THREE.Vector3(dx, 1.7, 0)
+      ]);
+      g.add(new THREE.Line(geom, ropeMat));
+    }
+    const chair = new THREE.Mesh(new THREE.TorusGeometry(0.62, 0.24, 10, 24, Math.PI), mat(0xf59e0b, { roughness: 0.9 }));
+    chair.rotation.z = Math.PI; chair.position.set(0, 1.25, 0); g.add(chair);
+    const cushion = new THREE.Mesh(new THREE.SphereGeometry(0.42, 14, 10), mat(0xfef3c7, { roughness: 0.95 }));
+    cushion.scale.set(1.1, 0.4, 1.0); cushion.position.set(0, 1.02, 0); g.add(cushion);
+    parent.add(g);
+  }
+
+  function addBookshelf(parent, x, z) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(box(2.4, 2.3, 0.5, 0x6b4f3a, 0, 1.15, 0));
+    for (let i = 0; i < 4; i++) {
+      g.add(box(2.25, 0.07, 0.55, 0x8b6650, 0, 0.55 + i * 0.5, 0.02));
+      for (let j = 0; j < 9; j++) {
+        const colors = [0xef4444, 0x3b82f6, 0xf59e0b, 0x10b981, 0xec4899, 0xa78bfa];
+        g.add(box(0.16, 0.34, 0.28, colors[(i + j) % colors.length], -0.95 + j * 0.22, 0.76 + i * 0.5, 0.24));
+      }
+    }
+    parent.add(g);
+  }
+
+  function addFunProps(parent, index) {
+    addPlant(parent, -10.8, 8.4, 1.0);
+    addPlant(parent, 10.7, -7.5, 0.9);
+    if (index === 0) {
+      addPlant(parent, -10.8, -7.5, 0.85);
+      addPlant(parent, 10.6, 7.5, 0.85);
+    } else if (index === 1) {
+      addBeanBag(parent, 2.8, -1.4, 0xf97316);
+      addBeanBag(parent, 6.2, -4.7, 0x22c55e);
+      addPlant(parent, 10.3, 7.4, 0.85);
+      parent.add(box(3.1, 0.08, 0.12, 0x22d3ee, 4.5, 2.1, -6.7, { emissive: 0x0891b2, emissiveIntensity: 0.7, castShadow: false }));
+    } else if (index === 2) {
+      parent.add(box(2.8, 1.8, 0.45, 0x3f2a1d, -4.6, 1.35, 4.1, { roughness: 0.8 }));
+      for (let i = 0; i < 4; i++) {
+        parent.add(box(2.5, 0.08, 0.32, 0x6b4f3a, -4.6, 0.65 + i * 0.38, 4.35));
+        for (let j = 0; j < 7; j++) {
+          const c = [0xef4444, 0x3b82f6, 0xf59e0b, 0x10b981][(i + j) % 4];
+          parent.add(box(0.14, 0.28, 0.18, c, -5.5 + j * 0.3, 0.83 + i * 0.38, 4.48));
+        }
+      }
+      addBeanBag(parent, -3.2, 2.0, 0xec4899);
+    } else {
+      addFoosball(parent, 2.0, -2.8);
+      addBeanBag(parent, -6.8, 5.3, 0x38bdf8);
+      addBeanBag(parent, -4.4, 5.4, 0xf59e0b);
+      addSnackWall(parent, -8.7, -7.4);
+      addNapPod(parent, -6.4, 2.7);
+      parent.add(box(1.25, 1.6, 0.6, 0x111827, 8.0, 0.8, -4.8, { metalness: 0.4 }));
+      parent.add(box(1.0, 0.85, 0.04, 0x0ea5e9, 8.0, 1.2, -4.48, { emissive: 0x0ea5e9, emissiveIntensity: 0.6 }));
+    }
+  }
+
+  const floorGroups = [];
+  const skyPanes = [];
+  const artificialLights = [];
+  const floorMeta = DATA.floors || [];
+  const floorBaseY = 0;
+  const floorGap = 5.8;
+
+  const skyCache = {};
+  function makeSkyTexture(phase = "day", weather = "sunny") {
+    const cacheKey = phase + ":" + weather;
+    if (skyCache[cacheKey]) return skyCache[cacheKey];
+    const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+    const ctx = c.getContext("2d");
+    const grad = ctx.createLinearGradient(0, 0, 0, 512);
+    if (phase === "night") {
+      grad.addColorStop(0, "#050b1e"); grad.addColorStop(0.6, "#0d1b3b"); grad.addColorStop(1, "#223056");
+    } else if (phase === "dusk" || phase === "dawn") {
+      grad.addColorStop(0, phase === "dawn" ? "#7aa8d8" : "#6f86c9");
+      grad.addColorStop(0.5, phase === "dawn" ? "#f8d3a3" : "#f4a07c");
+      grad.addColorStop(1, "#ffe8c7");
+    } else {
+      grad.addColorStop(0, weather === "rain" ? "#64748b" : "#4da3e8");
+      grad.addColorStop(0.55, weather === "rain" ? "#94a3b8" : "#9fd6ff");
+      grad.addColorStop(1, weather === "rain" ? "#cbd5e1" : "#e3f4ff");
+    }
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 512);
+    if (phase === "night") {
+      ctx.fillStyle = "rgba(255,255,255,.9)";
+      for (let i = 0; i < 42; i++) {
+        const x = (i * 97) % 512, y = (i * 53) % 250, r = i % 5 === 0 ? 1.6 : 0.8;
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = "rgba(255,222,140,.9)";
+      ctx.beginPath(); ctx.arc(390, 92, 24, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "rgba(10,18,40,.8)";
+      for (let i = 0; i < 16; i++) {
+        const h = 18 + (i * 31) % 80;
+        ctx.fillRect(20 + i * 31, 512 - h, 22, h);
+      }
+    } else {
+      ctx.fillStyle = weather === "rain" ? "rgba(71,85,105,.88)" : "rgba(255,255,255,0.78)";
+      for (const [x, y, r] of [[100, 120, 42], [150, 112, 32], [210, 128, 25], [360, 210, 40], [405, 202, 28]]) {
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.fillStyle = "rgba(255,255,255,0.35)";
+      ctx.beginPath(); ctx.ellipse(330, 108, 82, 18, 0, 0, Math.PI * 2); ctx.fill();
+      if (phase === "dusk" || phase === "dawn") {
+        ctx.fillStyle = "rgba(255,190,120,.28)";
+        ctx.beginPath(); ctx.arc(380, 140, 76, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+    if (weather === "rain") {
+      ctx.strokeStyle = "rgba(226,232,240,.5)"; ctx.lineWidth = 2;
+      for (let i = 0; i < 28; i++) {
+        const x = (i * 71 + 17) % 512, y = (i * 43 + 20) % 430;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - 9, y + 28); ctx.stroke();
+      }
+    }
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+    skyCache[cacheKey] = tex;
+    return tex;
+  }
+
+  function makeWoodTexture() {
+    const c = document.createElement("canvas"); c.width = 512; c.height = 512;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#b98758"; ctx.fillRect(0, 0, 512, 512);
+    for (let row = 0; row < 8; row++) {
+      const y = row * 64;
+      const shade = 180 + ((row * 37) % 24);
+      ctx.fillStyle = `rgb(${shade}, ${shade - 42}, ${shade - 76})`;
+      ctx.fillRect(0, y + 2, 512, 60);
+      ctx.strokeStyle = "rgba(80, 45, 25, 0.24)"; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(512, y); ctx.stroke();
+      for (let g = 0; g < 9; g++) {
+        ctx.strokeStyle = `rgba(90, 55, 30, ${0.06 + (g % 3) * 0.025})`;
+        ctx.beginPath();
+        const gy = y + 8 + g * 6;
+        ctx.moveTo(0, gy);
+        ctx.bezierCurveTo(140, gy + (g % 2 ? 2 : -2), 360, gy + (g % 2 ? -2 : 3), 512, gy);
+        ctx.stroke();
+      }
+    }
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = THREE.RepeatWrapping; tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(7, 5); tex.encoding = THREE.sRGBEncoding;
+    return tex;
+  }
+
+  function makeSign(text, x, y, z, color) {
+    const cssColor = typeof color === "number" ? `#${color.toString(16).padStart(6, "0")}` : color;
+    const c = document.createElement("canvas"); c.width = 512; c.height = 120;
+    const ctx = c.getContext("2d");
+    ctx.clearRect(0, 0, 512, 120);
+    ctx.fillStyle = "rgba(7, 13, 25, 0.92)";
+    ctx.strokeStyle = cssColor; ctx.lineWidth = 4;
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(4, 4, 504, 112, 16); else ctx.rect(4, 4, 504, 112);
+    ctx.fill(); ctx.stroke();
+    ctx.fillStyle = cssColor; ctx.font = "bold 42px Inter, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(text, 256, 74);
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding;
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    sprite.scale.set(2.6, 0.61, 1); sprite.position.set(x, y, z); return sprite;
+  }
+
+  function glassRoom(parent, x0, z0, x1, z1, color, frosted, label) {
+    const w = x1 - x0, d = z1 - z0;
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2;
+    const opacity = frosted ? 0.62 : 0.20;
+    const glass = new THREE.MeshStandardMaterial({
+      color: 0x93c5fd, transparent: true, opacity, roughness: 0.15, metalness: 0.1,
+      side: THREE.DoubleSide,
+    });
+    const frame = mat(0x94a3b8, { metalness: 0.55, roughness: 0.3 });
+    const h = 2.45;
+    const room = new THREE.Group();
+    room.scale.set(1, 1, 1);
+    parent.add(room);
+    room.userData.structural = true;
+    function wall(width, depth, x, z) {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(width, h, depth), glass);
+      mesh.position.set(x, h / 2, z); mesh.castShadow = false; mesh.receiveShadow = false; room.add(mesh);
+      const top = new THREE.Mesh(new THREE.BoxGeometry(width + 0.06, 0.06, depth + 0.06), frame);
+      top.position.set(x, h + 0.03, z); room.add(top);
+    }
+    wall(w, 0.12, cx, z0);
+    wall(0.12, d, x0, cz);
+    wall(0.12, d, x1, cz);
+    const door = 1.25;
+    wall((w - door) / 2, 0.12, x0 + (w - door) / 4, z1);
+    wall((w - door) / 2, 0.12, x1 - (w - door) / 4, z1);
+    for (const dx of [-door / 2, door / 2]) {
+      const post = new THREE.Mesh(new THREE.BoxGeometry(0.07, h, 0.07), frame);
+      post.position.set(cx + dx, h / 2, z1); room.add(post);
+    }
+    parent.add(makeSign(label, cx, h + 0.5, z1 + 0.08, color));
+  }
+
+  function makeDataScreen(title, subtitle, color = 0x38bdf8) {
+    const css = `#${color.toString(16).padStart(6, "0")}`;
+    const c = document.createElement("canvas"); c.width = 640; c.height = 360;
+    const ctx = c.getContext("2d");
+    ctx.fillStyle = "#07111f"; ctx.fillRect(0, 0, 640, 360);
+    ctx.strokeStyle = css; ctx.lineWidth = 5; ctx.strokeRect(12, 12, 616, 336);
+    ctx.fillStyle = css; ctx.font = "bold 34px Inter, sans-serif"; ctx.fillText(title, 36, 62);
+    ctx.fillStyle = "#94a3b8"; ctx.font = "22px Inter, sans-serif"; ctx.fillText(subtitle, 36, 104);
+    ctx.strokeStyle = "rgba(56,189,248,.35)"; ctx.lineWidth = 2;
+    for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.moveTo(36, 155 + i * 30); ctx.lineTo(604, 155 + i * 30); ctx.stroke(); }
+    ctx.strokeStyle = css; ctx.lineWidth = 5; ctx.beginPath();
+    for (let i = 0; i < 18; i++) {
+      const x = 36 + i * 33;
+      const y = 270 - Math.sin(i * 0.8) * 42 - i * 3;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    const tex = new THREE.CanvasTexture(c); tex.encoding = THREE.sRGBEncoding; return tex;
+  }
+
+  function addScreenPanel(parent, x, y, z, w, h, title, subtitle, color) {
+    const g = new THREE.Group(); g.position.set(x, y, z);
+    g.add(box(w + 0.16, h + 0.16, 0.08, 0x0f172a, 0, 0, 0, { metalness: 0.5, roughness: 0.3 }));
+    const screen = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: makeDataScreen(title, subtitle, color) }));
+    screen.position.z = 0.05; g.add(screen);
+    parent.add(g);
+  }
+
+  function addDataRack(parent, x, z, color) {
+    const g = new THREE.Group(); g.position.set(x, 0, z);
+    g.add(box(1.2, 2.1, 0.9, 0x111827, 0, 1.05, 0, { metalness: 0.4, roughness: 0.35 }));
+    for (let i = 0; i < 6; i++) {
+      g.add(box(1.0, 0.12, 0.03, 0x1e293b, 0, 0.35 + i * 0.27, 0.47));
+      g.add(box(0.06, 0.06, 0.05, i % 2 ? color : 0x22c55e, -0.38 + (i % 4) * 0.22, 0.35 + i * 0.27, 0.5, { emissive: i % 2 ? color : 0x22c55e, emissiveIntensity: 0.9, castShadow: false }));
+    }
+    parent.add(g);
+  }
+
+  function addWorkflowLine(parent, a, b, color) {
+    const points = [a, new THREE.Vector3((a.x + b.x) / 2, 0.08, (a.z + b.z) / 2), b];
+    const curve = new THREE.QuadraticBezierCurve3(...points);
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(24)),
+      new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.45 })
+    );
+    parent.add(line);
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.09, 8, 6), new THREE.MeshBasicMaterial({ color }));
+    parent.add(dot);
+    return { dot, curve, offset: Math.random() };
+  }
+
+  function buildWorkflowFloor(fg) {
+    // Data Lake
+    addScreenPanel(fg, -8.0, 2.6, -9.9, 3.2, 1.7, "DATA LAKE", "bars ? checksums ? PIT", 0x38bdf8);
+    addDataRack(fg, -6.2, -7.8, 0x38bdf8);
+    addDataRack(fg, -7.7, -7.8, 0x22d3ee);
+    addDataRack(fg, -9.2, -7.8, 0xa3e635);
+    fg.add(makeSign("DATA LAKE", -7.7, 2.15, -5.2, 0x38bdf8));
+
+    // Feature Lab
+    addScreenPanel(fg, 0.0, 2.6, -9.9, 3.2, 1.7, "FEATURE LAB", "signals ? regimes ? PIT", 0xa78bfa);
+    for (const x of [-1.7, 0.0, 1.7]) {
+      fg.add(box(1.2, 0.12, 0.8, 0x9a6b4f, x, 1.0, -7.1));
+      fg.add(box(0.8, 0.06, 0.5, 0x0f172a, x, 1.08, -7.1));
+      fg.add(box(0.55, 0.42, 0.04, 0x38bdf8, x, 1.45, -7.35, { emissive: 0x0ea5e9, emissiveIntensity: 0.5 }));
+      for (const lx of [-0.45, 0.45]) for (const lz of [-0.25, 0.25]) fg.add(box(0.06, 0.9, 0.06, 0x334155, x + lx, 0.48, -7.1 + lz));
+    }
+    fg.add(makeSign("FEATURE LAB", 0, 2.15, -5.2, 0xa78bfa));
+
+    // Backtest Grid
+    addScreenPanel(fg, 10.0, 2.6, -9.9, 3.5, 1.8, "BACKTEST GRID", "walk-forward ? DSR ? PBO", 0xfb923c);
+    addScreenPanel(fg, 13.0, 2.4, -8.0, 1.8, 1.1, "VALIDATION", "cost stress", 0xfbbf24);
+    fg.add(makeSign("BACKTEST GRID", 10.5, 2.15, -5.2, 0xfb923c));
+
+    // Risk Vault (closed)
+    glassRoom(fg, -16.0, -4.0, -11.0, 0.8, 0xfacc15, false, "RISK VAULT");
+    fg.add(box(1.2, 1.8, 0.8, 0x1e293b, -13.8, 1.0, -2.4, { metalness: 0.5 }));
+    fg.add(box(1.1, 0.1, 0.9, 0xd97706, -13.8, 1.95, -2.4));
+    fg.add(makeSign("RISK VAULT", -13.5, 2.85, 0.9, 0xfacc15));
+
+    // Meta control table
+    const table = new THREE.Group(); table.position.set(0, 0, 2.1);
+    table.add(cylinder(1.9, 1.9, 0.12, 0x1b2a44, 0, 1.0, 0, { metalness: 0.2, roughness: 0.4 }));
+    table.add(cylinder(0.25, 0.25, 0.95, 0x1e293b, 0, 0.5, 0, { metalness: 0.5 }));
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.45, 0.035, 10, 64), new THREE.MeshBasicMaterial({ color: 0xe879f9, transparent: true, opacity: 0.9 }));
+    ring.rotation.x = Math.PI / 2; ring.position.y = 1.25; table.add(ring);
+    for (let i = 0; i < 4; i++) {
+      const colors = [0x38bdf8, 0xfb923c, 0xf87171, 0x2dd4bf];
+      table.add(box(0.18, 0.3 + i * 0.12, 0.18, colors[i], -0.9 + i * 0.6, 1.2 + (0.3 + i * 0.12) / 2, -0.1, { emissive: colors[i], emissiveIntensity: 0.7 }));
+    }
+    fg.add(table);
+    addScreenPanel(fg, -4.2, 2.2, 4.9, 3.4, 1.5, "META ALLOCATOR", "vol ? correlation ? budgets", 0xe879f9);
+    fg.add(makeSign("META TABLE", 0, 2.15, 5.0, 0xe879f9));
+
+    // Execution Gateway
+    addScreenPanel(fg, 10.3, 2.4, -1.1, 3.0, 1.5, "EXECUTION", "slice ? retry ? reconcile", 0xf472b6);
+    const gate = new THREE.Group(); gate.position.set(10.0, 0, 2.4);
+    gate.add(box(3.4, 0.1, 1.2, 0x1f2937, 0, 0.8, 0));
+    for (let i = 0; i < 5; i++) gate.add(box(0.42, 0.16, 0.42, i % 2 ? 0xf472b6 : 0x38bdf8, -1.2 + i * 0.6, 0.93, 0));
+    for (const x of [-1.4, 1.4]) for (const z of [-0.4, 0.4]) gate.add(box(0.08, 0.75, 0.08, 0x94a3b8, x, 0.4, z));
+    fg.add(gate);
+    fg.add(makeSign("EXECUTION GATEWAY", 10.0, 2.15, 2.4, 0xf472b6));
+
+    // Evaluation
+    addScreenPanel(fg, 4.7, 2.3, 3.5, 2.8, 1.4, "EVALUATION", "TCA ? drift ? PnL", 0x2dd4bf);
+    addScreenPanel(fg, -4.0, 2.1, 7.0, 2.8, 1.2, "QUANT SCOREBOARD", "paper vs agents", 0x38bdf8);
+
+    // Quant amenities
+    glassRoom(fg, -15.5, -11.2, -8.0, -5.0, 0x38bdf8, false, "QUANT MEETING");
+    const meeting = new THREE.Group(); meeting.position.set(-11.7, 0, -8.1); parentFurniture(meeting, "meeting"); fg.add(meeting);
+    fg.add(box(4.6, 0.12, 1.0, 0x334155, -12.0, 1.0, 6.2));
+    fg.add(box(4.6, 0.9, 0.92, 0x1f2937, -12.0, 0.5, 6.2));
+    for (let i = 0; i < 3; i++) fg.add(box(0.55, 0.55, 0.55, 0x1f2937, -13.8 + i * 1.2, 0.55, 7.9));
+    addSnackWall(fg, -14.3, 10.2);
+    addFoosball(fg, 4.4, 6.4);
+    fg.add(roomFurnitureGroup(7.4, 7.2, Math.PI, 0x1f2937));
+    addBeanBag(fg, 2.5, 8.2, 0x38bdf8);
+    fg.add(makeSign("QUANT PANTRY", -12.0, 2.15, 5.0, 0xfb923c));
+    fg.add(makeSign("QUANT FUN", 4.6, 2.15, 5.0, 0xf472b6));
+
+    // Pipeline flow
+    const flow = [
+      addWorkflowLine(fg, new THREE.Vector3(-7.7, 0.08, -5.2), new THREE.Vector3(0, 0.08, -5.2), 0x38bdf8),
+      addWorkflowLine(fg, new THREE.Vector3(0, 0.08, -5.2), new THREE.Vector3(0, 0.08, 0.3), 0xa78bfa),
+      addWorkflowLine(fg, new THREE.Vector3(0, 0.08, 0.3), new THREE.Vector3(-13.5, 0.08, 0.9), 0xfacc15),
+      addWorkflowLine(fg, new THREE.Vector3(0, 0.08, 0.3), new THREE.Vector3(10.0, 0.08, 2.4), 0xf472b6),
+    ];
+    return flow;
+  }
+
+  function buildFloor(meta, index) {
+    const fg = new THREE.Group();
+    fg.position.y = index * 7.0;
+    scene.add(fg);
+    floorGroups.push(fg);
+    const accent = new THREE.Color(meta.accent || "#38bdf8").getHex();
+    const shell = new THREE.Group(); fg.add(shell); fg.userData.shell = shell;
+    const plate = box(34, 0.22, 24, 0xb98758, 0, 0, 0, { roughness: 0.72, receiveShadow: true });
+    plate.material.map = makeWoodTexture();
+    fg.add(plate); fg.userData.plate = plate;
+    const rug = new THREE.Mesh(new THREE.PlaneGeometry(13, 7), mat(0xd7aa7c, { roughness: 0.95 }));
+    rug.rotation.x = -Math.PI / 2; rug.position.set(0, 0.04, 3.0); fg.add(rug);
+    const rugInner = new THREE.Mesh(new THREE.PlaneGeometry(12.2, 6.2), mat(0xe7c9a9, { roughness: 0.95 }));
+    rugInner.rotation.x = -Math.PI / 2; rugInner.position.set(0, 0.045, 3.0); fg.add(rugInner);
+    shell.add(box(34, 0.08, 0.22, accent, 0, 0.18, -11.9, { emissive: accent, emissiveIntensity: 0.5, castShadow: false }));
+    shell.add(box(34, 2.9, 0.35, 0xe8eef5, 0, 1.45, -12.1));
+    shell.add(box(0.35, 2.9, 24, 0xe8eef5, -17.1, 1.45, 0));
+    shell.add(box(0.35, 2.9, 24, 0xe8eef5, 17.1, 1.45, 0));
+    for (let i = 0; i < 5; i++) {
+      const pane = new THREE.Mesh(
+        new THREE.PlaneGeometry(3.0, 2.85),
+        new THREE.MeshBasicMaterial({ map: makeSkyTexture("day", "sunny") })
+      );
+      pane.position.set(-12 + i * 6, 2.05, -11.9); shell.add(pane); skyPanes.push(pane);
+      shell.add(box(3.1, 0.08, 0.12, 0xf8fafc, -12 + i * 6, 0.58, -11.82, { castShadow: false }));
+      shell.add(box(0.08, 2.95, 0.12, 0xf8fafc, -13.5 + i * 6, 2.05, -11.82, { castShadow: false }));
+      shell.add(box(0.08, 2.95, 0.12, 0xf8fafc, -10.5 + i * 6, 2.05, -11.82, { castShadow: false }));
+    }
+    for (const x of [-12, 0, 12]) {
+      shell.add(box(2.6, 0.05, 0.18, 0xfff2cf, x, 4.85, 0.5, { emissive: 0xfff2cf, emissiveIntensity: 0.9, castShadow: false }));
+    }
+    for (const z of [-7, -1, 5]) {
+      shell.add(box(0.08, 2.95, 0.08, 0xf1f5f9, -17.02, 2.05, z - 1.35, { castShadow: false }));
+      shell.add(box(0.08, 2.95, 0.08, 0xf1f5f9, -17.02, 2.05, z + 1.35, { castShadow: false }));
+      const leftPane = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.6, 2.7),
+        new THREE.MeshBasicMaterial({ map: makeSkyTexture("day", "sunny"), side: THREE.DoubleSide })
+      );
+      leftPane.rotation.y = Math.PI / 2; leftPane.position.set(-17.01, 2.05, z); shell.add(leftPane); skyPanes.push(leftPane);
+      const rightPane = new THREE.Mesh(
+        new THREE.PlaneGeometry(2.6, 2.7),
+        new THREE.MeshBasicMaterial({ map: makeSkyTexture("day", "sunny"), side: THREE.DoubleSide })
+      );
+      rightPane.rotation.y = -Math.PI / 2; rightPane.position.set(17.01, 2.05, z); shell.add(rightPane); skyPanes.push(rightPane);
+      shell.add(box(0.08, 2.95, 0.08, 0xf1f5f9, 17.02, 2.05, z - 1.35, { castShadow: false }));
+      shell.add(box(0.08, 2.95, 0.08, 0xf1f5f9, 17.02, 2.05, z + 1.35, { castShadow: false }));
+    }
+    const light = new THREE.PointLight(accent, 7, 20, 2); light.position.set(0, 4.6, 1); fg.add(light);
+    fg.add(new THREE.PointLight(0xffb877, 4, 16, 2).translateX(-11).translateZ(-1));
+    fg.add(new THREE.PointLight(0x7dd3fc, 3, 16, 2).translateX(11).translateZ(5));
+    if (index === 0) {
+      buildWorkflowFloor(fg);
+      return fg;
+    }
+
+    // Closed / frosted rooms
+    glassRoom(fg, -15.5, -11.2, -8.0, -5.0, 0xfbbf24, false, "MEETING");
+    glassRoom(fg, -16.2, -4.2, -13.2, -0.8, 0x94a3b8, true, "WC");
+    glassRoom(fg, 9.0, -11.2, 15.7, -5.0, 0xe879f9, false, "DIRECTOR");
+    glassRoom(fg, 9.0, -0.8, 15.7, 4.2, 0xfacc15, false, "RISK");
+    glassRoom(fg, 10.0, 5.2, 15.7, 9.2, 0x94a3b8, true, "GUEST");
+
+    // Meeting room
+    const meeting = new THREE.Group(); meeting.position.set(-11.7, 0, -8.1); parentFurniture(meeting, "meeting"); fg.add(meeting);
+    // WC fixture
+    fg.add(box(0.55, 0.45, 0.7, 0xe2e8f0, -14.7, 0.28, -2.8));
+    fg.add(box(0.55, 0.62, 0.18, 0xe2e8f0, -14.7, 0.8, -3.12));
+    fg.add(box(0.3, 0.2, 0.35, 0xcbd5e1, -15.4, 1.15, -3.1));
+    // Guest room bed
+    const guest = new THREE.Group(); guest.position.set(12.8, 0, 7.1); parentFurniture(guest, "bed"); fg.add(guest);
+    fg.add(box(0.55, 0.55, 0.55, 0x334155, 10.7, 0.3, 8.6));
+
+    // Open labs and partitions
+    lowWall(fg, -7.3, 0.8, 0.16, 6.2, 0xa78bfa, 0.18);
+    lowWall(fg, -11.6, 4.8, 7.0, 0.16, 0x94a3b8, 0.16);
+    lowWall(fg, 8.2, -0.2, 0.16, 4.2, 0xfacc15, 0.18);
+    // Discussion room (open)
+    const discussion = new THREE.Group(); discussion.position.set(0, 0, 2.6); parentFurniture(discussion, "round"); fg.add(discussion);
+    addBeanBag(fg, -3.2, 3.6, 0xf97316);
+    addBeanBag(fg, 3.2, 3.5, 0x22c55e);
+    // Pantry
+    fg.add(box(4.6, 0.12, 1.0, 0x334155, -12.0, 1.0, 6.2));
+    fg.add(box(4.6, 0.9, 0.92, 0x1f2937, -12.0, 0.5, 6.2));
+    for (let i = 0; i < 3; i++) {
+      fg.add(box(0.55, 0.55, 0.55, 0x1f2937, -13.8 + i * 1.2, 0.55, 7.9));
+      fg.add(box(0.55, 0.08, 0.55, 0x475569, -13.8 + i * 1.2, 0.85, 7.9));
+    }
+    addSnackWall(fg, -14.3, 10.2);
+    fg.add(cylinder(0.18, 0.16, 0.34, 0x0f172a, -13.6, 1.28, 6.2, { metalness: 0.5 }));
+    fg.add(box(0.35, 0.35, 0.12, 0x38bdf8, -13.6, 1.5, 6.4, { emissive: 0x0ea5e9, emissiveIntensity: 0.5 }));
+    for (const x of [-12.8, -11.2]) {
+      const chair = new THREE.Group(); chair.position.set(x, 0, 5.2); chair.add(box(0.45, 0.08, 0.45, 0x1f2937, 0, 0.55, 0)); chair.add(box(0.45, 0.58, 0.07, 0x1f2937, 0, 0.85, -0.22)); fg.add(chair);
+    }
+    // Lobby
+    fg.add(box(2.6, 0.12, 0.9, 0x2a3550, -5.0, 1.0, 7.4));
+    fg.add(box(2.6, 0.9, 0.14, 0x2a3550, -5.0, 1.45, 7.85));
+    fg.add(box(0.35, 0.35, 0.12, 0x38bdf8, -5.0, 1.5, 7.7, { emissive: 0x0ea5e9, emissiveIntensity: 0.6 }));
+    fg.add(roomFurnitureGroup(-2.0, 7.4, Math.PI / 2, 0x1f2937));
+    // Entertainment
+    fg.add(box(3.2, 0.12, 0.3, 0x1e293b, 4.6, 1.1, 9.4));
+    fg.add(box(2.4, 1.35, 0.12, 0x0b1220, 4.6, 1.9, 9.4, { emissive: 0x1d4ed8, emissiveIntensity: 0.25 }));
+    fg.add(box(2.2, 1.15, 0.04, 0x0f172a, 4.6, 1.9, 9.32));
+    addFoosball(fg, 2.0, 6.4);
+    fg.add(roomFurnitureGroup(5.8, 7.2, Math.PI, 0x1f2937));
+    addBeanBag(fg, 7.6, 8.0, 0xf59e0b);
+    addNapPod(fg, 7.7, 9.4);
+    fg.add(box(1.1, 1.45, 0.55, 0x111827, 0.2, 0.73, 8.8, { metalness: 0.4 }));
+    fg.add(box(0.85, 0.75, 0.04, 0x0ea5e9, 0.2, 1.1, 9.09, { emissive: 0x0ea5e9, emissiveIntensity: 0.6 }));
+    // Adult playground
+    addTableTennis(fg, -7.2, 9.0);
+    addSwing(fg, 8.6, 6.0);
+    addBookshelf(fg, -15.0, 9.1);
+
+    // Open-zone signs
+    fg.add(makeSign("TRADING", 0.0, 2.05, -9.8, 0x38bdf8));
+    fg.add(makeSign("AI LAB", -10.8, 2.05, -1.8, 0xa78bfa));
+    fg.add(makeSign("DATA LAB", -13.6, 2.05, 3.0, 0xa3e635));
+    fg.add(makeSign("PANTRY", -12.0, 2.15, 5.0, 0xfb923c));
+    fg.add(makeSign("LOBBY", -5.0, 2.15, 5.0, 0x22d3ee));
+    fg.add(makeSign("DISCUSSION", 0.0, 2.15, 5.0, 0xfbbf24));
+    fg.add(makeSign("FUN ROOM", 4.6, 2.15, 5.0, 0xf472b6));
+
+    // Plants
+    addPlant(fg, -16.2, 10.7, 1.0); addPlant(fg, 16.2, -10.8, 0.9);
+    addPlant(fg, -16.2, -10.7, 0.85); addPlant(fg, 16.2, 10.7, 0.85);
+    return fg;
+  }
+
+  function parentFurniture(parent, kind) {
+    const tmp = new THREE.Group();
+    roomFurniture(tmp, kind);
+    parent.add(...tmp.children);
+  }
+
+  // Floor metadata is required for navigation; fall back to one floor.
+  const floors = floorMeta.length ? floorMeta : [{
+    id: "trading", name: "Level 1 · Live Trading", short: "Trading",
+    accent: "#38bdf8", rooms: ["Live Trading", "Reception"]
+  }];
+  floors.forEach((meta, index) => buildFloor(meta, index));
+
+  for (const agent of DATA.agents) {
+    const floorIndex = Number.isFinite(agent.floor) ? agent.floor : 0;
+    const parent = floorGroups[floorIndex] || floorGroups[0];
+    const x = agent.position[0];
+    const z = agent.position[1];
+    if (agent.id === "meta") createMetaTable(agent, parent, x, z);
+    else createDesk(agent, parent, x, z);
+  }
+
+  // HUD
+  document.getElementById("title").textContent = DATA.title;
+  document.getElementById("subtitle").textContent = DATA.subtitle;
+  document.getElementById("stamp").textContent = `generated ${new Date(DATA.generated_at).toLocaleString()} · live gate ${DATA.gate}`;
+  const counts = DATA.counts || {};
+  document.getElementById("pills").innerHTML = [
+    ["active", counts.active || 0], ["idle", counts.idle || 0],
+    ["warning", counts.warning || 0], ["error", counts.error || 0],
+    ["offline", counts.offline || 0]
+  ].map(([k, v]) => `<span class="pill"><span class="dot" style="background:${COLORS[k]};display:inline-block;margin-right:5px"></span>${v} ${k}</span>`).join("");
+  document.getElementById("squads").innerHTML = (DATA.squads || []).map((squad) => {
+    const manager = byId[squad.manager] ? byId[squad.manager].name : "—";
+    return `${squad.name}: <b>${manager}</b>`;
+  }).join(" · ");
+  const competition = DATA.competition || { teams: [], winner: "tie" };
+  document.getElementById("competition").innerHTML =
+    `<div style="color:#94a3b8;font-size:10px;margin-bottom:4px;">${competition.round || "Paper challenge"}</div>` +
+    (competition.teams || []).map((team) => {
+      const leader = competition.winner === team.id ? " <span class='leader'>LEADER</span>" : "";
+      const ret = `${(Number(team.return_pct || 0) * 100).toFixed(2)}%`;
+      return `<div class="team"><span>${team.name}${leader}</span><span><b>$${Number(team.equity || 0).toLocaleString(undefined, {maximumFractionDigits: 0})}</b> / ${ret}</span></div>`;
+    }).join("");
+
+  const floorNav = document.getElementById("floorNav");
+  const floorTag = document.getElementById("floorTag");
+  let currentFloor = 0;
+  let allMode = false;
+  const allButton = document.createElement("button");
+  allButton.textContent = "All Floors";
+  allButton.addEventListener("click", () => focusAllFloors());
+  floorNav.appendChild(allButton);
+  floors.forEach((floor, index) => {
+    const button = document.createElement("button");
+    button.textContent = floor.short || `Floor ${index + 1}`;
+    button.addEventListener("click", () => focusFloor(index));
+    floorNav.appendChild(button);
+  });
+
+  function restoreShells() {
+    floorGroups.forEach((group) => {
+      if (group.userData.shell) group.userData.shell.visible = true;
+      const plate = group.userData.plate;
+      if (plate) {
+        plate.material.transparent = false;
+        plate.material.opacity = 1.0;
+        plate.material.depthWrite = true;
+        plate.material.needsUpdate = true;
+      }
+    });
+  }
+
+  function focusFloor(index) {
+    allMode = false;
+    currentFloor = Math.max(0, Math.min(floorGroups.length - 1, index));
+    restoreShells();
+    floorGroups.forEach((group, i) => { group.visible = i === currentFloor; });
+    const baseY = floorGroups[currentFloor].position.y;
+    const halfFov = THREE.MathUtils.degToRad(camera.fov / 2);
+    const distance = Math.max(31, 17.0 / (Math.tan(halfFov) * Math.max(camera.aspect, 0.65)));
+    allLight.visible = true;
+    allLight.intensity = 1.0;
+    renderer.toneMappingExposure = 0.95;
+    camera.position.set(0, baseY + 16.5, distance);
+    controls.target.set(0, baseY + 1.2, 0.6);
+    controls.maxDistance = 75;
+    controls.update();
+    const meta = floors[currentFloor] || floors[0];
+    floorTag.innerHTML = `${meta.name || "The Office"} <span>· ${(meta.rooms || []).length} spaces · open plan + closed rooms</span>`;
+    [...floorNav.children].forEach((button, i) => button.classList.toggle("active", i === currentFloor + 1));
+  }
+
+  function focusAllFloors() {
+    allMode = true;
+    floorGroups.forEach((group) => {
+      group.visible = true;
+      if (group.userData.shell) group.userData.shell.visible = false;
+      const plate = group.userData.plate;
+      if (plate) {
+        plate.material.transparent = true;
+        plate.material.opacity = 0.12;
+        plate.material.depthWrite = false;
+        plate.material.needsUpdate = true;
+      }
+    });
+    allLight.visible = true;
+    renderer.toneMappingExposure = 1.05;
+    camera.position.set(0, 12.5, 39);
+    controls.target.set(0, 3.6, 0.0);
+    controls.maxDistance = 72;
+    controls.update();
+    floorTag.innerHTML = `All Floors <span>| ${floorGroups.length} levels | quant workflow vs agent office</span>`;
+    [...floorNav.children].forEach((button, i) => button.classList.toggle("active", i === 0));
+  }
+
+  const environmentData = DATA.environment || {};
+  const query = new URLSearchParams(location.search);
+  const forcedHour = query.get("hour") !== null ? Number(query.get("hour")) : null;
+  let manualWeather = query.get("weather");
+  let currentWeather = manualWeather || environmentData.weather || "sunny";
+  let currentPhase = environmentData.phase || "day";
+  const environmentEl = document.getElementById("environment");
+
+  function singaporeClock() {
+    if (forcedHour !== null) {
+      return { hour: forcedHour, text: `${String(forcedHour).padStart(2, "0")}:00` };
+    }
+    const parts = new Intl.DateTimeFormat("en-SG", {
+      timeZone: "Asia/Singapore", hour: "2-digit", minute: "2-digit", hour12: false,
+    }).formatToParts(new Date());
+    const hour = Number(parts.find((part) => part.type === "hour")?.value || 12);
+    const minute = parts.find((part) => part.type === "minute")?.value || "00";
+    return { hour, text: `${String(hour).padStart(2, "0")}:${minute}` };
+  }
+
+  function phaseForHour(hour) {
+    if (hour >= 5 && hour < 7) return "dawn";
+    if (hour >= 7 && hour < 17) return "day";
+    if (hour >= 17 && hour < 20) return "dusk";
+    return "night";
+  }
+
+  function applyEnvironment() {
+    const clock = singaporeClock();
+    currentPhase = phaseForHour(clock.hour);
+    const rain = currentWeather === "rain";
+    const cloudy = currentWeather === "cloudy";
+    const night = currentPhase === "night";
+    const dusk = currentPhase === "dusk" || currentPhase === "dawn";
+    let bg = 0xdcefff;
+    if (night) bg = 0x050a17;
+    else if (dusk) bg = 0x9b7f9f;
+    else if (rain) bg = 0x8fa0b3;
+    else if (cloudy) bg = 0xb9c8d8;
+    scene.background.setHex(bg);
+    scene.fog.color.setHex(bg);
+    scene.fog.near = night ? 42 : 50;
+    scene.fog.far = night ? 95 : 105;
+    hemi.intensity = night ? 0.22 : dusk ? 0.62 : rain ? 0.68 : 0.9;
+    ambient.intensity = night ? 0.08 : dusk ? 0.20 : 0.28;
+    sun.intensity = night ? 0.03 : dusk ? 0.58 : rain ? 0.35 : cloudy ? 0.85 : 1.65;
+    sun.color.setHex(night ? 0x93c5fd : dusk ? 0xffb27d : 0xfff1d2);
+    fill.intensity = night ? 0.18 : rain ? 0.24 : 0.46;
+    allLight.visible = true;
+    allLight.intensity = night ? 0.22 : dusk ? 0.55 : 0.35;
+    renderer.toneMappingExposure = night ? 0.82 : dusk ? 0.86 : rain ? 0.86 : 0.95;
+    for (const lamp of artificialLights) {
+      lamp.light.intensity = lamp.base * (night ? 2.0 : dusk ? 1.35 : rain ? 1.1 : 0.45);
+    }
+    for (const pane of skyPanes) {
+      pane.material.map = makeSkyTexture(currentPhase, currentWeather);
+      pane.material.needsUpdate = true;
+    }
+    const temperature = environmentData.temperature_c != null ? ` | ${environmentData.temperature_c.toFixed(1)} C` : "";
+    const source = environmentData.source === "open-meteo" ? "" : " | offline weather";
+    environmentEl.textContent = `${clock.text} Singapore | ${currentPhase} | ${currentWeather}${temperature}${source}`;
+    const weatherButton = document.getElementById("toggleWeather");
+    if (weatherButton) weatherButton.textContent = `Weather: ${manualWeather ? currentWeather : "Auto"}`;
+  }
+
+  document.getElementById("toggleWeather").addEventListener("click", () => {
+    const order = ["sunny", "cloudy", "rain"];
+    const at = order.indexOf(currentWeather);
+    manualWeather = order[(at + 1) % order.length];
+    currentWeather = manualWeather;
+    applyEnvironment();
+  });
+  setInterval(() => { if (forcedHour === null) applyEnvironment(); }, 60000);
+
+  const info = document.getElementById("info");
+  const infoName = document.getElementById("infoName");
+  const infoRole = document.getElementById("infoRole");
+  const infoDot = document.getElementById("infoDot");
+  const infoStatus = document.getElementById("infoStatus");
+  const infoMetric = document.getElementById("infoMetric");
+  const infoDetail = document.getElementById("infoDetail");
+  const infoSpeech = document.getElementById("infoSpeech");
+  const infoKv = document.getElementById("infoKv");
+  const infoSpark = document.getElementById("infoSpark");
+  const ctxSpark = infoSpark.getContext("2d");
+
+  function drawSpark(agent) {
+    const w = infoSpark.width, h = infoSpark.height;
+    ctxSpark.clearRect(0, 0, w, h);
+    ctxSpark.fillStyle = "rgba(148,163,184,.12)"; ctxSpark.fillRect(0, 0, w, h);
+    const values = agent.spark && agent.spark.length > 1 ? agent.spark : [1, 1];
+    let min = Math.min(...values), max = Math.max(...values);
+    if (max - min < 1e-9) { min -= 0.5; max += 0.5; }
+    ctxSpark.strokeStyle = agent.accent; ctxSpark.lineWidth = 4; ctxSpark.beginPath();
+    values.forEach((v, i) => {
+      const x = 10 + (i / Math.max(1, values.length - 1)) * (w - 20);
+      const y = h - 10 - ((v - min) / (max - min)) * (h - 24);
+      if (i === 0) ctxSpark.moveTo(x, y); else ctxSpark.lineTo(x, y);
+    });
+    ctxSpark.stroke();
+  }
+
+  function showAgent(agent) {
+    info.classList.add("show");
+    infoName.textContent = agent.name;
+    infoRole.textContent = `${agent.role} · ${agent.room || "office"}`;
+    infoDot.style.background = statusColor(agent.status);
+    infoStatus.textContent = agent.status;
+    infoMetric.textContent = agent.metric;
+    infoDetail.textContent = agent.detail;
+    infoSpeech.textContent = `“${agent.speech}”`;
+    infoKv.replaceChildren();
+    const squad = (DATA.squads || []).find((item) => item.id === agent.squad);
+    const manager = squad && byId[squad.manager] ? byId[squad.manager].name : (agent.manager && byId[agent.manager] ? byId[agent.manager].name : "Board");
+    const rows = [
+      ["Paper equity", agent.equity ? `$${Number(agent.equity).toLocaleString(undefined, { maximumFractionDigits: 2 })}` : "—"],
+      ["Return", agent.pnl_pct ? `${(Number(agent.pnl_pct) * 100).toFixed(2)}%` : "—"],
+      ["Squad", squad ? squad.name : agent.squad || "—"],
+      ["Manager", manager],
+      ["Floor", floors[agent.floor]?.short || "—"],
+      ["Status", agent.status],
+    ];
+    for (const [k, v] of rows) {
+      const kk = document.createElement("span"); kk.textContent = k;
+      const vv = document.createElement("span"); vv.textContent = v;
+      infoKv.append(kk, vv);
+    }
+    drawSpark(agent);
+  }
+
+  const raycaster = new THREE.Raycaster();
+  const pointer = new THREE.Vector2();
+  let hovered = null;
+  function hitAt(clientX, clientY) {
+    const rect = renderer.domElement.getBoundingClientRect();
+    pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+    pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(agentGroups, true);
+    if (!hits.length) return null;
+    let node = hits[0].object;
+    while (node && !node.userData.agentId) node = node.parent;
+    return node ? byId[node.userData.agentId] : null;
+  }
+  renderer.domElement.addEventListener("pointermove", (event) => {
+    const agent = hitAt(event.clientX, event.clientY);
+    if (agent !== hovered) { hovered = agent; renderer.domElement.style.cursor = agent ? "pointer" : "grab"; }
+  });
+  renderer.domElement.addEventListener("pointerup", (event) => {
+    if (event.button !== 0) return;
+    const agent = hitAt(event.clientX, event.clientY);
+    if (agent) showAgent(agent);
+  });
+  renderer.domElement.addEventListener("pointerdown", () => info.classList.remove("show"));
+  document.getElementById("closeInfo").addEventListener("click", () => info.classList.remove("show"));
+
+  let orbit = false;
+  document.getElementById("toggleOrbit").addEventListener("click", (event) => {
+    orbit = !orbit; controls.autoRotate = orbit;
+    event.currentTarget.textContent = orbit ? "Pause orbit" : "Start orbit";
+  });
+  let labelsVisible = true;
+  document.getElementById("toggleLabels").addEventListener("click", (event) => {
+    labelsVisible = !labelsVisible;
+    for (const obj of agentObjects) obj.label.visible = labelsVisible;
+    event.currentTarget.textContent = labelsVisible ? "Hide labels" : "Show labels";
+  });
+  document.getElementById("resetView").addEventListener("click", () => { if (allMode) focusAllFloors(); else focusFloor(currentFloor); applyEnvironment(); });
+  window.addEventListener("keydown", (event) => { if (event.key === "Escape") info.classList.remove("show"); });
+
+  const clock = new THREE.Clock();
+  const moveTarget = new THREE.Vector3();
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.getElapsedTime();
+    for (const obj of agentObjects) {
+      if (!obj.person) continue;
+      const p = obj.person;
+      const active = obj.agent.status === "active";
+      const roaming = (obj.agent.status === "idle" || obj.agent.status === "offline") && obj.waypoints.length > 0;
+      let walking = false;
+
+      if (roaming) {
+        if (t > obj.waitUntil && p.group.position.distanceTo(obj.target) < 0.18) {
+          const next = obj.waypoints[Math.floor(Math.random() * obj.waypoints.length)];
+          obj.target.copy(next);
+          obj.waitUntil = t + 3.0 + Math.random() * 5.0;
+        }
+        moveTarget.copy(obj.target).sub(p.group.position);
+        moveTarget.y = 0;
+        const distance = moveTarget.length();
+        if (distance > 0.08) {
+          const step = Math.min(distance, obj.moveSpeed * dt);
+          moveTarget.normalize();
+          p.group.position.addScaledVector(moveTarget, step);
+          p.group.rotation.y = Math.atan2(moveTarget.x, moveTarget.z);
+          walking = true;
+        } else if (t > obj.waitUntil) {
+          obj.waitUntil = t + 2.0 + Math.random() * 4.0;
+        }
+      } else {
+        moveTarget.copy(obj.home).sub(p.group.position);
+        moveTarget.y = 0;
+        const distance = moveTarget.length();
+        if (distance > 0.04) {
+          const step = Math.min(distance, 1.5 * dt);
+          moveTarget.normalize();
+          p.group.position.addScaledVector(moveTarget, step);
+          p.group.rotation.y = Math.atan2(moveTarget.x, moveTarget.z);
+          walking = true;
+        } else {
+          p.group.position.copy(obj.home);
+          p.group.rotation.y = 0;
+        }
+      }
+
+      const stride = walking ? Math.sin(t * 9.0 + obj.phase) : 0;
+      p.group.position.y = 0.11 + (walking ? Math.abs(Math.sin(t * 9.0 + obj.phase)) * 0.035 : 0);
+      p.legL.rotation.x = stride * 0.5;
+      p.legR.rotation.x = -stride * 0.5;
+      p.head.position.y = p.headY + Math.sin(t * 1.7 + obj.phase) * 0.012;
+      if (walking) {
+        p.armL.rotation.x = -0.3 + stride * 0.55;
+        p.armR.rotation.x = -0.3 - stride * 0.55;
+      } else {
+        p.armL.rotation.x = -1.0 + Math.sin(t * 4.5 + obj.phase) * (active ? 0.18 : 0.04);
+        p.armR.rotation.x = -1.0 + Math.cos(t * 4.5 + obj.phase) * (active ? 0.18 : 0.04);
+      }
+      if (obj.ring) {
+        const pulse = 1 + Math.sin(t * 2.0 + obj.phase) * (active ? 0.06 : 0.02);
+        obj.ring.scale.setScalar(pulse);
+        obj.ring.material.opacity = active ? 0.72 + Math.sin(t * 2 + obj.phase) * 0.12 : 0.45;
+      }
+    }
+    controls.update();
+    renderer.render(scene, camera);
+  }
+  window.addEventListener("resize", () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setPixelRatio(Math.min(devicePixelRatio || 1, 2));
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  focusFloor(1);
+  applyEnvironment();
+  animate();
+})();
+  </script>
+</body>
+</html>

@@ -1,0 +1,544 @@
+"""Read-only Streamlit dashboard for the deterministic and AI pipelines.
+
+Run:
+    uv run streamlit run src/tradingbot/ops/dashboard.py
+
+The dashboard never places orders or changes config. It only reads reports,
+performance history, heartbeats, and paper state. The deterministic campaign
+and the AI-agent campaign are separate accounts with separate artifacts.
+"""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+import pandas as pd  # type: ignore[import-untyped]
+import plotly.graph_objects as go  # type: ignore[import-untyped]
+import streamlit as st
+import streamlit.components.v1 as components
+
+from tradingbot.config import AppConfig, load_config
+from tradingbot.ops.evaluation import build_report, write_report
+from tradingbot.ops.heartbeat import read_heartbeat
+from tradingbot.ops.office3d import build_office_html
+
+ROOT = Path(__file__).resolve().parents[3]
+DET_CONFIGS = {
+    "Crypto trend": "config/base.yaml",
+    "Crypto XSMOM": "config/xsmom.yaml",
+    "Crypto breakout": "config/breakout.yaml",
+    "Crypto reversal": "config/reversal.yaml",
+    "Crypto meta allocator": "config/meta.yaml",
+    "US equities trend": "config/alpaca.yaml",
+    "Long history BTC/LTC": "config/long_history.yaml",
+    "Max history 8-asset": "config/max_history.yaml",
+}
+AI_CONFIG = "config/ai_agent.yaml"
+
+
+def _load_json(path: Path) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _load_config(path: str) -> AppConfig | None:
+    try:
+        return load_config(ROOT / path)
+    except Exception:
+        return None
+
+
+def _perf_frame(path: Path) -> pd.DataFrame:
+    if not path.exists() or path.stat().st_size == 0:
+        return pd.DataFrame()
+    try:
+        frame = pd.read_json(path, lines=True)
+    except ValueError:
+        return pd.DataFrame()
+    if "timestamp" in frame.columns:
+        frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True, errors="coerce")
+    return frame.sort_values("timestamp") if "timestamp" in frame.columns else frame
+
+
+def _add_equity_trace(fig: go.Figure, path: Path, name: str, color: str, dash: str = "solid") -> None:
+    frame = _perf_frame(path)
+    if frame.empty or "equity" not in frame.columns:
+        return
+    fig.add_trace(
+        go.Scatter(
+            x=frame["timestamp"],
+            y=frame["equity"],
+            mode="lines+markers" if len(frame) <= 5 else "lines",
+            name=name,
+            line=dict(color=color, width=2, dash=dash),
+        )
+    )
+
+
+def _metric_row(report: dict[str, Any] | None) -> dict[str, Any]:
+    if not report:
+        return {}
+    account = report.get("account", {})
+    data = report.get("data", {})
+    tca = report.get("tca", {})
+    drift = report.get("signal_drift", {})
+    return {
+        "equity": float(account.get("equity", 0.0)),
+        "cash": float(account.get("cash", 0.0)),
+        "data_age": data.get("age_days", "?"),
+        "tca": float(tca.get("weighted_slip_bps", 0.0)),
+        "drift": drift.get("drift"),
+        "alerts": report.get("alerts", []),
+    }
+
+
+def _render_deterministic() -> None:
+    label = st.sidebar.selectbox("Config", list(DET_CONFIGS))
+    config = _load_config(DET_CONFIGS[label])
+    if config is None:
+        st.error(f"Could not load {DET_CONFIGS[label]}")
+        return
+    strategy_options = ["trend", "xsmom", "breakout", "reversal", "meta"]
+    strategy = st.sidebar.selectbox(
+        "Strategy",
+        strategy_options,
+        index=strategy_options.index(config.strategy.name)
+        if config.strategy.name in strategy_options
+        else 0,
+    )
+    if st.sidebar.button("Rebuild evaluation"):
+        rebuilt = build_report(config, strategy, ROOT)
+        write_report(rebuilt, ROOT)
+        st.sidebar.success("Report rebuilt")
+
+    report_path = ROOT / "artifacts" / "reports" / f"evaluation_{strategy}.json"
+    report = _load_json(report_path)
+    if report is None:
+        st.warning("No evaluation report yet. Click 'Rebuild evaluation'.")
+        return
+
+    metrics = _metric_row(report)
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Equity", f"${metrics.get('equity', 0):,.2f}")
+    c2.metric("Cash", f"${metrics.get('cash', 0):,.2f}")
+    c3.metric("Data age", f"{metrics.get('data_age', '?')}d")
+    c4.metric("TCA slip", f"{metrics.get('tca', 0):.1f} bps")
+    c5.metric("Signal drift", f"{(metrics.get('drift') or 0):.1%}")
+
+    alerts = metrics.get("alerts", [])
+    if alerts:
+        st.error("Alerts: " + " · ".join(str(a) for a in alerts))
+    else:
+        st.success("No alerts.")
+
+    perf_path = ROOT / config.broker.performance_path
+    bt_path = ROOT / config.backtest.output_dir / f"backtest_{strategy}_daily.csv"
+    fig = go.Figure()
+    _add_equity_trace(fig, perf_path, "paper/live", "#1565C0")
+    if bt_path.exists():
+        try:
+            bt = pd.read_csv(bt_path)
+        except Exception:
+            bt = pd.DataFrame()
+        if "timestamp" in bt.columns and "equity" in bt.columns:
+            bt["timestamp"] = pd.to_datetime(bt["timestamp"], utc=True)
+            fig.add_trace(
+                go.Scatter(
+                    x=bt["timestamp"],
+                    y=bt["equity"],
+                    mode="lines",
+                    name="backtest",
+                    line=dict(color="#9E9E9E", width=1.2),
+                )
+            )
+    fig.update_layout(
+        title="Equity: paper/live vs backtest",
+        height=420,
+        margin=dict(l=20, r=20, t=40, b=20),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch")
+
+    left, right = st.columns(2)
+    with left:
+        st.subheader("Live vs backtest")
+        st.json(report.get("live_vs_backtest", {}))
+        st.subheader("Rolling metrics")
+        st.json(report.get("rolling", {}))
+    with right:
+        st.subheader("TCA / slippage")
+        st.json(report.get("tca", {}))
+        st.subheader("Order health (7d)")
+        st.json(report.get("order_health", {}))
+        st.subheader("Signal drift")
+        st.json(report.get("signal_drift", {}))
+
+    st.subheader("Positions")
+    positions = report.get("account", {}).get("positions", {})
+    if positions:
+        st.dataframe(
+            pd.DataFrame(
+                [{"asset": k, "qty": v} for k, v in positions.items()]
+            ).sort_values("asset"),
+            width="stretch",
+            hide_index=True,
+        )
+    else:
+        st.info("No positions.")
+
+
+def _render_ai() -> None:
+    config = _load_config(AI_CONFIG)
+    report = _load_json(ROOT / "artifacts" / "ai" / "reports" / "latest.json")
+    if report is None:
+        st.warning("No AI-agent report yet.")
+        st.code(
+            "powershell -ExecutionPolicy Bypass -File scripts/run_ai_pipeline.ps1",
+            language="powershell",
+        )
+        st.caption(
+            "Set TYPESAFE_API_KEY for Jev, or configure a local OpenAI-compatible "
+            "endpoint in config/ai_agent.yaml. Without a provider the run is "
+            "explicitly labelled as a deterministic fallback, not AI."
+        )
+        return
+
+    account = report.get("account", {})
+    decision = report.get("decision", {})
+    policy = report.get("policy", {})
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("AI equity", f"${account.get('equity', 0):,.2f}")
+    c2.metric("Cash", f"${account.get('cash', 0):,.2f}")
+    c3.metric("Confidence", f"{float(decision.get('confidence', 0)):.1%}")
+    c4.metric("Regime", str(decision.get("regime", "?")))
+    c5.metric("Data age", f"{report.get('data_age_days', '?')}d")
+
+    provider = report.get("provider", "?")
+    model = report.get("model", "?")
+    if report.get("status") == "error":
+        st.error(
+            "AI decision failed; no orders were sent. "
+            f"{report.get('error', 'See the heartbeat for details.')}"
+        )
+    elif report.get("fallback"):
+        st.warning(
+            f"Fallback decision: `{provider}` / `{model}`. This is not an AI model. "
+            "Configure TYPESAFE_API_KEY or a local LLM to use the AI path."
+        )
+    else:
+        st.success(f"Decision provider: `{provider}` / `{model}`")
+    if report.get("status") == "dry_run":
+        st.info("This was a dry run: decisions and reports only, no orders.")
+    if report.get("status") == "error":
+        st.caption(
+            "The AI pipeline fails closed: existing paper positions are held and "
+            "no new orders are sent until the provider recovers."
+        )
+    alerts = report.get("alerts", [])
+    if alerts:
+        st.error("Alerts: " + " · ".join(str(a) for a in alerts))
+
+    perf_path = ROOT / config.broker.performance_path if config else ROOT / "artifacts/ai/performance.jsonl"
+    fig = go.Figure()
+    _add_equity_trace(fig, perf_path, "AI agent paper", "#7B1FA2")
+    _add_equity_trace(
+        fig,
+        ROOT / "artifacts" / "performance_trend.jsonl",
+        "deterministic trend (reference)",
+        "#1565C0",
+        "dot",
+    )
+    fig.update_layout(
+        title="AI-agent paper equity vs deterministic reference",
+        height=420,
+        margin=dict(l=20, r=20, t=40, b=20),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch")
+
+    scorecard = _load_json(ROOT / "artifacts" / "ai" / "reports" / "scorecard.json")
+    if scorecard:
+        st.subheader("AI scorecard")
+        sm = scorecard.get("metrics", {})
+        sp = scorecard.get("provider", {})
+        sc1, sc2, sc3, sc4, sc5 = st.columns(5)
+        sc1.metric("Days", f"{scorecard.get('n_days', 0)}")
+        sc2.metric("Sharpe", f"{float(sm.get('sharpe', 0)):.2f}")
+        sc3.metric("Max DD", f"{float(sm.get('max_dd', 0)):.1%}")
+        sc4.metric("Fallback rate", f"{float(sp.get('fallback_rate', 0)):.0%}")
+        sc5.metric(
+            "TCA",
+            f"{float(scorecard.get('tca', {}).get('weighted_slip_bps', 0)):.1f} bps",
+        )
+        if scorecard.get("status") != "ok":
+            st.info(f"Scorecard status: {scorecard.get('status')}")
+        for note in scorecard.get("notes", []):
+            st.caption(f"- {note}")
+    else:
+        st.info("No AI scorecard yet. Run `uv run python -m tradingbot --config config/ai_agent.yaml ai-evaluate`.")
+
+    st.subheader("Last decision")
+    st.caption(
+        f"As of {report.get('as_of', '?')} · policy turnover "
+        f"{float(policy.get('turnover', 0)):.1%} · gross "
+        f"{float(policy.get('gross', 0)):.1%}"
+    )
+    actions = decision.get("actions", [])
+    target = policy.get("target_weights", {})
+    if actions:
+        rows = []
+        for action in actions:
+            rows.append(
+                {
+                    "asset": action.get("asset"),
+                    "action": action.get("action"),
+                    "confidence": float(action.get("confidence", 0)),
+                    "target_weight": float(target.get(action.get("asset"), 0.0)),
+                    "reason": action.get("reason", ""),
+                }
+            )
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    elif target:
+        st.dataframe(
+            pd.DataFrame(
+                [{"asset": k, "target_weight": v} for k, v in target.items()]
+            ).sort_values("asset"),
+            width="stretch",
+            hide_index=True,
+        )
+
+    notes = policy.get("notes", [])
+    if notes:
+        st.subheader("Policy notes")
+        for note in notes:
+            st.write(f"- {note}")
+
+    left, right = st.columns(2)
+    with left:
+        st.subheader("Positions")
+        positions = account.get("positions", {})
+        if positions:
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {
+                            "asset": asset,
+                            "qty": float(pos.get("qty", 0)),
+                            "value": float(pos.get("value", 0)),
+                            "weight": float(pos.get("weight", 0)),
+                        }
+                        for asset, pos in positions.items()
+                    ]
+                ).sort_values("asset"),
+                width="stretch",
+                hide_index=True,
+            )
+        else:
+            st.info("No positions.")
+    with right:
+        st.subheader("Execution")
+        orders = report.get("orders", [])
+        if orders:
+            st.dataframe(pd.DataFrame(orders), width="stretch", hide_index=True)
+        else:
+            st.info("No orders in this cycle.")
+        st.caption(f"Audit: `{report.get('audit_path', '')}`")
+        st.json(decision)
+
+    st.caption(
+        "AI chooses direction/weights. The deterministic policy layer owns sizing, "
+        "caps, cash, confidence gating, and turnover. Paper only."
+    )
+
+
+def _render_both() -> None:
+    sleeve_configs = {
+        "Trend": "config/base.yaml",
+        "XSMOM": "config/xsmom.yaml",
+        "Breakout": "config/breakout.yaml",
+        "Reversal": "config/reversal.yaml",
+        "Meta": "config/meta.yaml",
+    }
+    configs = {name: _load_config(path) for name, path in sleeve_configs.items()}
+    trend_config = configs["Trend"]
+    xsmom_config = configs["XSMOM"]
+    ai_config = _load_config(AI_CONFIG)
+    reports = {
+        name: _load_json(
+            ROOT / "artifacts" / "reports" / f"evaluation_{name.lower()}.json"
+        )
+        for name in sleeve_configs
+    }
+    reports["AI agent"] = _load_json(
+        ROOT / "artifacts" / "ai" / "reports" / "latest.json"
+    )
+
+    st.subheader("Paper sleeves + separate AI agent")
+    cols = st.columns(3)
+    for col, (name, report) in zip(cols, list(reports.items())[:3], strict=True):
+        if report is None:
+            col.metric(name, "no report")
+            continue
+        account = report.get("account", {})
+        col.metric(name, f"${account.get('equity', 0):,.2f}")
+        if name == "AI agent":
+            decision = report.get("decision", {})
+            col.caption(
+                f"{report.get('provider', '?')} · {decision.get('regime', '?')} · "
+                f"{float(decision.get('confidence', 0)):.0%} confidence"
+            )
+        else:
+            tca = report.get("tca", {}).get("weighted_slip_bps", 0)
+            col.caption(f"TCA {float(tca):.1f} bps")
+
+    fig = go.Figure()
+    if trend_config:
+        _add_equity_trace(
+            fig, ROOT / trend_config.broker.performance_path, "Deterministic trend", "#1565C0"
+        )
+    if xsmom_config:
+        _add_equity_trace(
+            fig, ROOT / xsmom_config.broker.performance_path, "Deterministic XSMOM", "#00897B"
+        )
+    extra_colors = {
+        "Breakout": "#F57C00",
+        "Reversal": "#C62828",
+        "Meta": "#6A1B9A",
+    }
+    for name, color in extra_colors.items():
+        config = configs.get(name)
+        if config:
+            _add_equity_trace(
+                fig,
+                ROOT / config.broker.performance_path,
+                f"Deterministic {name}",
+                color,
+            )
+    if ai_config:
+        _add_equity_trace(
+            fig, ROOT / ai_config.broker.performance_path, "AI agent paper", "#7B1FA2"
+        )
+    fig.update_layout(
+        title="Separate paper accounts",
+        height=430,
+        margin=dict(l=20, r=20, t=40, b=20),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch")
+
+    rows: list[dict[str, Any]] = []
+    for name, report in reports.items():
+        if report is None:
+            rows.append({"pipeline": name, "equity": None, "cash": None, "alerts": "no report"})
+            continue
+        account = report.get("account", {})
+        alerts = report.get("alerts", [])
+        rows.append(
+            {
+                "pipeline": name,
+                "equity": float(account.get("equity", 0)),
+                "cash": float(account.get("cash", 0)),
+                "alerts": "; ".join(str(a) for a in alerts) if alerts else "none",
+            }
+        )
+    st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+
+    ai_report = reports["AI agent"]
+    if ai_report is None:
+        st.warning(
+            "AI pipeline has not run yet. Use `scripts/run_ai_pipeline.ps1` "
+            "after configuring Jev or a local LLM."
+        )
+    else:
+        decision = ai_report.get("decision", {})
+        policy = ai_report.get("policy", {})
+        st.subheader("AI decision")
+        if ai_report.get("status") == "error":
+            st.error("Last AI decision failed; no orders were sent.")
+        elif ai_report.get("fallback"):
+            st.warning("Last AI decision used the labelled deterministic fallback.")
+        st.write(
+            f"Provider **{ai_report.get('provider', '?')}** / "
+            f"`{ai_report.get('model', '?')}` · regime **{decision.get('regime', '?')}** · "
+            f"confidence **{float(decision.get('confidence', 0)):.1%}** · "
+            f"target gross **{float(policy.get('gross', 0)):.1%}**"
+        )
+        target = policy.get("target_weights", {})
+        positive = {k: v for k, v in target.items() if abs(float(v)) > 1e-9}
+        if positive:
+            st.dataframe(
+                pd.DataFrame(
+                    [{"asset": k, "target_weight": float(v)} for k, v in positive.items()]
+                ).sort_values("asset"),
+                width="stretch",
+                hide_index=True,
+            )
+
+    gate = _load_json(ROOT / "artifacts" / "LIVE_GATE.json")
+    if gate:
+        if gate.get("status") == "GO":
+            st.success("Live-capital gate: GO")
+        else:
+            st.error(
+                f"Live-capital gate: {gate.get('status', 'NO_GO')} — "
+                + ", ".join(str(item) for item in gate.get("failed", [])[:4])
+            )
+
+    st.subheader("Heartbeats")
+    heartbeat_rows: list[dict[str, Any]] = []
+    heartbeat_configs = [
+        (f"Deterministic {name}", config) for name, config in configs.items()
+    ] + [("AI agent", ai_config)]
+    for name, config in heartbeat_configs:
+        if not config:
+            continue
+        payload = read_heartbeat(ROOT / config.broker.heartbeat_path)
+        heartbeat_rows.append(
+            {
+                "pipeline": name,
+                "status": (payload or {}).get("status", "no heartbeat"),
+                "as_of": (payload or {}).get("as_of", ""),
+                "equity": (payload or {}).get("equity"),
+                "provider": (payload or {}).get("provider", ""),
+            }
+        )
+    st.dataframe(pd.DataFrame(heartbeat_rows), width="stretch", hide_index=True)
+
+    st.caption(
+        "Each deterministic sleeve and the AI agent have separate configs, broker "
+        "state, journals, performance files, and kill switches. The meta sleeve is "
+        "the consolidated portfolio. Dashboard is read-only."
+    )
+
+
+st.set_page_config(page_title="Trading Bot — Multi-Sleeve + AI", layout="wide")
+st.title("Trading Bot — Multi-Sleeve + AI Agent")
+st.caption(
+    "Read-only. Separate paper sleeves plus an isolated AI agent. No order controls. "
+    "The AI path has no broker credentials and cannot bypass the risk policy."
+)
+
+view = st.sidebar.radio(
+    "Pipeline",
+    ["Both", "Deterministic", "AI agent", "3D Office"],
+    index=0,
+)
+if view == "Deterministic":
+    _render_deterministic()
+elif view == "AI agent":
+    _render_ai()
+elif view == "3D Office":
+    try:
+        components.html(build_office_html(ROOT), height=900, scrolling=False)
+    except Exception as exc:
+        st.error(f"Could not build the 3D office: {type(exc).__name__}: {exc}")
+        st.code("uv run python scripts/build_office3d.py")
+else:
+    _render_both()
