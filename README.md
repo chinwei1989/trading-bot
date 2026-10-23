@@ -411,7 +411,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/20_OFFICE3D.md` | Two-floor 3D office, quant/agent competition, daylight/weather, squads, Blender MCP status |
 | `docs/21_PIT_AND_FUNDING.md` | Campaign health, listing-aware PIT spans, funding data and carry caveats |
 | `docs/22_CARRY_AND_EXTENDED_PIT.md` | Two-leg carry research, walk-forward result, extended delisted sample |
-| `docs/23_DEPLOYMENT.md` | Streamlit/Render/Docker entrypoints, dashboard auth, live-refresh |
+| `docs/23_DEPLOYMENT.md` | Vercel ASGI entrypoint, Streamlit/Render/Docker, dashboard auth, live-refresh |
 
 ---
 

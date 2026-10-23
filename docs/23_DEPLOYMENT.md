@@ -19,6 +19,37 @@ streamlit_app.py
 Do not point it at `src/tradingbot/ops/dashboard.py`; that bypasses the path
 bootstrap.
 
+## Vercel
+
+Vercel expects a top-level ASGI/WSGI variable in `app.py`. The repository now
+exports:
+
+```python
+from streamlit.starlette import App
+
+app = App("streamlit_app.py")
+```
+
+`vercel.json` sets a minimal build command, and `.vercelignore` excludes the
+large `pyproject.toml`/`uv.lock` dependency graph so Vercel installs the
+dashboard-only `requirements.txt` instead. `requirements.txt` includes
+`streamlit[starlette]` and `uvicorn[standard]`.
+
+Use **`app.py`** as the Vercel entrypoint. The local ASGI check works with:
+
+```powershell
+uv run uvicorn app:app --host 127.0.0.1 --port 8504
+```
+
+Caveat: Vercel Functions are serverless and the `maxDuration` in `vercel.json`
+is 60 seconds. The ASGI app was verified locally with uvicorn; it is not a
+replacement for a persistent Streamlit host. Streamlit keeps a long-lived session/WebSocket open, so Vercel
+may disconnect during normal use. For a stable always-on dashboard, use
+Streamlit Community Cloud, Render, or a container host rather than Vercel.
+
+Vercel also does not persist local `data/` or `artifacts/`; the hosted dashboard
+will be empty unless those are mounted from external storage.
+
 ## Streamlit Community Cloud
 
 1. Push the repository.
