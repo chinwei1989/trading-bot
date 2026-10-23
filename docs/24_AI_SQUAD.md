@@ -3,6 +3,7 @@
 **Saved:** 24 Oct 2026  
 **Status:** seven-agent squad built and tested; paper-only; not scheduled.
 **Model:** all seven agents currently use **Jev** typed calls. No other LLM is used.
+**Architecture:** `docs/25_AI_SQUAD_ARCHITECTURE.md`.
 
 This document is the persistent project memory for the AI squad decision. The
 squad is a separate paper lane. It cannot touch the deterministic quant account

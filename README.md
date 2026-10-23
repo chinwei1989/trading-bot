@@ -426,7 +426,8 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/21_PIT_AND_FUNDING.md` | Campaign health, listing-aware PIT spans, funding data and carry caveats |
 | `docs/22_CARRY_AND_EXTENDED_PIT.md` | Two-leg carry research, walk-forward result, extended delisted sample |
 | `docs/23_DEPLOYMENT.md` | Vercel lite status app, Streamlit/Render/Docker, dashboard auth, live-refresh |
-| `docs/24_AI_SQUAD.md` | Three-agent AI squad memory, stage-1 architecture, guardrails, and expansion boundary |
+| `docs/24_AI_SQUAD.md` | Seven-agent AI squad memory, guardrails, and runbook |
+| `docs/25_AI_SQUAD_ARCHITECTURE.md` | AI squad system design, Mermaid architecture/sequence diagrams, agent dependencies, and authority model |
 
 ---
 
