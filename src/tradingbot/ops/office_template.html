@@ -27,8 +27,17 @@
       border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
       backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
     }
-    #titlePanel { top: 18px; left: 18px; padding: 18px 20px; max-width: 460px; }
-    #titlePanel h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; }
+    #titlePanel { top: 18px; left: 18px; padding: 18px 20px; max-width: 460px; transition: max-width .2s ease, padding .2s ease; }
+    #titlePanel h1 { margin: 0; font-size: 22px; letter-spacing: -.02em; padding-right: 28px; }
+    #titlePanel .title-toggle { position: absolute; top: 10px; right: 10px; padding: 2px 7px; font-size: 15px; line-height: 1.2; }
+    #titlePanel.collapsed { max-width: 250px; padding: 12px 16px; }
+    #titlePanel.collapsed .sub,
+    #titlePanel.collapsed .stamp,
+    #titlePanel.collapsed #environment,
+    #titlePanel.collapsed #floorTag,
+    #titlePanel.collapsed #squads,
+    #titlePanel.collapsed #competition,
+    #titlePanel.collapsed .pills { display: none; }
     #titlePanel .sub { margin-top: 6px; color: var(--muted); font-size: 12px; }
     #titlePanel .stamp { margin-top: 9px; color: #64748b; font-size: 11px; }
     #floorTag { margin-top: 12px; color: #cbd5e1; font-size: 12px; font-weight: 600; }
@@ -42,7 +51,9 @@
     .pills { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 11px; }
     .pill { font-size: 11px; padding: 4px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
     .pill b { color: var(--text); font-weight: 600; }
-    #controls { top: 18px; right: 18px; display: flex; gap: 8px; padding: 8px; }
+    #controls { top: 18px; right: 18px; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; padding: 8px; max-width: 480px; }
+    .tilt-control { display: flex; align-items: center; gap: 7px; padding: 0 4px; color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .tilt-control input { width: 86px; accent-color: var(--idle); cursor: ew-resize; }
     button {
       border: 1px solid var(--line); background: rgba(30, 41, 59, 0.7); color: var(--text);
       border-radius: 10px; padding: 8px 11px; font-size: 11px; cursor: pointer;
@@ -75,9 +86,13 @@
     #error.show { display: grid; }
     #error h2 { color: var(--error); }
     #error code { color: #fbbf24; }
+    @media (max-width: 1100px) {
+      #titlePanel { max-width: 280px; }
+    }
     @media (max-width: 760px) {
       #info { width: calc(100vw - 36px); right: 18px; top: 150px; }
-      #titlePanel { max-width: calc(100vw - 36px); }
+      #titlePanel { max-width: 250px; }
+      #controls { max-width: 240px; }
       #floorNav { bottom: 54px; max-width: calc(100vw - 36px); overflow-x: auto; }
       #hint { display: none; }
       #legend { flex-wrap: wrap; max-width: calc(100vw - 36px); }
@@ -88,6 +103,7 @@
   <div id="app"></div>
 
   <div id="titlePanel" class="panel">
+    <button class="title-toggle" id="collapseTitle" aria-label="Collapse Agent Office panel" aria-expanded="true">-</button>
     <h1 id="title">The Agent Office</h1>
     <div class="sub" id="subtitle">A paper-trading floor</div>
     <div class="stamp" id="stamp"></div>
@@ -102,6 +118,8 @@
     <button id="toggleOrbit">Start orbit</button>
     <button id="toggleLabels">Hide labels</button>
     <button id="toggleWeather">Weather: Auto</button>
+    <button id="toggleBackground">Background: Auto</button>
+    <label class="tilt-control" title="Camera elevation">Tilt <input id="tilt" type="range" min="5" max="75" value="43" step="1" /></label>
     <button id="resetView">Reset view</button>
   </div>
 
@@ -181,9 +199,32 @@ __ORBIT_JS__
   controls.dampingFactor = 0.06;
   controls.minDistance = 10;
   controls.maxDistance = 42;
+  controls.minPolarAngle = 0.08;
   controls.maxPolarAngle = Math.PI / 2.04;
   controls.autoRotate = false;
   controls.autoRotateSpeed = 0.25;
+
+  const tiltInput = document.getElementById("tilt");
+  function setTilt(elevationDeg) {
+    const elevation = THREE.MathUtils.clamp(Number(elevationDeg), 5, 75);
+    const offset = camera.position.clone().sub(controls.target);
+    if (offset.lengthSq() < 1e-8) return;
+    const spherical = new THREE.Spherical().setFromVector3(offset);
+    spherical.phi = THREE.MathUtils.degToRad(90 - elevation);
+    spherical.makeSafe();
+    camera.position.copy(controls.target).add(new THREE.Vector3().setFromSpherical(spherical));
+    controls.update();
+  }
+  function syncTilt() {
+    if (document.activeElement === tiltInput) return;
+    const offset = camera.position.clone().sub(controls.target);
+    if (offset.lengthSq() < 1e-8) return;
+    const phi = Math.acos(THREE.MathUtils.clamp(offset.y / offset.length(), -1, 1));
+    const elevation = 90 - THREE.MathUtils.radToDeg(phi);
+    tiltInput.value = String(Math.round(THREE.MathUtils.clamp(elevation, 5, 75)));
+  }
+  tiltInput.addEventListener("input", () => setTilt(Number(tiltInput.value)));
+  controls.addEventListener("change", syncTilt);
 
   const hemi = new THREE.HemisphereLight(0xffffff, 0xc9a77c, 0.9);
   scene.add(hemi);
@@ -1330,6 +1371,7 @@ __ORBIT_JS__
   const query = new URLSearchParams(location.search);
   const forcedHour = query.get("hour") !== null ? Number(query.get("hour")) : null;
   let manualWeather = query.get("weather");
+  let blackBackground = query.get("bg") === "black";
   let currentWeather = manualWeather || environmentData.weather || "sunny";
   let currentPhase = environmentData.phase || "day";
   const environmentEl = document.getElementById("environment");
@@ -1365,6 +1407,7 @@ __ORBIT_JS__
     else if (dusk) bg = 0x9b7f9f;
     else if (rain) bg = 0x8fa0b3;
     else if (cloudy) bg = 0xb9c8d8;
+    if (blackBackground) bg = 0x000000;
     scene.background.setHex(bg);
     scene.fog.color.setHex(bg);
     scene.fog.near = night ? 92 : 105;
@@ -1389,6 +1432,8 @@ __ORBIT_JS__
     environmentEl.textContent = `${clock.text} Singapore | ${currentPhase} | ${currentWeather}${temperature}${source}`;
     const weatherButton = document.getElementById("toggleWeather");
     if (weatherButton) weatherButton.textContent = `Weather: ${manualWeather ? currentWeather : "Auto"}`;
+    const backgroundButton = document.getElementById("toggleBackground");
+    if (backgroundButton) backgroundButton.textContent = `Background: ${blackBackground ? "Black" : "Auto"}`;
   }
 
   document.getElementById("toggleWeather").addEventListener("click", () => {
@@ -1397,6 +1442,19 @@ __ORBIT_JS__
     manualWeather = order[(at + 1) % order.length];
     currentWeather = manualWeather;
     applyEnvironment();
+  });
+  document.getElementById("toggleBackground").addEventListener("click", () => {
+    blackBackground = !blackBackground;
+    applyEnvironment();
+  });
+  document.getElementById("collapseTitle").addEventListener("click", (event) => {
+    event.stopPropagation();
+    const panel = document.getElementById("titlePanel");
+    const button = document.getElementById("collapseTitle");
+    const collapsed = panel.classList.toggle("collapsed");
+    button.textContent = collapsed ? "+" : "-";
+    button.setAttribute("aria-expanded", String(!collapsed));
+    button.setAttribute("aria-label", collapsed ? "Expand Agent Office panel" : "Collapse Agent Office panel");
   });
   setInterval(() => { if (forcedHour === null) applyEnvironment(); }, 60000);
 
