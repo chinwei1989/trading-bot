@@ -1,0 +1,52 @@
+# Binance USD-M perpetual daily bars for the funding/basis carry research lane.
+# Public CryptoData archives; no API key. Spot data comes from config/base.yaml.
+data:
+  source: binance
+  market: futures
+  interval: 1d
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+    - SOLUSDT
+    - XRPUSDT
+    - ADAUSDT
+    - DOGEUSDT
+    - LINKUSDT
+  start: "2020-01"
+  end: null
+  bars_path: data/normalized/bars_futures.parquet
+  raw_dir: data/raw
+  use_cache: true
+  verify_checksums: true
+  include_recent: true
+  recent_limit: 30
+
+strategy:
+  name: trend
+
+backtest:
+  initial_capital: 10000
+  output_dir: artifacts/carry
+
+risk:
+  max_gross: 1.0
+  max_net: 0.0
+  max_asset_weight: 0.25
+  max_drawdown: 0.20
+  kill_switch_file: artifacts/KILL_CARRY
+  state_path: artifacts/carry_risk_state.json
+
+broker:
+  name: paper
+  paper: true
+  quote_currency: USDT
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/carry_orders.sqlite
+  order_state_path: artifacts/carry_order_state.sqlite
+  state_path: artifacts/carry_paper_state.json
+  performance_path: artifacts/carry_performance.jsonl
+  heartbeat_path: artifacts/carry_heartbeat.json
+
+seed: 7

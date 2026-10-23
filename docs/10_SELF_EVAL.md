@@ -41,11 +41,11 @@ Full generated report: `artifacts/SELF_EVAL.md` (regenerate with `uv run python 
 | Two-floor 51 x 36 m 3D office: partitioned agent floor, quant workflow, competition, weather | Working |
 | Scheduled daily paper campaign | Registered at 07:00/07:15/07:20 local |
 | Campaign health check (`TradingBotHealth`) | Registered at 07:30 local; fresh-row verification |
-| Listing-aware PIT span filter | Working; delisted-inclusive data still missing |
-| Binance funding-rate data layer | Working; carry sleeve not built |
+| Listing-aware PIT span filter | Working; extended sample adds 3 delisted assets |
+| Binance funding/basis carry research lane | Working; OOS DSR 0.00, not added |
 | FRED macro downloader | Implemented (requires `FRED_API_KEY`) |
 | CLI: download, backtest, walkforward, paper, ai-run, ai-status, check, validate-data | Working |
-| Tests | **102 passing** |
+| Tests | **105 passing** |
 | Lint / type check | `ruff` pass, `mypy src` pass |
 
 A `live` command now exists but is locked behind `--confirm-live`, `LIVE_TRADING=YES`, a non-paper broker, and `sandbox=false` for ccxt. It has not been exercised against a real broker because no keys are configured.
@@ -164,8 +164,8 @@ The parser bug is a good example of why self-evaluation matters: the backtest wo
 ## 5. Known limitations
 
 - **Crypto-only demo.** Alpaca/ccxt adapters are implemented but untested live.
-- **Survivorship bias.** Listing dates are now enforced with `config/pit_universe_crypto.csv`, but current listed coins only; no complete delisted-asset universe.
-- **No funding/borrow/carry sleeve.** Raw Binance funding data is downloaded, but the two-leg delta-neutral carry strategy is not modeled yet.
+- **Survivorship bias.** Listing dates are enforced with `config/pit_universe_crypto.csv`; an extended sample adds BUSD, SRM, and TOMO, but this is not a complete historical delisted-asset universe.
+- **Carry is research-only.** The two-leg funding/basis backtest exists, but its walk-forward OOS Sharpe is 0.68, DSR 0.00, PBO 0.57; it is not in the meta allocator.
 - **No macro/sentiment features** in the live strategies.
 - **Paper fills at the last close**, not next open/order book.
 - **Short OOS sample.** Three 1-year folds cannot prove an edge.
@@ -177,13 +177,12 @@ The parser bug is a good example of why self-evaluation matters: the backtest wo
 
 ## 6. Next steps (in order)
 
-1. Add **funding/basis** data and a delta-neutral carry research module.
-2. Add **PIT crypto universe + delisted symbols**; reduce survivorship bias.
+1. Improve the **carry** signal/term-structure and execution model; current OOS is not sufficient.
+2. Complete a **full historical delisted PIT universe** with monthly liquidity selection.
 3. Add **Alpaca stock sleeve** with PIT universe and delisted stocks.
-4. Add a **paper-trading scheduler** and Telegram heartbeat/alerts.
-5. Add a **live order state machine** with retries, partial fills, reconciliation.
-6. Add **macro regime overlay** (rates, credit, VIX, DXY) as a risk throttle.
-7. Re-run self-eval after each change; archive reports.
+4. Add a **macro regime overlay** (rates, credit, VIX, DXY) as a risk throttle.
+5. Re-run self-eval and all walk-forward gates after each change; archive reports.
+6. Keep paper campaigns running until 56 unique days plus DSR/PBO/TCA all pass.
 
 ---
 

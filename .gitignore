@@ -28,6 +28,7 @@ models/
 *.zip
 *.csv
 !config/pit_universe_crypto.csv
+!config/pit_universe_crypto_extended.csv
 
 # Logs and secrets
 logs/

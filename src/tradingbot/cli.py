@@ -557,6 +557,116 @@ def cmd_flatten(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_carry_walkforward(args: argparse.Namespace) -> int:
+    from tradingbot.backtest.carry import (
+        carry_param_grid,
+        load_carry_inputs,
+        walk_forward_carry,
+    )
+
+    spot, perp, funding = load_carry_inputs(
+        args.spot_config,
+        args.perp_config,
+        args.funding,
+        root=ROOT,
+    )
+    result = walk_forward_carry(
+        spot,
+        perp,
+        funding,
+        carry_param_grid(),
+        train_days=args.train_days,
+        test_days=args.test_days,
+        step_days=args.step_days,
+        warmup_days=args.warmup_days,
+    )
+    print(f"\nCarry walk-forward folds ({len(result.folds)}):")
+    for i, fold in enumerate(result.folds, 1):
+        test_metrics = fold.get("test_metrics")
+        test_sharpe = (
+            float(test_metrics.get("sharpe", 0.0))
+            if isinstance(test_metrics, dict)
+            else 0.0
+        )
+        print(
+            f"  {i}: train {str(fold['train_start'])[:10]}..{str(fold['train_end'])[:10]} "
+            f"test {str(fold['test_start'])[:10]}..{str(fold['test_end'])[:10]} "
+            f"params={fold['best_params']} testSharpe={test_sharpe:.2f}"
+        )
+    _print_metrics("Carry OOS", result.oos_metrics)
+    print(f"\nTrials: {len(result.trial_sharpes)}")
+    print(f"DSR: {result.dsr:.4f}")
+    print(f"PBO: {result.pbo:.4f}")
+    out = Path(args.output_dir)
+    out = out if out.is_absolute() else ROOT / out
+    out.mkdir(parents=True, exist_ok=True)
+    path = out / "carry_walkforward.json"
+    path.write_text(
+        json.dumps(
+            {
+                "folds": result.folds,
+                "oos_metrics": result.oos_metrics,
+                "dsr": result.dsr,
+                "pbo": result.pbo,
+                "n_trials": len(result.trial_sharpes),
+            },
+            indent=2,
+            default=str,
+        ),
+        encoding="utf-8",
+    )
+    print(f"\nSaved: {path}")
+    return 0
+
+
+def cmd_carry_backtest(args: argparse.Namespace) -> int:
+    from tradingbot.backtest.carry import (
+        CarryParams,
+        load_carry_inputs,
+        run_carry,
+        save_carry,
+    )
+
+    spot, perp, funding = load_carry_inputs(
+        args.spot_config,
+        args.perp_config,
+        args.funding,
+        root=ROOT,
+    )
+    params = CarryParams(
+        lookback_days=args.lookback_days,
+        rebalance_days=args.rebalance_days,
+        min_funding_apr=args.min_funding_apr,
+        top_n=args.top_n,
+        max_weight=args.max_weight,
+        max_gross=args.max_gross,
+        spot_cost_bps=args.spot_cost_bps,
+        perp_cost_bps=args.perp_cost_bps,
+    )
+    result = run_carry(spot, perp, funding, params, initial_capital=args.initial_capital)
+    print("\nCarry backtest")
+    print("--------------")
+    for key in [
+        "final_equity",
+        "total_return",
+        "cagr",
+        "vol",
+        "sharpe",
+        "max_dd",
+        "turnover_annual",
+        "gross_exposure_avg",
+        "avg_funding_annualized",
+        "avg_basis_annualized",
+    ]:
+        print(f"{key:>22}: {result.metrics.get(key, 0.0):,.4f}")
+    out = Path(args.output_dir)
+    out = out if out.is_absolute() else ROOT / out
+    daily, weights, metrics = save_carry(result, out)
+    _save_chart(result.daily, out / "carry.png", "Funding carry research")
+    print(f"\nSaved: {daily}, {weights}, {metrics}")
+    return 0
+
+
 def cmd_download_funding(args: argparse.Namespace) -> int:
     from tradingbot.data.funding import download_funding
 
@@ -730,6 +840,33 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("flatten", help="flatten paper or live positions")
     p.add_argument("--confirm-live", action="store_true")
     p.set_defaults(func=cmd_flatten)
+
+    p = sub.add_parser("carry-walkforward", help="walk-forward validation for the carry research lane")
+    p.add_argument("--spot-config", default="config/base.yaml")
+    p.add_argument("--perp-config", default="config/futures.yaml")
+    p.add_argument("--funding", default="data/normalized/funding.parquet")
+    p.add_argument("--output-dir", default="artifacts/carry")
+    p.add_argument("--train-days", type=int, default=730)
+    p.add_argument("--test-days", type=int, default=365)
+    p.add_argument("--step-days", type=int, default=365)
+    p.add_argument("--warmup-days", type=int, default=60)
+    p.set_defaults(func=cmd_carry_walkforward)
+
+    p = sub.add_parser("carry-backtest", help="run the two-leg funding/basis carry research backtest")
+    p.add_argument("--spot-config", default="config/base.yaml")
+    p.add_argument("--perp-config", default="config/futures.yaml")
+    p.add_argument("--funding", default="data/normalized/funding.parquet")
+    p.add_argument("--output-dir", default="artifacts/carry")
+    p.add_argument("--initial-capital", type=float, default=10_000.0)
+    p.add_argument("--lookback-days", type=int, default=14)
+    p.add_argument("--rebalance-days", type=int, default=7)
+    p.add_argument("--min-funding-apr", type=float, default=0.05)
+    p.add_argument("--top-n", type=int, default=5)
+    p.add_argument("--max-weight", type=float, default=0.20)
+    p.add_argument("--max-gross", type=float, default=0.80)
+    p.add_argument("--spot-cost-bps", type=float, default=10.0)
+    p.add_argument("--perp-cost-bps", type=float, default=10.0)
+    p.set_defaults(func=cmd_carry_backtest)
 
     p = sub.add_parser("download-funding", help="download public Binance perpetual funding history")
     p.add_argument("--symbols", default="BTCUSDT,ETHUSDT,SOLUSDT")
