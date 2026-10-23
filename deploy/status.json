@@ -1,0 +1,261 @@
+{
+  "generated_at": "2026-10-23T15:56:58.213780+00:00",
+  "source": "local snapshot",
+  "gate": {
+    "status": "NO_GO",
+    "generated_at": "2026-10-23T07:25:14.066407+00:00",
+    "config_strategy": "trend",
+    "checks": [
+      {
+        "name": "deflated Sharpe",
+        "passed": false,
+        "detail": "DSR 0.264 vs required 0.95"
+      },
+      {
+        "name": "PBO",
+        "passed": false,
+        "detail": "PBO 0.312 vs allowed 0.20"
+      },
+      {
+        "name": "paper campaign",
+        "passed": false,
+        "detail": "1 unique days vs required 56"
+      },
+      {
+        "name": "TCA",
+        "passed": true,
+        "detail": "5.0 bps, 7 fills (max 10.0 bps)"
+      },
+      {
+        "name": "data freshness",
+        "passed": true,
+        "detail": "1 days old (max 2)"
+      },
+      {
+        "name": "paper alerts",
+        "passed": true,
+        "detail": "none"
+      },
+      {
+        "name": "live broker config",
+        "passed": true,
+        "detail": "broker=alpaca paper=False"
+      },
+      {
+        "name": "LIVE_TRADING",
+        "passed": false,
+        "detail": "not set"
+      },
+      {
+        "name": "Alpaca keys",
+        "passed": false,
+        "detail": "missing"
+      },
+      {
+        "name": "kill switch",
+        "passed": true,
+        "detail": "inactive"
+      },
+      {
+        "name": "AI paper days",
+        "passed": false,
+        "detail": "1 vs required 56"
+      },
+      {
+        "name": "AI is not fallback",
+        "passed": true,
+        "detail": "fallback rate 0.0% (max 5%)"
+      },
+      {
+        "name": "AI scorecard",
+        "passed": false,
+        "detail": "status=insufficient_data"
+      },
+      {
+        "name": "AI live execution",
+        "passed": false,
+        "detail": "not implemented; AI lane is paper-only by design"
+      }
+    ],
+    "failed": [
+      "deflated Sharpe",
+      "PBO",
+      "paper campaign",
+      "LIVE_TRADING",
+      "Alpaca keys",
+      "AI paper days",
+      "AI scorecard",
+      "AI live execution"
+    ]
+  },
+  "health": {
+    "status": "OK",
+    "generated_at": "2026-10-23T15:35:09.656602+00:00",
+    "required_days": 56,
+    "max_age_hours": 26.0,
+    "campaigns": [
+      {
+        "name": "trend",
+        "status": "ok",
+        "latest": "2026-10-23T15:33:48.204096+00:00",
+        "age_hours": 0.02,
+        "days": 1,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      },
+      {
+        "name": "xsmom",
+        "status": "ok",
+        "latest": "2026-10-23T15:33:53.064179+00:00",
+        "age_hours": 0.02,
+        "days": 1,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      },
+      {
+        "name": "breakout",
+        "status": "ok",
+        "latest": "2026-10-23T15:34:03.404528+00:00",
+        "age_hours": 0.02,
+        "days": 1,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      },
+      {
+        "name": "reversal",
+        "status": "ok",
+        "latest": "2026-10-23T15:34:14.864995+00:00",
+        "age_hours": 0.02,
+        "days": 1,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      },
+      {
+        "name": "meta",
+        "status": "ok",
+        "latest": "2026-10-23T15:34:40.906108+00:00",
+        "age_hours": 0.01,
+        "days": 1,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      },
+      {
+        "name": "ai",
+        "status": "ok",
+        "latest": "2026-10-23T06:58:48.189739+00:00",
+        "age_hours": 8.61,
+        "days": 1,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      }
+    ]
+  },
+  "campaigns": {
+    "trend": {
+      "equity": 9995.261014610773,
+      "timestamp": "2026-10-23T15:33:48.204096+00:00",
+      "days": 1,
+      "mode": "paper"
+    },
+    "xsmom": {
+      "equity": 9990.999999999978,
+      "timestamp": "2026-10-23T15:33:53.064179+00:00",
+      "days": 1,
+      "mode": "paper"
+    },
+    "breakout": {
+      "equity": 9995.097914285167,
+      "timestamp": "2026-10-23T15:34:03.404528+00:00",
+      "days": 1,
+      "mode": "paper"
+    },
+    "reversal": {
+      "equity": 10000.0,
+      "timestamp": "2026-10-23T15:34:14.864995+00:00",
+      "days": 1,
+      "mode": "paper"
+    },
+    "meta": {
+      "equity": 9996.288076828423,
+      "timestamp": "2026-10-23T15:34:40.906108+00:00",
+      "days": 1,
+      "mode": "paper"
+    },
+    "ai": {
+      "equity": 10000.0,
+      "timestamp": "2026-10-23T06:58:48.189739+00:00",
+      "days": 1,
+      "mode": null
+    }
+  },
+  "ai_scorecard": {
+    "pipeline": "ai_agent",
+    "generated_at": "2026-10-23T06:58:53.673881+00:00",
+    "status": "insufficient_data",
+    "n_days": 1,
+    "metrics": {
+      "status": "insufficient_data",
+      "n_days": 1,
+      "final_equity": 10000.0,
+      "total_return": 0.0,
+      "cagr": 0.0,
+      "vol": 0.0,
+      "sharpe": 0.0,
+      "sortino": 0.0,
+      "max_dd": 0.0,
+      "avg_gross": 0.0,
+      "avg_cash_pct": 1.0
+    },
+    "benchmarks": {
+      "trend": {
+        "status": "insufficient_data",
+        "n_days": 1,
+        "final_equity": 9995.261014610773,
+        "total_return": 0.0,
+        "cagr": 0.0,
+        "vol": 0.0,
+        "sharpe": 0.0,
+        "sortino": 0.0,
+        "max_dd": 0.0,
+        "avg_gross": 0.31597682454293663,
+        "avg_cash_pct": 0.6840231754570633
+      },
+      "xsmom": {
+        "status": "insufficient_data",
+        "n_days": 1,
+        "final_equity": 9990.999999999978,
+        "total_return": 0.0,
+        "cagr": 0.0,
+        "vol": 0.0,
+        "sharpe": 0.0,
+        "sortino": 0.0,
+        "max_dd": 0.0,
+        "avg_gross": 0.6005404864392925,
+        "avg_cash_pct": 1.0000000000024045
+      }
+    },
+    "provider": {
+      "decisions": 1,
+      "fallback": 0,
+      "fallback_rate": 0.0,
+      "dry_runs": 0,
+      "errors": 0,
+      "mean_latency_ms": 398.68790000036824,
+      "providers": {
+        "jev": 1
+      }
+    },
+    "confidence_calibration": [],
+    "tca": {
+      "fills": 0.0,
+      "weighted_slip_bps": 0.0,
+      "median_slip_bps": 0.0,
+      "p95_abs_slip_bps": 0.0,
+      "notional": 0.0
+    },
+    "notes": [
+      "Need at least 20 paper days for meaningful metrics.",
+      "Only one performance point exists."
+    ]
+  }
+}
