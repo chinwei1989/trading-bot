@@ -23,6 +23,7 @@ import polars as pl
 from tradingbot.data.store import normalize_bars
 
 SPAN_COLUMNS = ["asset", "start", "end"]
+MEMBERSHIP_COLUMNS = ["effective_date", "asset"]
 
 
 def spans_from_bars(bars: pl.DataFrame, *, open_ended: bool = True) -> pl.DataFrame:
@@ -92,6 +93,57 @@ def apply_spans(bars: pl.DataFrame, spans: pl.DataFrame) -> pl.DataFrame:
     return normalize_bars(out)
 
 
+def save_membership(membership: pl.DataFrame, path: str | Path) -> Path:
+    out = Path(path)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    membership.select(MEMBERSHIP_COLUMNS).sort(["effective_date", "asset"]).write_csv(out)
+    return out
+
+
+def load_membership(path: str | Path) -> pl.DataFrame:
+    p = Path(path)
+    if not p.exists():
+        raise FileNotFoundError(f"universe membership not found: {p}")
+    if p.suffix.lower() == ".parquet":
+        frame = pl.read_parquet(p)
+    else:
+        frame = pl.read_csv(p, try_parse_dates=True)
+    missing = [c for c in MEMBERSHIP_COLUMNS if c not in frame.columns]
+    if missing:
+        raise ValueError(f"membership file missing columns: {missing}")
+    return frame.select(MEMBERSHIP_COLUMNS).with_columns(
+        pl.col("effective_date").cast(pl.Date)
+    )
+
+
+def apply_membership(bars: pl.DataFrame, membership: pl.DataFrame) -> pl.DataFrame:
+    """Keep only bars for the monthly PIT membership snapshot."""
+    bars = normalize_bars(bars)
+    snapshots = membership.select(MEMBERSHIP_COLUMNS).with_columns(
+        pl.col("effective_date").cast(pl.Date)
+    )
+    out = (
+        bars.with_columns(pl.col("timestamp").dt.truncate("1mo").dt.date().alias("month"))
+        .join(
+            snapshots,
+            left_on=["month", "asset"],
+            right_on=["effective_date", "asset"],
+            how="inner",
+        )
+        .drop("month")
+        .sort(["timestamp", "asset"])
+    )
+    return normalize_bars(out)
+
+
+def _has_membership_columns(path: Path) -> bool:
+    if path.suffix.lower() == ".parquet":
+        columns: list[str] = list(pl.read_parquet_schema(path).keys())
+    else:
+        columns = pl.read_csv(path, n_rows=0).columns
+    return "effective_date" in columns
+
+
 def load_bars_with_universe(
     bars_path: str | Path,
     spans_path: str | Path | None = None,
@@ -104,7 +156,9 @@ def load_bars_with_universe(
         return bars
     universe_file = Path(spans_path)
     if not universe_file.exists():
-        raise FileNotFoundError(f"universe spans not found: {universe_file}")
+        raise FileNotFoundError(f"universe file not found: {universe_file}")
+    if _has_membership_columns(universe_file):
+        return apply_membership(bars, load_membership(universe_file))
     return apply_spans(bars, load_spans(universe_file))
 
 

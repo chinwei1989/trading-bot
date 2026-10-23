@@ -41,11 +41,11 @@ Full generated report: `artifacts/SELF_EVAL.md` (regenerate with `uv run python 
 | Two-floor 51 x 36 m 3D office: partitioned agent floor, quant workflow, competition, weather | Working |
 | Scheduled daily paper campaign | Registered at 07:00/07:15/07:20 local |
 | Campaign health check (`TradingBotHealth`) | Registered at 07:30 local; fresh-row verification |
-| Listing-aware PIT span filter | Working; extended sample adds 3 delisted assets |
+| Monthly delisted-inclusive PIT pipeline | Working; full sample 87 assets, OOS DSR 0.48 |
 | Binance funding/basis carry research lane | Working; OOS DSR 0.00, not added |
 | FRED macro downloader | Implemented (requires `FRED_API_KEY`) |
 | CLI: download, backtest, walkforward, paper, ai-run, ai-status, check, validate-data | Working |
-| Tests | **105 passing** |
+| Tests | **106 passing** |
 | Lint / type check | `ruff` pass, `mypy src` pass |
 
 A `live` command now exists but is locked behind `--confirm-live`, `LIVE_TRADING=YES`, a non-paper broker, and `sandbox=false` for ccxt. It has not been exercised against a real broker because no keys are configured.
@@ -164,7 +164,7 @@ The parser bug is a good example of why self-evaluation matters: the backtest wo
 ## 5. Known limitations
 
 - **Crypto-only demo.** Alpaca/ccxt adapters are implemented but untested live.
-- **Survivorship bias.** Listing dates are enforced with `config/pit_universe_crypto.csv`; an extended sample adds BUSD, SRM, and TOMO, but this is not a complete historical delisted-asset universe.
+- **Survivorship bias.** A full monthly PIT sample (87 assets, top-10 by archive-size proxy) is available, but archive size is not quote volume and the current selection still needs review.
 - **Carry is research-only.** The two-leg funding/basis backtest exists, but its walk-forward OOS Sharpe is 0.68, DSR 0.00, PBO 0.57; it is not in the meta allocator.
 - **No macro/sentiment features** in the live strategies.
 - **Paper fills at the last close**, not next open/order book.

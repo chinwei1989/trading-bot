@@ -695,10 +695,26 @@ def cmd_universe_audit(args: argparse.Namespace) -> int:
     report = audit_spans(load_bars(bars_path))
     print(json.dumps(report, indent=2, default=str))
     if config.data.universe_path:
-        spans_path = _path(config, config.data.universe_path)
-        print(f"universe file: {spans_path}")
-        if spans_path.exists():
-            print(load_spans(spans_path))
+        universe_path = _path(config, config.data.universe_path)
+        print(f"universe file: {universe_path}")
+        if universe_path.exists():
+            columns = (
+                pl.read_parquet_schema(universe_path).keys()
+                if universe_path.suffix.lower() == ".parquet"
+                else pl.read_csv(universe_path, n_rows=0).columns
+            )
+            if "effective_date" in columns:
+                from tradingbot.data.universe import load_membership
+
+                members = load_membership(universe_path)
+                print(
+                    members.group_by("effective_date")
+                    .agg(pl.len().alias("assets"))
+                    .sort("effective_date")
+                    .tail(12)
+                )
+            else:
+                print(load_spans(universe_path))
     return 0
 
 

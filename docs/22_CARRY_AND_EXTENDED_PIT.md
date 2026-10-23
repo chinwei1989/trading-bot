@@ -145,6 +145,53 @@ bias is solved.
 
 ---
 
+## 4. Full monthly PIT pipeline
+
+`scripts/build_pit_full.py` now builds a monthly, delisted-inclusive membership
+file from the Binance Vision archive:
+
+```powershell
+uv run python scripts/build_pit_full.py --top-n 10 --workers 8
+uv run python -m tradingbot --config config/pit_full.yaml universe-audit
+uv run python -m tradingbot --config config/pit_full.yaml backtest
+uv run python -m tradingbot --config config/pit_full.yaml walkforward --strategy meta
+```
+
+It discovers all USDT spot symbols in the archive, excludes stablecoins and
+leveraged tokens, ranks monthly `1d` archive size, selects the top N, and writes:
+
+- `config/pit_universe_full.csv` ? `effective_date,asset` monthly membership
+- `data/normalized/bars_pit_full.parquet` ? selected asset bars
+- `config/pit_full.yaml` ? research config
+
+The archive-size ranking is an **activity proxy**, not quote volume. It is used
+because the monthly archive can expose delisted symbols that the current
+exchange API cannot. The membership filter drops any bar outside the monthly
+selected set.
+
+The first run produced **763 monthly membership rows**, **87 unique assets**, and
+169,311 daily bars. LUNA, WBTC, WBETH, XAUT, and COCOS were excluded because of
+redenomination/price anomalies or tokenized/wrapped exposure.
+
+Results on the full monthly PIT sample:
+
+| Metric | Full sample | Walk-forward OOS |
+|---|---:|---:|
+| Sharpe | 0.97 | **0.42** |
+| Total return | 205.7% | 24.7% |
+| Max drawdown | -32.7% | **-32.4%** |
+| DSR | — | **0.48** |
+| PBO | — | **0.46** |
+
+This fails the live gate. The monthly membership also creates high turnover
+(21.1 annualized), so the next iteration should add liquidity-aware buffers and
+lower-turnover membership transitions before considering it for allocation.
+
+Do not use this universe for live/paper until the walk-forward and data-quality
+review are complete. It is deliberately separate from the scheduled campaigns.
+
+---
+
 ## 4. Gate impact
 
 No change:

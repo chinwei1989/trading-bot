@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **105 tests passing**, `ruff` pass, `mypy src` pass
+- **106 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -241,6 +241,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
 - **Carry research lane:** two-leg spot/perp funding/basis backtest + walk-forward; full-sample looks strong, OOS DSR 0.00 / PBO 0.57, so not added to meta
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
+- **Full monthly PIT sample:** 87 delisted-inclusive assets, 763 monthly membership rows; meta OOS Sharpe 0.42, DSR 0.48, PBO 0.46, still NO_GO
 - **Funding data:** public Binance funding-rate downloader + summary; 58,193 events through 23 Oct 2026
 - **Hard live gate:** `live-gate` returns NO_GO until DSR/PBO, paper days, TCA, data, keys, and environment all pass
 
@@ -295,6 +296,11 @@ uv run python -m tradingbot universe-audit
 uv run python -m tradingbot universe-build --output config/pit_universe_crypto.csv
 uv run python scripts/build_pit_extended.py
 uv run python -m tradingbot --config config/pit_extended.yaml backtest
+
+# Full monthly delisted-inclusive PIT research universe
+uv run python scripts/build_pit_full.py --top-n 10 --workers 8
+uv run python -m tradingbot --config config/pit_full.yaml backtest
+uv run python -m tradingbot --config config/pit_full.yaml walkforward --strategy meta
 
 # Two-leg funding/basis carry research
 uv run python -m tradingbot --config config/futures.yaml download

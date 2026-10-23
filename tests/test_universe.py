@@ -6,9 +6,12 @@ from pathlib import Path
 import polars as pl
 
 from tradingbot.data.universe import (
+    apply_membership,
     apply_spans,
     audit_spans,
+    load_membership,
     load_spans,
+    save_membership,
     save_spans,
     spans_from_bars,
 )
@@ -70,6 +73,41 @@ def test_span_roundtrip(tmp_path: Path) -> None:
     loaded = load_spans(path)
     assert loaded.height == 3
     assert set(loaded.columns) == {"asset", "start", "end"}
+
+
+def test_membership_snapshot_roundtrip_and_application(tmp_path: Path) -> None:
+    membership = pl.DataFrame(
+        {
+            "effective_date": [date(2024, 1, 1), date(2024, 2, 1)],
+            "asset": ["AAA", "BBB"],
+        }
+    )
+    path = save_membership(membership, tmp_path / "membership.csv")
+    loaded = load_membership(path)
+    assert loaded.height == 2
+
+    bars = pl.DataFrame(
+        {
+            "timestamp": [
+                "2024-01-01",
+                "2024-01-01",
+                "2024-02-01",
+                "2024-02-01",
+            ],
+            "asset": ["AAA", "BBB", "AAA", "BBB"],
+            "open": [1.0, 1.0, 1.0, 1.0],
+            "high": [1.0, 1.0, 1.0, 1.0],
+            "low": [1.0, 1.0, 1.0, 1.0],
+            "close": [1.0, 1.0, 1.0, 1.0],
+            "volume": [1.0, 1.0, 1.0, 1.0],
+        }
+    ).with_columns(pl.col("timestamp").str.to_date()).with_columns(
+        pl.col("timestamp").cast(pl.Datetime("us")).dt.replace_time_zone("UTC")
+    )
+    out = apply_membership(bars, loaded)
+    assert out.height == 2
+    assert out.filter(pl.col("asset") == "AAA").height == 1
+    assert out.filter(pl.col("asset") == "BBB").height == 1
 
 
 def test_audit_spans() -> None:
