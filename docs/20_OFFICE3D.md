@@ -13,13 +13,28 @@ The scene is deliberately split into two levels:
 | Level | Team | Contents |
 |---|---|---|
 | **1 — Quant Workflow** | Deterministic | Data Lake, Feature Lab, Backtest Grid, Risk Vault, Meta Table, Execution Gateway, Evaluation, Quant Meeting, Quant Pantry, Quant Fun |
-| **2 — Agent Office** | Agent | Trading Bullpen, AI Lab, Data Lab, Discussion, Meeting, Director, Risk, Guest, Pantry, Entertainment, Lobby, WC |
+| **2 — Agent Office** | Agent | Trading Bullpen, AI Lab, Data Lab, Discussion, Meeting, Director, Risk, Guest, Pantry, Entertainment, Lobby, WC, Reception, Phone booths, Store |
+
+Each floor is **51 × 36 m** (1.5× the original 34 × 24 m footprint). This is the 40% reduction from the earlier 85 × 60 m pass.
 
 The **Quant Workflow** floor has no people. It shows the machinery of the original pipeline: data, features, validation, risk, allocation, execution, evaluation.
 
 The **Agent Office** floor has the people: Priya, Maya, Leo, Nina, Omar, Noah, Jev, Kai, Elena, Rhea, Sam, Ava.
 
 Both floors have their own meeting room, pantry, and recreation space.
+
+### Partitioned layout
+
+The agent floor is no longer one open room:
+
+- glazed, framed trading bullpen with cubicle dividers
+- separate AI/Data lab
+- enclosed meeting, director, risk, guest, and WC rooms
+- pantry and front lounge with a framed corridor
+- glazed entrance, reception desk, two phone booths, and a small store room
+- solid lower wall panels with glass upper panels, plus door openings and frames
+
+The quant floor keeps the machine hall, but separates the back lab from the corridor and front amenities.
 
 ---
 

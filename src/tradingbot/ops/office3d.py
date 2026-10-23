@@ -496,7 +496,7 @@ def build_office_data(root: Path | None = None) -> dict[str, Any]:
     return {
         "generated_at": datetime.now(UTC).isoformat(),
         "title": "The Agent Office",
-        "subtitle": "Two levels - quant workflow below - agent office above - read-only",
+        "subtitle": "Two levels - 51 x 36 m each - partitioned office - quant workflow below - agents above",
         "gate": (gate or {}).get("status", "NO_GO"),
         "gate_failed": (gate or {}).get("failed", []),
         "counts": counts,

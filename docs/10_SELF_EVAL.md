@@ -38,7 +38,7 @@ Full generated report: `artifacts/SELF_EVAL.md` (regenerate with `uv run python 
 | AI paper scorecard + confidence calibration | Working |
 | Hard live-capital gate (`live-gate`, currently NO_GO) | Working |
 | Read-only Streamlit dashboard (deterministic + AI + 3D office views) | Working |
-| Two-floor 3D office: quant workflow + agent office, competition, weather | Working |
+| Two-floor 51 x 36 m 3D office: partitioned agent floor, quant workflow, competition, weather | Working |
 | Scheduled daily paper campaign | Registered at 07:00 local |
 | FRED macro downloader | Implemented (requires `FRED_API_KEY`) |
 | CLI: download, backtest, walkforward, paper, ai-run, ai-status, check, validate-data | Working |
