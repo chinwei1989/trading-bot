@@ -39,10 +39,13 @@ Full generated report: `artifacts/SELF_EVAL.md` (regenerate with `uv run python 
 | Hard live-capital gate (`live-gate`, currently NO_GO) | Working |
 | Read-only Streamlit dashboard (deterministic + AI + 3D office views) | Working |
 | Two-floor 51 x 36 m 3D office: partitioned agent floor, quant workflow, competition, weather | Working |
-| Scheduled daily paper campaign | Registered at 07:00 local |
+| Scheduled daily paper campaign | Registered at 07:00/07:15/07:20 local |
+| Campaign health check (`TradingBotHealth`) | Registered at 07:30 local; fresh-row verification |
+| Listing-aware PIT span filter | Working; delisted-inclusive data still missing |
+| Binance funding-rate data layer | Working; carry sleeve not built |
 | FRED macro downloader | Implemented (requires `FRED_API_KEY`) |
 | CLI: download, backtest, walkforward, paper, ai-run, ai-status, check, validate-data | Working |
-| Tests | **89 passing** |
+| Tests | **102 passing** |
 | Lint / type check | `ruff` pass, `mypy src` pass |
 
 A `live` command now exists but is locked behind `--confirm-live`, `LIVE_TRADING=YES`, a non-paper broker, and `sandbox=false` for ccxt. It has not been exercised against a real broker because no keys are configured.
@@ -161,8 +164,8 @@ The parser bug is a good example of why self-evaluation matters: the backtest wo
 ## 5. Known limitations
 
 - **Crypto-only demo.** Alpaca/ccxt adapters are implemented but untested live.
-- **Survivorship bias.** Current listed coins only; no delisted assets/PIT universe.
-- **No funding/borrow/carry.** Spot-only demo; perp funding is not modeled.
+- **Survivorship bias.** Listing dates are now enforced with `config/pit_universe_crypto.csv`, but current listed coins only; no complete delisted-asset universe.
+- **No funding/borrow/carry sleeve.** Raw Binance funding data is downloaded, but the two-leg delta-neutral carry strategy is not modeled yet.
 - **No macro/sentiment features** in the live strategies.
 - **Paper fills at the last close**, not next open/order book.
 - **Short OOS sample.** Three 1-year folds cannot prove an edge.

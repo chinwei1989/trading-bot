@@ -67,6 +67,21 @@ schtasks /Delete /TN "TradingBotPaper" /F
 
 ---
 
+## 2b. Campaign health
+
+The scheduled paper tasks run at 07:00, 07:15, and 07:20 local time. A health
+check runs at 07:30:
+
+```powershell
+uv run python -m tradingbot health
+Get-Content artifacts\CAMPAIGN_HEALTH.md
+```
+
+It fails if any of trend, XSMOM, breakout, reversal, meta, or AI did not write a
+fresh performance row for today's Singapore date, or if its heartbeat reports an
+error. A failed health check should be fixed before counting that day toward the
+56-day gate.
+
 ## 3. Kill switch
 
 Activate:

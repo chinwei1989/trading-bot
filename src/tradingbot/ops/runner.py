@@ -12,7 +12,7 @@ from typing import Literal
 import polars as pl
 
 from tradingbot.config import AppConfig, load_config
-from tradingbot.data.store import load_bars
+from tradingbot.data.universe import load_bars_with_universe
 from tradingbot.execution.broker import OrderRequest, OrderResult, Position
 from tradingbot.execution.factory import build_broker
 from tradingbot.execution.manager import OrderManager, ReconciliationError
@@ -119,7 +119,11 @@ def run_cycle(
     bars_path = _resolve(root, config.data.bars_path)
     if not bars_path.exists():
         raise FileNotFoundError(f"missing bars: {bars_path}")
-    bars = _completed_bars(load_bars(bars_path), config.data.interval)
+    universe_path = _resolve(root, config.data.universe_path) if config.data.universe_path else None
+    bars = _completed_bars(
+        load_bars_with_universe(bars_path, universe_path),
+        config.data.interval,
+    )
     if bars.is_empty():
         raise RuntimeError("no completed bars available")
 

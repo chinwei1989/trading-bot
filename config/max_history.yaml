@@ -18,6 +18,7 @@ data:
     - LINKUSDT
   start: "2017-01"
   end: null
+  universe_path: config/pit_universe_crypto.csv
   bars_path: data/normalized/bars_max_history.parquet
   raw_dir: data/raw
   use_cache: true

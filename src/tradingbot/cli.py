@@ -26,6 +26,7 @@ from tradingbot.backtest.validation import (
 )
 from tradingbot.config import AppConfig, load_config
 from tradingbot.data.store import load_bars, validate_bars
+from tradingbot.data.universe import load_bars_with_universe
 from tradingbot.execution.factory import build_broker
 from tradingbot.execution.orders import (
     OrderJournal,
@@ -48,6 +49,11 @@ load_dotenv(ROOT / ".env")
 
 def _path(config: AppConfig, value: Path) -> Path:
     return value if value.is_absolute() else ROOT / value
+
+
+def _load_market_bars(config: AppConfig, bars_path: Path) -> pl.DataFrame:
+    universe = _path(config, config.data.universe_path) if config.data.universe_path else None
+    return load_bars_with_universe(bars_path, universe)
 
 
 def _print_metrics(name: str, metrics: dict[str, float]) -> None:
@@ -149,7 +155,7 @@ def cmd_backtest(args: argparse.Namespace) -> int:
     bars_path = _path(config, config.data.bars_path)
     if not bars_path.exists():
         raise SystemExit(f"missing {bars_path}; run `download` first")
-    bars = load_bars(bars_path)
+    bars = _load_market_bars(config, bars_path)
     strategy = build_strategy(config.strategy, config.backtest.periods_per_year)
     result = strategy.generate_weights(bars)
     weights = enforce_limits(result.weights, config.risk)
@@ -179,7 +185,7 @@ def cmd_paper_replay(args: argparse.Namespace) -> int:
     bars_path = _path(config, config.data.bars_path)
     if not bars_path.exists():
         raise SystemExit(f"missing {bars_path}; run `download` first")
-    bars = load_bars(bars_path)
+    bars = _load_market_bars(config, bars_path)
     result = paper_replay(config, bars)
     print("\nPaper-broker replay vs vectorized backtest")
     print("-------------------------------------------")
@@ -213,7 +219,7 @@ def cmd_walkforward(args: argparse.Namespace) -> int:
     bars_path = _path(config, config.data.bars_path)
     if not bars_path.exists():
         raise SystemExit(f"missing {bars_path}; run `download` first")
-    bars = load_bars(bars_path)
+    bars = _load_market_bars(config, bars_path)
     grids = {
         "trend": trend_param_grid,
         "xsmom": xsmom_param_grid,
@@ -291,7 +297,7 @@ def cmd_paper(args: argparse.Namespace) -> int:
     bars_path = _path(config, config.data.bars_path)
     if not bars_path.exists():
         raise SystemExit(f"missing {bars_path}; run `download` first")
-    bars = load_bars(bars_path)
+    bars = _load_market_bars(config, bars_path)
     if config.data.interval == "1d":
         bars = bars.filter(pl.col("timestamp").dt.date() < datetime.now(UTC).date())
     strategy = build_strategy(config.strategy, config.backtest.periods_per_year)
@@ -536,7 +542,7 @@ def cmd_flatten(args: argparse.Namespace) -> int:
     bars_path = _path(config, config.data.bars_path)
     if not bars_path.exists():
         raise SystemExit(f"missing {bars_path}")
-    bars = load_bars(bars_path)
+    bars = _load_market_bars(config, bars_path)
     last = bars.sort("timestamp").group_by("asset").tail(1)
     prices = {r["asset"]: float(r["close"]) for r in last.iter_rows(named=True)}
     broker = build_broker(config, force_paper=True, allow_short=True)
@@ -549,6 +555,74 @@ def cmd_flatten(args: argparse.Namespace) -> int:
     broker.save_state(state)
     print(f"paper positions flattened; state: {state}")
     return 0
+
+
+def cmd_download_funding(args: argparse.Namespace) -> int:
+    from tradingbot.data.funding import download_funding
+
+    symbols = [s.strip() for s in args.symbols.split(",") if s.strip()]
+    if not symbols:
+        raise SystemExit("--symbols must contain at least one symbol")
+    download_funding(symbols, args.start, args.end, Path(args.output))
+    return 0
+
+
+def cmd_funding_summary(args: argparse.Namespace) -> int:
+    from tradingbot.data.funding import funding_summary
+
+    summary = funding_summary(args.path)
+    print(summary)
+    return 0
+
+
+def cmd_universe_audit(args: argparse.Namespace) -> int:
+    from tradingbot.data.universe import audit_spans, load_spans
+
+    config = load_config(args.config)
+    bars_path = _path(config, config.data.bars_path)
+    if not bars_path.exists():
+        raise SystemExit(f"missing {bars_path}")
+    report = audit_spans(load_bars(bars_path))
+    print(json.dumps(report, indent=2, default=str))
+    if config.data.universe_path:
+        spans_path = _path(config, config.data.universe_path)
+        print(f"universe file: {spans_path}")
+        if spans_path.exists():
+            print(load_spans(spans_path))
+    return 0
+
+
+def cmd_universe_build(args: argparse.Namespace) -> int:
+    from tradingbot.data.universe import save_spans, spans_from_bars
+
+    config = load_config(args.config)
+    bars_path = _path(config, config.data.bars_path)
+    if not bars_path.exists():
+        raise SystemExit(f"missing {bars_path}")
+    out = _path(config, Path(args.output))
+    spans = spans_from_bars(load_bars(bars_path))
+    save_spans(spans, out)
+    print(spans)
+    print(f"Saved: {out}")
+    return 0
+
+
+def cmd_health(args: argparse.Namespace) -> int:
+    from tradingbot.ops.campaign_health import (
+        build_health,
+        format_health,
+        notify_health,
+        write_health,
+    )
+
+    report = build_health(ROOT, max_age_hours=args.max_age_hours)
+    json_path, md_path = write_health(report, ROOT)
+    print(format_health(report))
+    print(f"Saved: {json_path}")
+    print(f"Saved: {md_path}")
+    if args.notify:
+        notify_health(report)
+    return 0 if report["status"] == "OK" else 1
 
 
 def cmd_evaluate(args: argparse.Namespace) -> int:
@@ -656,6 +730,29 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("flatten", help="flatten paper or live positions")
     p.add_argument("--confirm-live", action="store_true")
     p.set_defaults(func=cmd_flatten)
+
+    p = sub.add_parser("download-funding", help="download public Binance perpetual funding history")
+    p.add_argument("--symbols", default="BTCUSDT,ETHUSDT,SOLUSDT")
+    p.add_argument("--start", default="2020-01-01")
+    p.add_argument("--end", default=None)
+    p.add_argument("--output", default="data/normalized/funding.parquet")
+    p.set_defaults(func=cmd_download_funding)
+
+    p = sub.add_parser("funding-summary", help="summarize a funding-rate parquet file")
+    p.add_argument("--path", default="data/normalized/funding.parquet")
+    p.set_defaults(func=cmd_funding_summary)
+
+    p = sub.add_parser("universe-audit", help="show listing spans and PIT universe status")
+    p.set_defaults(func=cmd_universe_audit)
+
+    p = sub.add_parser("universe-build", help="build a PIT span file from current bars")
+    p.add_argument("--output", default="config/pit_universe_crypto.csv")
+    p.set_defaults(func=cmd_universe_build)
+
+    p = sub.add_parser("health", help="check that every paper campaign wrote a fresh row")
+    p.add_argument("--max-age-hours", type=float, default=26.0)
+    p.add_argument("--notify", action="store_true", help="send a Telegram alert if degraded")
+    p.set_defaults(func=cmd_health)
 
     p = sub.add_parser("evaluate", help="build live-vs-backtest/TCA/drift report")
     p.add_argument("--strategy", choices=["trend", "xsmom", "breakout", "reversal", "meta"], default=None)

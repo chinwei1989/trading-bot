@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **89 tests passing**, `ruff` pass, `mypy src` pass
+- **102 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -237,6 +237,9 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
+- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, and AI; writes `artifacts/CAMPAIGN_HEALTH.md`
+- **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
+- **Funding data:** public Binance funding-rate downloader + summary; 58,193 events through 23 Oct 2026; carry sleeve not built yet
 - **Hard live gate:** `live-gate` returns NO_GO until DSR/PBO, paper days, TCA, data, keys, and environment all pass
 
 Engineering checks pass, but the strategies are **not validated for live capital** (trend DSR ≈ 0.26, XSMOM PBO ≈ 0.39). See `docs/10_SELF_EVAL.md` and `artifacts/SELF_EVAL.md`.
@@ -280,6 +283,16 @@ powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
 powershell -ExecutionPolicy Bypass -File scripts/run_campaign.ps1
+
+# Campaign health check; scheduled at 07:30 local
+uv run python -m tradingbot health
+powershell -ExecutionPolicy Bypass -File scripts/register_health.ps1
+
+# PIT listing spans + funding data
+uv run python -m tradingbot universe-audit
+uv run python -m tradingbot universe-build --output config/pit_universe_crypto.csv
+uv run python -m tradingbot download-funding --symbols BTCUSDT,ETHUSDT --start 2020-01-01
+uv run python -m tradingbot funding-summary --path data/normalized/funding.parquet
 
 # Separate AI-agent paper pipeline (paper only; no live path)
 # TYPESAFE_API_KEY is configured in .env; or point agent.endpoint at a local model.
@@ -359,6 +372,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/18_AI_EVALUATION.md` | AI paper scorecard, calibration, promotion evidence rules |
 | `docs/19_MULTI_SLEEVE.md` | Breakout, reversal, meta allocator, execution hardening and results |
 | `docs/20_OFFICE3D.md` | Two-floor 3D office, quant/agent competition, daylight/weather, squads, Blender MCP status |
+| `docs/21_PIT_AND_FUNDING.md` | Campaign health, listing-aware PIT spans, funding data and carry caveats |
 
 ---
 
