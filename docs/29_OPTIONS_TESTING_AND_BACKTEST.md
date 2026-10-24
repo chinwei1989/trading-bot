@@ -345,8 +345,9 @@ without changing the engine.
 
 ### Free one-day Tardis sample
 
-Tardis makes the **first day of each month** available as CSV without an API
-key. The `options_chain` export is tick-level and covers every Deribit option.
+Tardis is a **paid data vendor**, but it makes the **first day of each month**
+available as CSV without an API key. The `options_chain` export is tick-level
+and covers every Deribit option.
 For 2026-10-01 the free file was **17.9 GB compressed**; the ingestion script
 streams it once and keeps the last quote per instrument at each 30-minute
 boundary.

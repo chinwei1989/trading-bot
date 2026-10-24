@@ -374,7 +374,8 @@ powershell -ExecutionPolicy Bypass -File scripts/register_ai_options_30m.ps1
 # Synthetic options replay (mechanics only; not evidence of edge)
 uv run python scripts/run_options_synthetic.py
 
-# Free one-day Tardis real-chain replay (no purchase or API key)
+# Tardis is paid; its first-day-of-month sample is free.
+# One-day real-chain replay (no purchase or API key):
 # First download the free first-day options_chain CSV from Tardis, then:
 uv run python scripts/ingest_tardis_options.py `
   data/raw/tardis/deribit_options_chain_2026-10-01.csv.gz `
