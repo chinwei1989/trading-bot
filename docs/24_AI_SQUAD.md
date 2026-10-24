@@ -1,7 +1,7 @@
 # 24 — AI Squad Memory
 
 **Saved:** 24 Oct 2026  
-**Status:** seven-agent squad built and tested; paper-only; not scheduled.
+**Status:** seven-agent squad built, tested, and scheduled daily at 07:25 local; paper-only; 1 paper day initialized.
 **Model:** all seven agents currently use **Jev** typed calls. No other LLM is used.
 **Architecture:** `docs/25_AI_SQUAD_ARCHITECTURE.md`.
 
@@ -161,9 +161,14 @@ uv run python -m tradingbot --config config/ai_squad.yaml ai-status
 powershell -ExecutionPolicy Bypass -File scripts/run_ai_squad.ps1 -DryRun
 ```
 
-No scheduled task has been registered. The existing `TradingBotAIPaper` task
-still runs the single-provider Jev lane at 07:15. The squad account must
-accumulate its own paper days.
+`TradingBotAISquad` is registered for 07:25 local, after the deterministic
+campaign (07:00), single-provider Jev lane (07:15), and sleeve campaign (07:20),
+and before the 07:30 health check. It has started its own paper-day clock and is
+included in campaign health.
+
+The first actual paper cycle initialized **$10,000** and made no orders because
+the chair chose flat for all eight assets. The dashboard has a dedicated
+**AI squad** view and the Vercel lite page has a separate squad status line.
 
 **Stage 1 history:** the original three-agent version (`trend -> risk -> chair`)
 completed one real three-call dry run on 24 Oct 2026. The full seven-agent

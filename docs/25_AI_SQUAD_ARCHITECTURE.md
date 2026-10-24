@@ -1,6 +1,6 @@
 # 25 — AI Squad System Design
 
-**Status:** implemented, paper-only, not scheduled.  
+**Status:** implemented, paper-only, scheduled daily at 07:25 local; 1 paper day initialized.
 **Scope:** the separate seven-agent AI paper lane. The deterministic quant lane is unchanged and does not use Jev.  
 **Code:** `src/tradingbot/ai/squad.py`, `src/tradingbot/ai/pipeline.py`, `src/tradingbot/ai/policy.py`.  
 **Config:** `config/ai_squad.yaml`.  
@@ -608,12 +608,13 @@ uv run python -m tradingbot --config config/ai_squad.yaml ai-status
 Current status:
 
 - separate $10,000 paper account;
-- no scheduled task yet;
-- no dashboard squad panel yet;
-- one full-roster dry run completed;
+- `TradingBotAISquad` scheduled daily at 07:25 local;
+- included in campaign health;
+- dedicated **AI squad** Streamlit view and Vercel squad status line;
+- one full-roster dry run and one actual paper cycle completed;
 - six Jev calls because sentiment data is absent;
 - all seven memos were written;
-- no orders were sent.
+- no orders were sent (the chair chose flat).
 
 The deterministic strategy freeze and the 56-day evidence window are unchanged.
 The hard live gate remains `NO_GO`.
@@ -630,6 +631,9 @@ The hard live gate remains `NO_GO`.
 | `src/tradingbot/ai/policy.py` | Sizing, caps, cash, turnover, confidence gate |
 | `src/tradingbot/ai/decision.py` | `AgentDecision`, `AssetDecision`, `force_rebalance` |
 | `src/tradingbot/portfolio/risk.py` | Hard safety checks and kill switch |
+| `src/tradingbot/ops/campaign_health.py` | Daily freshness checks for all campaigns, including `ai_squad` |
+| `src/tradingbot/ops/dashboard.py` | Read-only **AI squad** view and competition overview |
+| `app.py` | Vercel lite status page, including the squad status line |
 | `config/ai_squad.yaml` | Separate paper account and squad configuration |
 | `tests/test_ai_squad.py` | Agent order, dependency, veto, block, abstention, blackboard tests |
 | `docs/24_AI_SQUAD.md` | Persistent squad decisions and runbook |

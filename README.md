@@ -238,7 +238,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
-- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, and AI; writes `artifacts/CAMPAIGN_HEALTH.md`
+- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, and the seven-agent AI squad; writes `artifacts/CAMPAIGN_HEALTH.md`
 - **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
 - **Carry research lane:** two-leg spot/perp funding/basis backtest + walk-forward; full-sample looks strong, OOS DSR 0.00 / PBO 0.57, so not added to meta
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
@@ -251,7 +251,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 
 Engineering checks pass, but the strategies are **not validated for live capital** (trend DSR ≈ 0.26, XSMOM PBO ≈ 0.39). See `docs/10_SELF_EVAL.md` and `artifacts/SELF_EVAL.md`.
 
-Jev is configured and returned real typed decisions (`jev-1.14.0`) in 10 historical dry runs. The AI paper account was reset to a clean **$10,000** on 23 Oct 2026, and the separate `TradingBotAIPaper` task is scheduled for 07:15 daily. The current scorecard is still `insufficient_data` (one day); the hard live gate is `NO_GO`. See `artifacts/LIVE_GATE.md`.
+Jev is configured and returned real typed decisions (`jev-1.14.0`) in 10 historical dry runs. The single-Jev AI paper account was reset to a clean **$10,000** on 23 Oct 2026, and `TradingBotAIPaper` runs at 07:15 daily. The seven-agent squad is a separate **$10,000** paper account; `TradingBotAISquad` runs at 07:25 daily and writes to `artifacts/ai_squad/`. Both AI scorecards are still `insufficient_data`; the hard live gate is `NO_GO`. See `artifacts/LIVE_GATE.md`.
 
 ### Quick start on this repo
 
@@ -284,7 +284,7 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + dashboard (Both / Deterministic / AI agent views)
+# Evaluation + dashboard (Both / Deterministic / AI agent / AI squad views)
 uv run python -m tradingbot evaluate --strategy trend
 powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
@@ -299,7 +299,7 @@ uv run python scripts/export_deploy_status.py
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
 powershell -ExecutionPolicy Bypass -File scripts/run_campaign.ps1
 
-# Campaign health check; scheduled at 07:30 local
+# Campaign health check (includes ai_squad); scheduled at 07:30 local
 uv run python -m tradingbot health
 powershell -ExecutionPolicy Bypass -File scripts/register_health.ps1
 
@@ -347,12 +347,13 @@ powershell -ExecutionPolicy Bypass -File scripts/register_ai_campaign.ps1
 
 # Seven-agent AI squad paper lane
 # macro -> trend -> XSMOM -> sentiment -> risk -> execution -> chair
-# Separate $10,000 account under artifacts/ai_squad; no scheduler yet.
+# Separate $10,000 account under artifacts/ai_squad; scheduled at 07:25 local.
 uv run python -m tradingbot --config config/ai_squad.yaml ai-run --dry-run
 uv run python -m tradingbot --config config/ai_squad.yaml ai-run
 uv run python -m tradingbot --config config/ai_squad.yaml ai-evaluate
 uv run python -m tradingbot --config config/ai_squad.yaml ai-status
 powershell -ExecutionPolicy Bypass -File scripts/run_ai_squad.ps1 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/register_ai_squad_campaign.ps1
 
 # Ten point-in-time dry decisions (no orders)
 uv run python scripts/jev_smoke.py

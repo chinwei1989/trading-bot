@@ -55,7 +55,7 @@ class CampaignCheck:
 
 
 def default_campaigns() -> list[CampaignSpec]:
-    """Campaign files written by the three scheduled paper tasks."""
+    """Campaign files written by the scheduled paper tasks."""
     return [
         CampaignSpec(
             "trend",
@@ -86,6 +86,11 @@ def default_campaigns() -> list[CampaignSpec]:
             "ai",
             Path("artifacts/ai/performance.jsonl"),
             Path("artifacts/ai/heartbeat.json"),
+        ),
+        CampaignSpec(
+            "ai_squad",
+            Path("artifacts/ai_squad/performance.jsonl"),
+            Path("artifacts/ai_squad/heartbeat.json"),
         ),
     ]
 

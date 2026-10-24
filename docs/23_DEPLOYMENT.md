@@ -38,7 +38,8 @@ It reads `deploy/status.json` and shows:
 
 - live-capital gate status
 - campaign health
-- paper equity and unique days for all six campaigns
+- paper equity and unique days for all six deterministic/single-AI campaigns
+- a separate seven-agent AI squad paper account
 - a 60-second browser refresh
 
 It has no Streamlit, pandas, polars, pyarrow, or plotly dependency, so the Vercel
@@ -129,7 +130,11 @@ The sidebar has **Auto-refresh**: Off / 30 seconds / 60 seconds / 5 minutes.
 It refreshes read data only. It never runs a campaign and never places an order.
 
 The trading campaigns still run on their Windows scheduled tasks at 07:00,
-07:15, and 07:20, with health at 07:30.
+07:15, 07:20, and 07:25, with health at 07:30.
+
+The full Streamlit dashboard has "Both", "Deterministic", "AI agent", "AI
+squad", and "3D Office" views. The AI squad view reads the separate
+`artifacts/ai_squad/` account and its latest blackboard.
 
 ## Live-trading gate is separate
 

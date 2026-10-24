@@ -88,6 +88,8 @@ def index(request: Request) -> HTMLResponse:
     gate_class = "good" if gate_status == "GO" else "bad"
     health_status = str(health.get("status", "N/A"))
     campaigns = data.get("campaigns") or {}
+    squad = data.get("ai_squad") or {}
+    squad_scorecard = data.get("ai_squad_scorecard") or {}
 
     cards = []
     for name in ("trend", "xsmom", "breakout", "reversal", "meta", "ai"):
@@ -99,6 +101,14 @@ def index(request: Request) -> HTMLResponse:
         )
     failed = ", ".join(str(x) for x in gate.get("failed", [])) or "none"
     campaigns_html = "".join(cards)
+    squad_days = int(squad.get("days") or 0)
+    squad_status = str(squad_scorecard.get("status", "not available"))
+    squad_html = (
+        "<div class='status'><span class='dot'></span>"
+        f"<strong>AI squad: {_money(squad.get('equity'))}</strong>"
+        f"<span class='muted'>{squad_days} days · scorecard "
+        f"{html.escape(squad_status)}</span></div>"
+    )
     generated = html.escape(str(data.get("generated_at") or "not generated"))
     page = f"""<!doctype html>
 <html lang="en">
@@ -134,6 +144,7 @@ a {{ color:#38bdf8; }}
 <strong>Live-capital gate: {html.escape(gate_status)}</strong>
 <span class="muted">Failed checks: {html.escape(failed)}</span></div>
 <div class="grid">{campaigns_html}</div>
+{squad_html}
 <div class="status"><span class="dot"></span>
 <strong>Campaign health: {html.escape(health_status)}</strong>
 <span class="muted">Paper days required: 56</span></div>

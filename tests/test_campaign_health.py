@@ -8,6 +8,7 @@ from tradingbot.ops.campaign_health import (
     CampaignSpec,
     build_health,
     check_campaign,
+    default_campaigns,
     format_health,
     write_health,
 )
@@ -24,6 +25,11 @@ def _spec() -> CampaignSpec:
         Path("performance.jsonl"),
         Path("heartbeat.json"),
     )
+
+
+def test_default_campaigns_include_ai_squad() -> None:
+    names = {campaign.name for campaign in default_campaigns()}
+    assert "ai_squad" in names
 
 
 def test_fresh_campaign_is_ok(tmp_path: Path) -> None:

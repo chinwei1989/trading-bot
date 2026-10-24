@@ -60,6 +60,10 @@ def main() -> int:
     health = _json(ROOT / "artifacts" / "CAMPAIGN_HEALTH.json")
     gate = _json(ROOT / "artifacts" / "LIVE_GATE.json")
     ai_scorecard = _json(ROOT / "artifacts" / "ai" / "reports" / "scorecard.json")
+    ai_squad = _performance(ROOT / "artifacts/ai_squad/performance.jsonl")
+    ai_squad_scorecard = _json(
+        ROOT / "artifacts" / "ai_squad" / "reports" / "scorecard.json"
+    )
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "source": "local snapshot",
@@ -67,6 +71,8 @@ def main() -> int:
         "health": health,
         "campaigns": campaigns,
         "ai_scorecard": ai_scorecard,
+        "ai_squad": ai_squad,
+        "ai_squad_scorecard": ai_squad_scorecard,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")

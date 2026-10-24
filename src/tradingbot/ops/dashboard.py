@@ -38,6 +38,7 @@ DET_CONFIGS = {
     "Max history 8-asset": "config/max_history.yaml",
 }
 AI_CONFIG = "config/ai_agent.yaml"
+AI_SQUAD_CONFIG = "config/ai_squad.yaml"
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -55,6 +56,34 @@ def _load_config(path: str) -> AppConfig | None:
         return load_config(ROOT / path)
     except Exception:
         return None
+
+
+def _latest_squad_run() -> tuple[Path, dict[str, Any]] | None:
+    base = ROOT / "artifacts" / "ai_squad" / "squad"
+    if not base.exists():
+        return None
+    manifests = sorted(
+        base.glob("*/manifest.json"),
+        key=lambda path: path.stat().st_mtime,
+        reverse=True,
+    )
+    for manifest in manifests:
+        payload = _load_json(manifest)
+        if payload:
+            return manifest.parent, payload
+    return None
+
+
+def _choice_summary(choices: Any) -> str:
+    if not isinstance(choices, dict):
+        return ""
+    notable = [
+        f"{asset}={value}"
+        for asset, value in choices.items()
+        if value not in {"flat", "unavailable", "neutral", "approve", "allow"}
+    ]
+    selected = notable or [f"{asset}={value}" for asset, value in choices.items()]
+    return ", ".join(selected[:8])
 
 
 def _perf_frame(path: Path) -> pd.DataFrame:
@@ -360,6 +389,205 @@ def _render_ai() -> None:
     )
 
 
+def _render_ai_squad() -> None:
+    config = _load_config(AI_SQUAD_CONFIG)
+    report = _load_json(ROOT / "artifacts" / "ai_squad" / "reports" / "latest.json")
+    if report is None:
+        st.warning("No seven-agent AI squad report yet.")
+        st.code(
+            "powershell -ExecutionPolicy Bypass -File scripts/run_ai_squad.ps1",
+            language="powershell",
+        )
+        st.caption(
+            "The squad uses role-scoped Jev calls. The deterministic policy and "
+            "risk checks still own sizing and execution."
+        )
+        return
+
+    account = report.get("account", {})
+    decision = report.get("decision", {})
+    policy = report.get("policy", {})
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1.metric("Squad equity", f"${account.get('equity', 0):,.2f}")
+    c2.metric("Cash", f"${account.get('cash', 0):,.2f}")
+    c3.metric("Confidence", f"{float(decision.get('confidence', 0)):.1%}")
+    c4.metric("Regime", str(decision.get("regime", "?")))
+    c5.metric("Data age", f"{report.get('data_age_days', '?')}d")
+    c6.metric("Force rebalance", "yes" if decision.get("force_rebalance") else "no")
+
+    provider = report.get("provider", "?")
+    model = report.get("model", "?")
+    if report.get("status") == "error":
+        st.error(
+            "Squad decision failed; no orders were sent. "
+            f"{report.get('error', 'See the report and heartbeat.')}"
+        )
+    elif report.get("fallback"):
+        st.warning(f"Fallback decision: `{provider}` / `{model}`. Not the AI squad.")
+    else:
+        st.success(f"Squad provider: `{provider}` / `{model}`")
+    if report.get("status") == "dry_run":
+        st.info("This was a dry run: decisions and reports only, no orders.")
+
+    alerts = report.get("alerts", [])
+    if alerts:
+        st.error("Alerts: " + " | ".join(str(a) for a in alerts))
+
+    perf_path = (
+        ROOT / config.broker.performance_path
+        if config
+        else ROOT / "artifacts/ai_squad/performance.jsonl"
+    )
+    fig = go.Figure()
+    _add_equity_trace(fig, perf_path, "AI squad paper", "#D81B60")
+    _add_equity_trace(
+        fig,
+        ROOT / "artifacts" / "ai" / "performance.jsonl",
+        "single-Jev paper",
+        "#7B1FA2",
+        "dot",
+    )
+    _add_equity_trace(
+        fig,
+        ROOT / "artifacts" / "performance_trend.jsonl",
+        "deterministic trend (reference)",
+        "#1565C0",
+        "dot",
+    )
+    fig.update_layout(
+        title="AI squad paper equity vs single-Jev and deterministic reference",
+        height=420,
+        margin=dict(l=20, r=20, t=40, b=20),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch")
+
+    scorecard = _load_json(
+        ROOT / "artifacts" / "ai_squad" / "reports" / "scorecard.json"
+    )
+    if scorecard:
+        st.subheader("Squad scorecard")
+        sm = scorecard.get("metrics", {})
+        sp = scorecard.get("provider", {})
+        sc1, sc2, sc3, sc4, sc5 = st.columns(5)
+        sc1.metric("Days", f"{scorecard.get('n_days', 0)}")
+        sc2.metric("Sharpe", f"{float(sm.get('sharpe', 0)):.2f}")
+        sc3.metric("Max DD", f"{float(sm.get('max_dd', 0)):.1%}")
+        sc4.metric("Fallback rate", f"{float(sp.get('fallback_rate', 0)):.0%}")
+        sc5.metric(
+            "TCA",
+            f"{float(scorecard.get('tca', {}).get('weighted_slip_bps', 0)):.1f} bps",
+        )
+        if scorecard.get("status") != "ok":
+            st.info(f"Scorecard status: {scorecard.get('status')}")
+        for note in scorecard.get("notes", []):
+            st.caption(f"- {note}")
+
+    latest = _latest_squad_run()
+    if latest:
+        run_dir, manifest = latest
+        st.subheader("Latest squad blackboard")
+        st.caption(
+            f"Run `{manifest.get('run_id', run_dir.name)}` · "
+            f"{len(manifest.get('agents', []))} agents · read-only memos"
+        )
+        memo_rows: list[dict[str, Any]] = []
+        for stage, filename in (manifest.get("memos") or {}).items():
+            memo = _load_json(run_dir / str(filename))
+            if not memo:
+                continue
+            memo_rows.append(
+                {
+                    "agent": memo.get("agent", stage),
+                    "stage": stage,
+                    "regime": memo.get("regime", ""),
+                    "confidence": float(memo.get("confidence", 0)),
+                    "model": memo.get("model", ""),
+                    "choices": _choice_summary(memo.get("choices", {})),
+                }
+            )
+        if memo_rows:
+            st.dataframe(
+                pd.DataFrame(memo_rows), width="stretch", hide_index=True
+            )
+        st.caption(f"Blackboard: `{run_dir}`")
+    else:
+        st.info("No squad blackboard found yet.")
+
+    st.subheader("Last decision")
+    st.caption(
+        f"As of {report.get('as_of', '?')} | policy turnover "
+        f"{float(policy.get('turnover', 0)):.1%} | gross "
+        f"{float(policy.get('gross', 0)):.1%}"
+    )
+    actions = decision.get("actions", [])
+    target = policy.get("target_weights", {})
+    if actions:
+        rows = []
+        for action in actions:
+            rows.append(
+                {
+                    "asset": action.get("asset"),
+                    "action": action.get("action"),
+                    "confidence": float(action.get("confidence", 0)),
+                    "target_weight": float(target.get(action.get("asset"), 0.0)),
+                    "reason": action.get("reason", ""),
+                }
+            )
+        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
+    elif target:
+        st.dataframe(
+            pd.DataFrame(
+                [{"asset": k, "target_weight": v} for k, v in target.items()]
+            ).sort_values("asset"),
+            width="stretch",
+            hide_index=True,
+        )
+
+    notes = policy.get("notes", [])
+    if notes:
+        st.subheader("Policy notes")
+        for note in notes:
+            st.write(f"- {note}")
+
+    left, right = st.columns(2)
+    with left:
+        st.subheader("Positions")
+        positions = account.get("positions", {})
+        if positions:
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {
+                            "asset": asset,
+                            "qty": float(pos.get("qty", 0)),
+                            "value": float(pos.get("value", 0)),
+                            "weight": float(pos.get("weight", 0)),
+                        }
+                        for asset, pos in positions.items()
+                    ]
+                ).sort_values("asset"),
+                width="stretch",
+                hide_index=True,
+            )
+        else:
+            st.info("No positions.")
+    with right:
+        st.subheader("Execution")
+        orders = report.get("orders", [])
+        if orders:
+            st.dataframe(pd.DataFrame(orders), width="stretch", hide_index=True)
+        else:
+            st.info("No orders in this cycle.")
+        st.caption(f"Audit: `{report.get('audit_path', '')}`")
+
+    st.caption(
+        "Seven role-scoped Jev calls share typed memos through a blackboard. "
+        "Risk vetoes and execution blocks are enforced by deterministic code; "
+        "sizing and paper execution remain outside the LLM. Paper only."
+    )
+
+
 def _render_both() -> None:
     sleeve_configs = {
         "Trend": "config/base.yaml",
@@ -372,6 +600,7 @@ def _render_both() -> None:
     trend_config = configs["Trend"]
     xsmom_config = configs["XSMOM"]
     ai_config = _load_config(AI_CONFIG)
+    ai_squad_config = _load_config(AI_SQUAD_CONFIG)
     reports = {
         name: _load_json(
             ROOT / "artifacts" / "reports" / f"evaluation_{name.lower()}.json"
@@ -381,8 +610,11 @@ def _render_both() -> None:
     reports["AI agent"] = _load_json(
         ROOT / "artifacts" / "ai" / "reports" / "latest.json"
     )
+    reports["AI squad"] = _load_json(
+        ROOT / "artifacts" / "ai_squad" / "reports" / "latest.json"
+    )
 
-    st.subheader("Paper sleeves + separate AI agent")
+    st.subheader("Paper sleeves + separate AI lanes")
     cols = st.columns(3)
     for col, (name, report) in zip(cols, list(reports.items())[:3], strict=True):
         if report is None:
@@ -426,6 +658,13 @@ def _render_both() -> None:
     if ai_config:
         _add_equity_trace(
             fig, ROOT / ai_config.broker.performance_path, "AI agent paper", "#7B1FA2"
+        )
+    if ai_squad_config:
+        _add_equity_trace(
+            fig,
+            ROOT / ai_squad_config.broker.performance_path,
+            "AI squad paper",
+            "#D81B60",
         )
     fig.update_layout(
         title="Separate paper accounts",
@@ -483,6 +722,31 @@ def _render_both() -> None:
                 hide_index=True,
             )
 
+    squad_report = reports["AI squad"]
+    if squad_report is None:
+        st.warning(
+            "AI squad has not run yet. Use `scripts/run_ai_squad.ps1` after "
+            "configuring Jev."
+        )
+    else:
+        squad_account = squad_report.get("account", {})
+        squad_decision = squad_report.get("decision", {})
+        squad_policy = squad_report.get("policy", {})
+        st.subheader("AI squad")
+        if squad_report.get("status") == "error":
+            st.error("Last AI squad decision failed; no orders were sent.")
+        st.write(
+            f"Provider **{squad_report.get('provider', '?')}** / "
+            f"`{squad_report.get('model', '?')}` | regime "
+            f"**{squad_decision.get('regime', '?')}** | confidence "
+            f"**{float(squad_decision.get('confidence', 0)):.1%}** | "
+            f"force rebalance **{bool(squad_decision.get('force_rebalance'))}**"
+        )
+        sq1, sq2, sq3 = st.columns(3)
+        sq1.metric("Squad equity", f"${squad_account.get('equity', 0):,.2f}")
+        sq2.metric("Cash", f"${squad_account.get('cash', 0):,.2f}")
+        sq3.metric("Target gross", f"{float(squad_policy.get('gross', 0)):.1%}")
+
     gate = _load_json(ROOT / "artifacts" / "LIVE_GATE.json")
     if gate:
         if gate.get("status") == "GO":
@@ -497,7 +761,7 @@ def _render_both() -> None:
     heartbeat_rows: list[dict[str, Any]] = []
     heartbeat_configs = [
         (f"Deterministic {name}", config) for name, config in configs.items()
-    ] + [("AI agent", ai_config)]
+    ] + [("AI agent", ai_config), ("AI squad", ai_squad_config)]
     for name, config in heartbeat_configs:
         if not config:
             continue
@@ -514,13 +778,14 @@ def _render_both() -> None:
     st.dataframe(pd.DataFrame(heartbeat_rows), width="stretch", hide_index=True)
 
     st.caption(
-        "Each deterministic sleeve and the AI agent have separate configs, broker "
-        "state, journals, performance files, and kill switches. The meta sleeve is "
-        "the consolidated portfolio. Dashboard is read-only."
+        "Each deterministic sleeve, the single-Jev AI lane, and the seven-agent "
+        "AI squad have separate configs, broker state, journals, performance files, "
+        "and kill switches. The meta sleeve is the consolidated portfolio. "
+        "Dashboard is read-only."
     )
 
 
-st.set_page_config(page_title="Trading Bot — Multi-Sleeve + AI", layout="wide")
+st.set_page_config(page_title="Trading Bot - Multi-Sleeve + AI Squad", layout="wide")
 
 # Optional access gate for hosted deployments. Local use is unchanged when the
 # environment variable is absent. Set DASHBOARD_PASSWORD in the host's secret
@@ -537,15 +802,15 @@ if _expected_password and not st.session_state.get("dashboard_authenticated"):
         st.error("Invalid password.")
     st.stop()
 
-st.title("Trading Bot — Multi-Sleeve + AI Agent")
+st.title("Trading Bot - Multi-Sleeve + AI Squad")
 st.caption(
-    "Read-only. Separate paper sleeves plus an isolated AI agent. No order controls. "
-    "The AI path has no broker credentials and cannot bypass the risk policy."
+    "Read-only. Separate paper sleeves plus two isolated AI lanes. No order controls. "
+    "The AI paths have no broker credentials and cannot bypass the risk policy."
 )
 
 view = st.sidebar.radio(
     "Pipeline",
-    ["Both", "Deterministic", "AI agent", "3D Office"],
+    ["Both", "Deterministic", "AI agent", "AI squad", "3D Office"],
     index=0,
 )
 refresh_label = st.sidebar.selectbox(
@@ -561,6 +826,8 @@ def _render_selected(selected: str) -> None:
         _render_deterministic()
     elif selected == "AI agent":
         _render_ai()
+    elif selected == "AI squad":
+        _render_ai_squad()
     elif selected == "3D Office":
         try:
             components.html(build_office_html(ROOT), height=900, scrolling=False)

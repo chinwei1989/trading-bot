@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-23T15:56:58.213780+00:00",
+  "generated_at": "2026-10-24T02:10:06.156081+00:00",
   "source": "local snapshot",
   "gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-23T07:25:14.066407+00:00",
+    "generated_at": "2026-10-24T01:50:47.818484+00:00",
     "config_strategy": "trend",
     "checks": [
       {
@@ -90,60 +90,69 @@
   },
   "health": {
     "status": "OK",
-    "generated_at": "2026-10-23T15:35:09.656602+00:00",
+    "generated_at": "2026-10-24T02:10:05.755930+00:00",
     "required_days": 56,
     "max_age_hours": 26.0,
     "campaigns": [
       {
         "name": "trend",
         "status": "ok",
-        "latest": "2026-10-23T15:33:48.204096+00:00",
-        "age_hours": 0.02,
-        "days": 1,
+        "latest": "2026-10-23T23:00:34.381924+00:00",
+        "age_hours": 3.16,
+        "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "xsmom",
         "status": "ok",
-        "latest": "2026-10-23T15:33:53.064179+00:00",
-        "age_hours": 0.02,
-        "days": 1,
+        "latest": "2026-10-23T23:00:39.203342+00:00",
+        "age_hours": 3.16,
+        "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "breakout",
         "status": "ok",
-        "latest": "2026-10-23T15:34:03.404528+00:00",
-        "age_hours": 0.02,
-        "days": 1,
+        "latest": "2026-10-23T23:20:05.839792+00:00",
+        "age_hours": 2.83,
+        "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "reversal",
         "status": "ok",
-        "latest": "2026-10-23T15:34:14.864995+00:00",
-        "age_hours": 0.02,
-        "days": 1,
+        "latest": "2026-10-23T23:20:17.985961+00:00",
+        "age_hours": 2.83,
+        "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "meta",
         "status": "ok",
-        "latest": "2026-10-23T15:34:40.906108+00:00",
-        "age_hours": 0.01,
-        "days": 1,
+        "latest": "2026-10-23T23:20:39.650878+00:00",
+        "age_hours": 2.82,
+        "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "ai",
         "status": "ok",
-        "latest": "2026-10-23T06:58:48.189739+00:00",
-        "age_hours": 8.61,
+        "latest": "2026-10-23T23:15:05.009278+00:00",
+        "age_hours": 2.92,
+        "days": 2,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      },
+      {
+        "name": "ai_squad",
+        "status": "ok",
+        "latest": "2026-10-24T02:09:38.508833+00:00",
+        "age_hours": 0.01,
         "days": 1,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -153,44 +162,44 @@
   "campaigns": {
     "trend": {
       "equity": 9995.261014610773,
-      "timestamp": "2026-10-23T15:33:48.204096+00:00",
+      "timestamp": "2026-10-23T23:00:34.381924+00:00",
       "days": 1,
       "mode": "paper"
     },
     "xsmom": {
       "equity": 9990.999999999978,
-      "timestamp": "2026-10-23T15:33:53.064179+00:00",
+      "timestamp": "2026-10-23T23:00:39.203342+00:00",
       "days": 1,
       "mode": "paper"
     },
     "breakout": {
       "equity": 9995.097914285167,
-      "timestamp": "2026-10-23T15:34:03.404528+00:00",
+      "timestamp": "2026-10-23T23:20:05.839792+00:00",
       "days": 1,
       "mode": "paper"
     },
     "reversal": {
       "equity": 10000.0,
-      "timestamp": "2026-10-23T15:34:14.864995+00:00",
+      "timestamp": "2026-10-23T23:20:17.985961+00:00",
       "days": 1,
       "mode": "paper"
     },
     "meta": {
       "equity": 9996.288076828423,
-      "timestamp": "2026-10-23T15:34:40.906108+00:00",
+      "timestamp": "2026-10-23T23:20:39.650878+00:00",
       "days": 1,
       "mode": "paper"
     },
     "ai": {
       "equity": 10000.0,
-      "timestamp": "2026-10-23T06:58:48.189739+00:00",
+      "timestamp": "2026-10-23T23:15:05.009278+00:00",
       "days": 1,
       "mode": null
     }
   },
   "ai_scorecard": {
     "pipeline": "ai_agent",
-    "generated_at": "2026-10-23T06:58:53.673881+00:00",
+    "generated_at": "2026-10-23T23:15:07.869499+00:00",
     "status": "insufficient_data",
     "n_days": 1,
     "metrics": {
@@ -235,14 +244,90 @@
       }
     },
     "provider": {
-      "decisions": 1,
+      "decisions": 2,
       "fallback": 0,
       "fallback_rate": 0.0,
       "dry_runs": 0,
       "errors": 0,
-      "mean_latency_ms": 398.68790000036824,
+      "mean_latency_ms": 375.62980000075186,
       "providers": {
-        "jev": 1
+        "jev": 2
+      }
+    },
+    "confidence_calibration": [],
+    "tca": {
+      "fills": 0.0,
+      "weighted_slip_bps": 0.0,
+      "median_slip_bps": 0.0,
+      "p95_abs_slip_bps": 0.0,
+      "notional": 0.0
+    },
+    "notes": [
+      "Need at least 20 paper days for meaningful metrics.",
+      "Only one performance point exists."
+    ]
+  },
+  "ai_squad": {
+    "equity": 10000.0,
+    "timestamp": "2026-10-24T02:09:38.508833+00:00",
+    "days": 1,
+    "mode": null
+  },
+  "ai_squad_scorecard": {
+    "pipeline": "ai_agent",
+    "generated_at": "2026-10-24T02:09:42.036856+00:00",
+    "status": "insufficient_data",
+    "n_days": 1,
+    "metrics": {
+      "status": "insufficient_data",
+      "n_days": 1,
+      "final_equity": 10000.0,
+      "total_return": 0.0,
+      "cagr": 0.0,
+      "vol": 0.0,
+      "sharpe": 0.0,
+      "sortino": 0.0,
+      "max_dd": 0.0,
+      "avg_gross": 0.0,
+      "avg_cash_pct": 1.0
+    },
+    "benchmarks": {
+      "trend": {
+        "status": "insufficient_data",
+        "n_days": 1,
+        "final_equity": 9995.261014610773,
+        "total_return": 0.0,
+        "cagr": 0.0,
+        "vol": 0.0,
+        "sharpe": 0.0,
+        "sortino": 0.0,
+        "max_dd": 0.0,
+        "avg_gross": 0.31597682454293663,
+        "avg_cash_pct": 0.6840231754570633
+      },
+      "xsmom": {
+        "status": "insufficient_data",
+        "n_days": 1,
+        "final_equity": 9990.999999999978,
+        "total_return": 0.0,
+        "cagr": 0.0,
+        "vol": 0.0,
+        "sharpe": 0.0,
+        "sortino": 0.0,
+        "max_dd": 0.0,
+        "avg_gross": 0.6005404864392925,
+        "avg_cash_pct": 1.0000000000024045
+      }
+    },
+    "provider": {
+      "decisions": 4,
+      "fallback": 0,
+      "fallback_rate": 0.0,
+      "dry_runs": 2,
+      "errors": 0,
+      "mean_latency_ms": 1750.2400250086794,
+      "providers": {
+        "squad": 4
       }
     },
     "confidence_calibration": [],
