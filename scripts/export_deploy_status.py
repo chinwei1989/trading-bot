@@ -17,6 +17,8 @@ CAMPAIGNS = {
     "reversal": Path("artifacts/performance_reversal.jsonl"),
     "meta": Path("artifacts/performance_meta.jsonl"),
     "ai": Path("artifacts/ai/performance.jsonl"),
+    "intraday": Path("artifacts/intraday/performance.jsonl"),
+    "ai_options_30m": Path("artifacts/ai_options_30m/performance.jsonl"),
 }
 
 
@@ -64,6 +66,11 @@ def main() -> int:
     ai_squad_scorecard = _json(
         ROOT / "artifacts" / "ai_squad" / "reports" / "scorecard.json"
     )
+    options_evidence = _json(
+        ROOT / "artifacts" / "options_evidence" / "latest.json"
+    )
+    options_live_gate = _json(ROOT / "artifacts" / "OPTIONS_LIVE_GATE.json")
+    readiness = _json(ROOT / "artifacts" / "READINESS.json")
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "source": "local snapshot",
@@ -73,6 +80,9 @@ def main() -> int:
         "ai_scorecard": ai_scorecard,
         "ai_squad": ai_squad,
         "ai_squad_scorecard": ai_squad_scorecard,
+        "options_evidence": options_evidence,
+        "options_live_gate": options_live_gate,
+        "readiness": readiness,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")

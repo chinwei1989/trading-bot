@@ -20,4 +20,13 @@ if ($uvCommand) {
 $code = $LASTEXITCODE
 "[$(Get-Date -Format o)] health result: $code" |
     Out-File -Append -Encoding utf8 "logs/health.log"
+
+# Refresh read-only evidence even if campaign health is degraded.
+& $uv run python scripts/build_options_evidence.py 2>&1 |
+    Out-File -Append -Encoding utf8 "logs/health.log"
+& $uv run python scripts/build_options_live_gate.py 2>&1 |
+    Out-File -Append -Encoding utf8 "logs/health.log"
+& $uv run python scripts/build_readiness.py 2>&1 |
+    Out-File -Append -Encoding utf8 "logs/health.log"
+
 exit $code

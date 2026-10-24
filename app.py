@@ -90,9 +90,21 @@ def index(request: Request) -> HTMLResponse:
     campaigns = data.get("campaigns") or {}
     squad = data.get("ai_squad") or {}
     squad_scorecard = data.get("ai_squad_scorecard") or {}
+    options = data.get("options_evidence") or {}
+    options_gate = data.get("options_live_gate") or {}
+    readiness = data.get("readiness") or {}
 
     cards = []
-    for name in ("trend", "xsmom", "breakout", "reversal", "meta", "ai"):
+    for name in (
+        "trend",
+        "xsmom",
+        "breakout",
+        "reversal",
+        "meta",
+        "ai",
+        "intraday",
+        "ai_options_30m",
+    ):
         row = campaigns.get(name) or {}
         cards.append(
             f"<div class='card'><div class='label'>{html.escape(name.upper())}</div>"
@@ -108,6 +120,27 @@ def index(request: Request) -> HTMLResponse:
         f"<strong>AI squad: {_money(squad.get('equity'))}</strong>"
         f"<span class='muted'>{squad_days} days · scorecard "
         f"{html.escape(squad_status)}</span></div>"
+    )
+    paper = options.get("paper") or {}
+    replay = options.get("replay") or {}
+    options_status = str(options.get("status", "not available"))
+    options_gate_status = str(options_gate.get("status", "NO_GO"))
+    paper_days = int(paper.get("paper_days") or 0)
+    options_html = (
+        "<div class='status'><span class='dot'></span>"
+        f"<strong>Options paper: {html.escape(options_status)}</strong>"
+        f"<span class='muted'>{paper_days}/56 days / "
+        f"{int(paper.get('fills') or 0)} fills / "
+        f"live gate {html.escape(options_gate_status)}</span></div>"
+        "<div class='status'><span class='dot'></span>"
+        f"<strong>Free real-chain replay: {_money(replay.get('final_equity'))}</strong>"
+        f"<span class='muted'>{int(replay.get('snapshots') or 0)} snapshots / "
+        f"{float(replay.get('total_return') or 0):.2%} return / "
+        "one day only, not evidence of edge</span></div>"
+    )
+    readiness_status = (
+        f"paper_ready={readiness.get('paper_ready')} "
+        f"live_ready={readiness.get('live_ready')}"
     )
     generated = html.escape(str(data.get("generated_at") or "not generated"))
     page = f"""<!doctype html>
@@ -145,9 +178,10 @@ a {{ color:#38bdf8; }}
 <span class="muted">Failed checks: {html.escape(failed)}</span></div>
 <div class="grid">{campaigns_html}</div>
 {squad_html}
+{options_html}
 <div class="status"><span class="dot"></span>
 <strong>Campaign health: {html.escape(health_status)}</strong>
-<span class="muted">Paper days required: 56</span></div>
+<span class="muted">Paper days required: 56 / {html.escape(readiness_status)}</span></div>
 <footer>
 Read-only snapshot. The full Streamlit dashboard is available locally with
 <code>scripts/run_dashboard.ps1</code> or on a persistent container host.
