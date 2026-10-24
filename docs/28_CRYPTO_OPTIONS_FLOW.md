@@ -6,10 +6,11 @@ execution is **not implemented** and is not live.
 
 The deterministic options core exists and is tested: account gates, selector,
 paper options broker, one-cycle pipeline, snapshot replay, a read-only Deribit
-public-chain adapter, a synthetic 30m replay, and a 30m AI options paper cycle.
-A purchased historical chain dataset and live execution are not built yet.
+public-chain adapter, a synthetic 30m replay, a free one-day Tardis real-chain
+replay, and a 30m AI options paper cycle. A multi-day purchased archive and live
+execution are not built yet.
 
-The animation includes a proposed **breakout specialist** and a 30-minute
+The animation includes the implemented **breakout specialist** and a 30-minute
 options loop. Neither is running yet. The current AI squad is the eight-agent
 daily spot squad; the current deterministic intraday lane is hourly spot.
 
@@ -289,12 +290,9 @@ phase is crypto-only.
 
 ## 8. What is deliberately not built
 
-- No crypto options data adapter yet.
-- No option paper broker yet.
-- No option selector/risk engine yet.
 - No live options broker connection.
-- No historical options backtest yet.
-- No options P&L in the current dashboard.
+- No paid multi-day historical options archive; the current real replay is one free Tardis day.
+- No options P&L in the current read-only dashboard.
 - No claim that the AI squad has options edge.
 
 The animated flow is a **simulation of the intended architecture**, not a
@@ -322,13 +320,16 @@ running options strategy.
   chains for mechanics replay.
 - `src/tradingbot/options/ai_pipeline.py`: 30m Jev squad → options paper cycle.
 - `src/tradingbot/options/historical.py`: validated CSV/Parquet snapshot loader.
+- `src/tradingbot/options/tardis.py`: free Tardis first-day options-chain ingestion.
+- `scripts/ingest_tardis_options.py`, `scripts/run_options_tardis_replay.py`.
 - `config/ai_options_30m.yaml`: separate paper account.
 - `scripts/run_ai_options_30m.ps1`, `scripts/register_ai_options_30m.ps1`.
 - Tests for gates, selection, paper fills, expiry, state, replay, Deribit
   fixtures, synthetic chains, historical loading, and AI options cycle.
 - Interactive flow animation and dashboard **Options flow** view.
 
-Still missing: purchased historical chain dataset and live execution.
+Still missing: a multi-day historical chain archive and live execution. The free
+one-day sample is not evidence of edge.
 
 ### Step 0 — Implemented adapter and synthetic replay
 

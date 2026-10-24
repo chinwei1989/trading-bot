@@ -3,11 +3,12 @@
 **Status:** account gates, selector, paper broker, one-cycle pipeline, AI
 decision-to-direction adapter, 30m AI options paper cycle, Deribit public-chain
 adapter, synthetic chain generator, historical CSV/Parquet loader, and
-event-driven snapshot replay are built and tested. A purchased historical chain
-dataset is **not present yet**.
+event-driven snapshot replay are built and tested. A **free one-day Tardis
+Deribit options-chain sample** is loaded and replayed; no paid historical
+dataset has been purchased.
 **Current tests:** gates, selector, paper fills, expiry settlement, state
 round-trip, AI action mapping, Deribit fixture parsing, synthetic chains,
-historical snapshot loading, and snapshot replay.
+historical snapshot loading, Tardis free-day ingestion, and snapshot replay.
 
 The animation in `web/ai_options_flow.html` is a **simulation**, not a backtest,
 not a paper run, and not evidence of edge.
@@ -27,11 +28,11 @@ not a paper run, and not evidence of edge.
 | AI decision adapter | **Built** | Maps typed actions/weights to long/short/flat option directions |
 | Deribit public-chain adapter | **Built** | Read-only chain and USD approximation; fixture-tested |
 | Synthetic chain generator | **Built** | Constant-IV Black-Scholes mechanics test |
-| Historical chain dataset | Not built | No paid historical quote archive yet |
+| Historical chain dataset | **Free sample loaded** | Tardis first-day Deribit export; no paid archive |
 | 30m AI options paper cycle | **Built** | Jev squad → directions → gates → paper broker |
 | 30m scheduled paper task | **Built** | `TradingBotAIOptions30m` every 30 minutes |
 | Historical CSV/Parquet loader | **Built** | Validated snapshot input |
-| Purchased historical chain dataset | Missing | Needs vendor purchase |
+| Purchased historical chain dataset | Not needed for free sample | No vendor purchase made |
 | Live-chain paper forward | **Started** | Runs every 30m; not yet several days |
 | Live options | Blocked | No live gate approval |
 
@@ -181,12 +182,14 @@ It does **not** test:
 
 Useful as a first smoke test, not as evidence of profitability.
 
-### B. Historical option-chain replay — credible, paid data
+### B. Historical option-chain replay - real data
 
 Use recorded snapshots with actual bid/ask, IV, Greeks, and OI. Fill buys at the
 ask and sells at the bid, add fees and slippage, and settle at expiry.
 
-This is the right backtest for the options selector.
+This is the right backtest for the options selector. A free one-day sample is
+available from Tardis; a multi-day sample would still require a purchase or
+more free first-day files.
 
 ### C. Live paper forward — most realistic for operations
 
@@ -203,7 +206,8 @@ quote gaps, and API behavior. It is not a historical backtest and needs at least
 | Deribit public API | Live chain, ticker, Greeks, IV | Free | Not a complete free historical quote archive |
 | Deribit DVOL | Historical implied-vol index | Free | Useful for synthetic pricing |
 | CryptoDataDownload | Daily option OHLCV by expiry | Free/paid tiers | Too coarse for 30m fills |
-| Tardis.dev | Deribit historical trades, books, tickers, mark IV, Greeks | Paid subscription | Deep history; strong for replay |
+| Tardis.dev free first-day | Deribit options-chain tick data, first day of each month | **Free, no API key** | Used for the one-day replay; full history needs a paid subscription |
+| Tardis.dev full history | Deribit historical trades, books, tickers, mark IV, Greeks | Paid subscription | Deep history; not purchased |
 | CryptoStruct | Deribit option-chain day bundles, L2, mark IV, Greeks | ~€1 per contract-day / option-chain day | Day-level purchase, good for a limited replay |
 | CoinAPI | Deribit/Binance/OKX/Bybit options, Greeks, L2 | Commercial | Broad normalized coverage |
 | Amberdata | Crypto options surfaces and analytics | Commercial | Institutional-grade |
@@ -339,8 +343,57 @@ with timestamp, instrument, bid/ask, Greeks, open interest, and underlying
 price. A purchased or otherwise licensed chain sample can therefore be replayed
 without changing the engine.
 
-A paid vendor sample has **not** been purchased. That item remains blocked on
-budget/vendor selection, not code.
+### Free one-day Tardis sample
+
+Tardis makes the **first day of each month** available as CSV without an API
+key. The `options_chain` export is tick-level and covers every Deribit option.
+For 2026-10-01 the free file was **17.9 GB compressed**; the ingestion script
+streams it once and keeps the last quote per instrument at each 30-minute
+boundary.
+
+```powershell
+# Download once from Tardis (free, no API key)
+curl.exe -L --fail -o data/raw/tardis/deribit_options_chain_2026-10-01.csv.gz `
+  "https://datasets.tardis.dev/v1/deribit/options_chain/2026/10/01/OPTIONS.csv.gz"
+
+# Convert to 30-minute BTC/ETH snapshots
+uv run python scripts/ingest_tardis_options.py `
+  data/raw/tardis/deribit_options_chain_2026-10-01.csv.gz `
+  data/normalized/options_tardis_2026-10-01.csv
+
+# Replay the free day
+uv run python scripts/run_options_tardis_replay.py
+```
+
+The replay uses real bid/ask, Greeks, open interest, and underlying prices.
+Deribit inverse premiums are converted to a USD approximation by multiplying
+the coin-denominated premium by the underlying index price. The signal is a
+simple 200-bar SMA, not the AI squad, and one day cannot establish edge. No
+paid vendor data is used.
+
+Observed result for the free 2026-10-01 day:
+
+```text
+source rows          350,381,837
+snapshots (30m)       47
+contracts written     89,736
+fills                      5
+final equity         $9,968.16
+return                  -0.32%
+max drawdown             -0.38%
+fees                     $0.11
+```
+
+The only traded contract was an ETH 16-Oct-26 2750 call; BTC candidates were
+rejected mainly because one contract was above the 2% per-trade premium budget.
+One ETH leg was still open at the end of the day. There was no expiry
+settlement inside the one-day window.
+
+Output:
+
+```text
+artifacts/options_tardis/tardis_replay_2026-10-01.json
+```
 
 ## 6.3 Replay API
 
@@ -416,9 +469,10 @@ The current live gate remains **NO_GO**.
 | Snapshot replay engine | **Built** |
 | Deribit public data adapter | **Built** |
 | Synthetic 30m options replay | **Built** |
+| Free Tardis one-day real-chain replay | **Built** |
 | AI-squad 30m signal integration | **Built** |
 | 30m scheduled paper forward | **Started** |
-| Paid historical chain replay | Blocked on vendor purchase |
+| Paid multi-day historical replay | Not purchased |
 | Live pilot | Only after the hard gate |
 
 The first code milestone is complete. The next build is the **venue data adapter**
