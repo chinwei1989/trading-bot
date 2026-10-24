@@ -1,12 +1,13 @@
 # 29 — Testing and Backtesting the Options Flow
 
 **Status:** account gates, selector, paper broker, one-cycle pipeline, AI
-decision-to-direction adapter, Deribit public-chain adapter, synthetic chain
-generator, and event-driven snapshot replay are built and tested. A real
-historical chain dataset is **not built yet**.
+decision-to-direction adapter, 30m AI options paper cycle, Deribit public-chain
+adapter, synthetic chain generator, historical CSV/Parquet loader, and
+event-driven snapshot replay are built and tested. A purchased historical chain
+dataset is **not present yet**.
 **Current tests:** gates, selector, paper fills, expiry settlement, state
-round-trip, AI action mapping, Deribit fixture parsing, synthetic chains, and
-snapshot replay.
+round-trip, AI action mapping, Deribit fixture parsing, synthetic chains,
+historical snapshot loading, and snapshot replay.
 
 The animation in `web/ai_options_flow.html` is a **simulation**, not a backtest,
 not a paper run, and not evidence of edge.
@@ -27,8 +28,11 @@ not a paper run, and not evidence of edge.
 | Deribit public-chain adapter | **Built** | Read-only chain and USD approximation; fixture-tested |
 | Synthetic chain generator | **Built** | Constant-IV Black-Scholes mechanics test |
 | Historical chain dataset | Not built | No paid historical quote archive yet |
-| End-to-end live-data test | Not built | Needs recorded/live chain wiring |
-| 30m options task | Not built | No scheduler or AI signal integration |
+| 30m AI options paper cycle | **Built** | Jev squad → directions → gates → paper broker |
+| 30m scheduled paper task | **Built** | `TradingBotAIOptions30m` every 30 minutes |
+| Historical CSV/Parquet loader | **Built** | Validated snapshot input |
+| Purchased historical chain dataset | Missing | Needs vendor purchase |
+| Live-chain paper forward | **Started** | Runs every 30m; not yet several days |
 | Live options | Blocked | No live gate approval |
 
 Run the existing gate tests:
@@ -296,7 +300,49 @@ Output:
 artifacts/options_synthetic/synthetic_replay.json
 ```
 
-## 6.2 Replay API
+## 6.2 AI options paper cycle
+
+The 30m paper lane is:
+
+```text
+30m BTC/ETH bars
+→ Jev squad direction
+→ Deribit public chain
+→ portfolio gate
+→ call/put selector
+→ contract gate
+→ paper options broker
+→ report + performance + heartbeat
+```
+
+Run one cycle:
+
+```powershell
+uv run python -m tradingbot --config config/ai_options_30m.yaml ai-options-run --dry-run
+uv run python -m tradingbot --config config/ai_options_30m.yaml ai-options-run
+```
+
+Scheduled task:
+
+```text
+TradingBotAIOptions30m — every 30 minutes
+```
+
+Current first cycles returned BTC flat / ETH flat, so no option order was placed.
+The task is registered for :01/:31, remains paper-only, and has started the
+live-chain paper forward clock.
+
+### Historical snapshot input
+
+`src/tradingbot/options/historical.py` loads a validated CSV or Parquet export
+with timestamp, instrument, bid/ask, Greeks, open interest, and underlying
+price. A purchased or otherwise licensed chain sample can therefore be replayed
+without changing the engine.
+
+A paid vendor sample has **not** been purchased. That item remains blocked on
+budget/vendor selection, not code.
+
+## 6.3 Replay API
 
 The replay engine is:
 
@@ -370,9 +416,9 @@ The current live gate remains **NO_GO**.
 | Snapshot replay engine | **Built** |
 | Deribit public data adapter | **Built** |
 | Synthetic 30m options replay | **Built** |
-| Paid historical chain replay | Next |
-| AI-squad 30m signal integration | Next |
-| 30m live paper forward | 20-56 days |
+| AI-squad 30m signal integration | **Built** |
+| 30m scheduled paper forward | **Started** |
+| Paid historical chain replay | Blocked on vendor purchase |
 | Live pilot | Only after the hard gate |
 
 The first code milestone is complete. The next build is the **venue data adapter**

@@ -145,6 +145,7 @@ one-shot task repeated **hourly**; there is no long-running trading daemon:
 | 07:20 | breakout/reversal/meta sleeves |
 | 07:25 | seven-agent AI squad |
 | :01 every hour | deterministic intraday meta paper lane |
+| :01/:31 every hour | 30m AI options paper lane |
 | 07:30 | campaign health check |
 
 The dashboard auto-refresh only reads files; it never triggers a cycle or sends

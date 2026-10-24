@@ -234,13 +234,13 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Seven-agent AI squad:** separate paper account; macro → trend → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
-- **Crypto options core:** 30m flow design, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, synthetic chain generator, and event-driven snapshot replay; live execution and the 30m AI options task are not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
+- **Crypto options core:** 30m AI options paper lane, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, synthetic chain generator, historical snapshot loader, and event-driven replay; live execution is not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
-- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, and the seven-agent AI squad; writes `artifacts/CAMPAIGN_HEALTH.md`
+- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the seven-agent AI squad, hourly intraday meta, and the 30m AI options paper lane; writes `artifacts/CAMPAIGN_HEALTH.md`
 - **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
 - **Carry research lane:** two-leg spot/perp funding/basis backtest + walk-forward; full-sample looks strong, OOS DSR 0.00 / PBO 0.57, so not added to meta
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
@@ -309,7 +309,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_intraday_cycle.ps1 -DryRun
 uv run python -m tradingbot --config config/intraday_meta.yaml run --mode paper --once --no-evaluate
 powershell -ExecutionPolicy Bypass -File scripts/register_intraday_campaign.ps1
 
-# Campaign health check (includes ai_squad and intraday_meta); scheduled at 07:30 local
+# Campaign health check (includes ai_squad, intraday_meta, and ai_options_30m); scheduled at 07:30 local
 uv run python -m tradingbot health
 powershell -ExecutionPolicy Bypass -File scripts/register_health.ps1
 
@@ -364,6 +364,15 @@ uv run python -m tradingbot --config config/ai_squad.yaml ai-evaluate
 uv run python -m tradingbot --config config/ai_squad.yaml ai-status
 powershell -ExecutionPolicy Bypass -File scripts/run_ai_squad.ps1 -DryRun
 powershell -ExecutionPolicy Bypass -File scripts/register_ai_squad_campaign.ps1
+
+# 30m AI crypto-options paper lane (Deribit public chain; long premium only)
+uv run python -m tradingbot --config config/ai_options_30m.yaml ai-options-run --dry-run
+uv run python -m tradingbot --config config/ai_options_30m.yaml ai-options-run
+powershell -ExecutionPolicy Bypass -File scripts/run_ai_options_30m.ps1 -DryRun
+powershell -ExecutionPolicy Bypass -File scripts/register_ai_options_30m.ps1
+
+# Synthetic options replay (mechanics only; not evidence of edge)
+uv run python scripts/run_options_synthetic.py
 
 # Ten point-in-time dry decisions (no orders)
 uv run python scripts/jev_smoke.py

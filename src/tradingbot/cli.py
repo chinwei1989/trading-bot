@@ -475,6 +475,36 @@ def cmd_ai_run(args: argparse.Namespace) -> int:
     return 0 if result.status in {"ok", "dry_run"} else 1
 
 
+def cmd_ai_options_run(args: argparse.Namespace) -> int:
+    from tradingbot.options.ai_pipeline import run_ai_options_cycle
+
+    config = load_config(args.config)
+    try:
+        result = run_ai_options_cycle(
+            config,
+            root=ROOT,
+            dry_run=args.dry_run,
+            reset=args.reset,
+            provider_override=args.provider,
+        )
+    except Exception as exc:
+        print(f"AI options pipeline failed: {type(exc).__name__}: {exc}")
+        return 1
+    print(
+        f"[ai-options] status={result.status} provider={result.provider} "
+        f"model={result.model} equity={result.equity:,.2f} "
+        f"cash={result.cash:,.2f} directions={result.directions}"
+    )
+    if result.paper:
+        print(
+            f"  paper={result.paper.get('status')} "
+            f"fills={len(result.paper.get('fills', []))}"
+        )
+    if result.report_path:
+        print(f"  report: {result.report_path}")
+    return 0 if result.status in {"ok", "dry_run"} else 1
+
+
 def cmd_ai_evaluate(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     scorecard = build_scorecard(config, ROOT)
@@ -869,6 +899,19 @@ def build_parser() -> argparse.ArgumentParser:
         help="override the configured decision provider",
     )
     p.set_defaults(func=cmd_ai_run)
+
+    p = sub.add_parser(
+        "ai-options-run",
+        help="run one paper-only 30m AI options cycle",
+    )
+    p.add_argument("--reset", action="store_true")
+    p.add_argument("--dry-run", action="store_true")
+    p.add_argument(
+        "--provider",
+        choices=["jev", "squad", "openai_compatible", "deterministic"],
+        default=None,
+    )
+    p.set_defaults(func=cmd_ai_options_run)
 
     p = sub.add_parser("ai-status", help="show the latest AI-agent report")
     p.set_defaults(func=cmd_ai_status)

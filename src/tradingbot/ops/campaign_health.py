@@ -97,6 +97,11 @@ def default_campaigns() -> list[CampaignSpec]:
             Path("artifacts/intraday/performance.jsonl"),
             Path("artifacts/intraday/heartbeat.json"),
         ),
+        CampaignSpec(
+            "ai_options_30m",
+            Path("artifacts/ai_options_30m/performance.jsonl"),
+            Path("artifacts/ai_options_30m/heartbeat.json"),
+        ),
     ]
 
 

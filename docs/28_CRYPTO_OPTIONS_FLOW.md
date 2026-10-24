@@ -6,8 +6,8 @@ execution is **not implemented** and is not live.
 
 The deterministic options core exists and is tested: account gates, selector,
 paper options broker, one-cycle pipeline, snapshot replay, a read-only Deribit
-public-chain adapter, and a synthetic 30m replay. AI-squad signal integration,
-real historical chain data, and the 30m runtime are not built yet.
+public-chain adapter, a synthetic 30m replay, and a 30m AI options paper cycle.
+A purchased historical chain dataset and live execution are not built yet.
 
 The animation includes a proposed **breakout specialist** and a 30-minute
 options loop. Neither is running yet. The current AI squad is the seven-agent
@@ -320,12 +320,15 @@ running options strategy.
   adapter and inverse-premium USD approximation.
 - `src/tradingbot/options/synthetic.py`: constant-IV Black-Scholes synthetic
   chains for mechanics replay.
+- `src/tradingbot/options/ai_pipeline.py`: 30m Jev squad → options paper cycle.
+- `src/tradingbot/options/historical.py`: validated CSV/Parquet snapshot loader.
+- `config/ai_options_30m.yaml`: separate paper account.
+- `scripts/run_ai_options_30m.ps1`, `scripts/register_ai_options_30m.ps1`.
 - Tests for gates, selection, paper fills, expiry, state, replay, Deribit
-  fixtures, and synthetic chains.
+  fixtures, synthetic chains, historical loading, and AI options cycle.
 - Interactive flow animation and dashboard **Options flow** view.
 
-Still missing: AI-squad signal adapter, historical chain dataset, live paper
-scheduler, and live execution.
+Still missing: purchased historical chain dataset and live execution.
 
 ### Step 0 — Implemented adapter and synthetic replay
 
@@ -354,13 +357,13 @@ generator are implemented. They are research tools, not evidence of profitabilit
 - Max legs, max premium, max net delta.
 - Exit rules and expiry handling.
 
-### Step 4 — 30m AI signal lane
+### Step 4 — 30m AI signal lane ✅ built
 
 - Separate `ai_options_30m` paper account.
 - BTC/ETH only.
-- Add breakout specialist to the squad.
-- Separate task at :01/:31.
-- Per-cycle turnover cap and no-trade band.
+- Separate task at :01/:31: `TradingBotAIOptions30m`.
+- Per-cycle paper option limits and one contract per cycle.
+- Jev squad currently has no breakout specialist; that remains a future agent addition.
 
 ### Step 5 — Evidence
 

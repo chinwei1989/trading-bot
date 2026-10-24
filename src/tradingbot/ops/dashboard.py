@@ -590,6 +590,70 @@ def _render_ai_squad() -> None:
     )
 
 
+def _render_ai_options() -> None:
+    report = _load_json(
+        ROOT / "artifacts" / "ai_options_30m" / "reports" / "latest.json"
+    )
+    if report is None:
+        st.warning("No 30m AI options report yet.")
+        st.code(
+            "uv run python -m tradingbot --config config/ai_options_30m.yaml "
+            "ai-options-run",
+            language="powershell",
+        )
+        return
+    paper = report.get("paper", {})
+    account = paper.get("account_after", {})
+    check = paper.get("account_check", {})
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Options equity", f"${float(account.get('equity', 0)):,.2f}")
+    c2.metric("Cash", f"${float(account.get('cash', 0)):,.2f}")
+    c3.metric("Legs", f"{int(account.get('legs', 0))}")
+    c4.metric("Regime", str(report.get("regime", "?")))
+    c5.metric("Confidence", f"{float(report.get('confidence', 0)):.1%}")
+    st.caption(
+        f"Provider `{report.get('provider', '?')}` / `{report.get('model', '?')}` · "
+        f"as of `{report.get('as_of', '?')}` · "
+        f"available premium ${float(check.get('available_premium', 0)):,.2f} · "
+        f"max new trade ${float(check.get('max_new_trade_premium', 0)):,.2f}"
+    )
+    st.write("**Directions**")
+    directions = report.get("directions", {})
+    if directions:
+        st.dataframe(
+            pd.DataFrame(
+                [{"underlying": key, "direction": value} for key, value in directions.items()]
+            ),
+            width="stretch",
+            hide_index=True,
+        )
+    st.write("**Paper fills**")
+    fills = paper.get("fills", [])
+    if fills:
+        st.dataframe(pd.DataFrame(fills), width="stretch", hide_index=True)
+    else:
+        st.info("No option fills in this cycle.")
+    st.write("**Selector decisions**")
+    selections = paper.get("selections", [])
+    if selections:
+        st.dataframe(pd.DataFrame(selections), width="stretch", hide_index=True)
+    else:
+        st.info("No new contract selection.")
+    blockers = check.get("blockers", [])
+    if blockers:
+        st.error("Portfolio gate: " + " | ".join(str(item) for item in blockers))
+    warnings = check.get("warnings", [])
+    if warnings:
+        st.warning("Portfolio warnings: " + " | ".join(str(item) for item in warnings))
+    st.caption(
+        "Paper-only long-premium crypto options. Deribit data is converted to a "
+        "USD-marked approximation. No live broker is reachable."
+    )
+    heartbeat = read_heartbeat(ROOT / "artifacts/ai_options_30m/heartbeat.json")
+    if heartbeat:
+        st.json(heartbeat)
+
+
 def _render_intraday() -> None:
     config = _load_config(INTRADAY_CONFIG)
     perf_path = (
@@ -934,6 +998,7 @@ view = st.sidebar.radio(
         "Intraday",
         "AI agent",
         "AI squad",
+        "AI options 30m",
         "Options flow",
         "3D Office",
     ],
@@ -956,6 +1021,8 @@ def _render_selected(selected: str) -> None:
         _render_intraday()
     elif selected == "AI squad":
         _render_ai_squad()
+    elif selected == "AI options 30m":
+        _render_ai_options()
     elif selected == "Options flow":
         _render_options_flow()
     elif selected == "3D Office":
