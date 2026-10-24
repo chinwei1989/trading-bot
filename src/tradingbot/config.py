@@ -49,7 +49,7 @@ class TrendParams(BaseModel):
     target_vol: float = 0.15
     max_weight: float = 0.25
     long_short: bool = False
-    rebalance: Literal["D", "W", "M"] = "W"
+    rebalance: Literal["H", "D", "W", "M"] = "W"
     max_gross: float = 1.0
     vol_target: bool = True
 
@@ -61,7 +61,7 @@ class XsmomParams(BaseModel):
     bottom_quantile: float = 0.30
     long_short: bool = True
     max_weight: float = 0.15
-    rebalance: Literal["D", "W", "M"] = "W"
+    rebalance: Literal["H", "D", "W", "M"] = "W"
     max_gross: float = 1.0
     vol_target: bool = True
     target_vol: float = 0.20
@@ -79,7 +79,7 @@ class BreakoutParams(BaseModel):
     target_vol: float = 0.15
     max_weight: float = 0.20
     long_short: bool = False
-    rebalance: Literal["D", "W", "M"] = "W"
+    rebalance: Literal["H", "D", "W", "M"] = "W"
     max_gross: float = 1.0
     vol_target: bool = True
     volume_filter: bool = True
@@ -100,7 +100,7 @@ class ReversalParams(BaseModel):
     target_vol: float = 0.10
     max_weight: float = 0.10
     long_short: bool = False
-    rebalance: Literal["D", "W", "M"] = "D"
+    rebalance: Literal["H", "D", "W", "M"] = "D"
     max_gross: float = 0.50
     vol_target: bool = True
 
@@ -116,7 +116,7 @@ class MetaParams(BaseModel):
     )
     lookback: int = 90
     min_history: int = 30
-    rebalance: Literal["W", "M"] = "W"
+    rebalance: Literal["H", "W", "M"] = "W"
     max_sleeve_weight: float = 0.60
     max_asset_weight: float = 0.25
     max_gross: float = 0.80

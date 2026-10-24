@@ -135,8 +135,8 @@ but it contains account/equity/strategy data.
 The sidebar has **Auto-refresh**: Off / 30 seconds / 60 seconds / 5 minutes.
 It refreshes read data only. It never runs a campaign and never places an order.
 
-All trading jobs are **one-shot daily** Windows scheduled tasks. There is no
-24/7 daemon and no intraday order loop:
+The daily jobs are one-shot Windows scheduled tasks. The intraday lane is a
+one-shot task repeated **hourly**; there is no long-running trading daemon:
 
 | Local time | Task |
 |---|---|
@@ -144,6 +144,7 @@ All trading jobs are **one-shot daily** Windows scheduled tasks. There is no
 | 07:15 | single-Jev AI paper lane |
 | 07:20 | breakout/reversal/meta sleeves |
 | 07:25 | seven-agent AI squad |
+| :01 every hour | deterministic intraday meta paper lane |
 | 07:30 | campaign health check |
 
 The dashboard auto-refresh only reads files; it never triggers a cycle or sends

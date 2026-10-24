@@ -233,6 +233,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Jev evaluation:** optional TypeSafe typed-decision provider; hosted/paid, no key means fail closed; see `docs/17_JEV_EVALUATION.md`
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Seven-agent AI squad:** separate paper account; macro → trend → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
+- **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
@@ -252,6 +253,8 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 Engineering checks pass, but the strategies are **not validated for live capital** (trend DSR ≈ 0.26, XSMOM PBO ≈ 0.39). See `docs/10_SELF_EVAL.md` and `artifacts/SELF_EVAL.md`.
 
 Jev is configured and returned real typed decisions (`jev-1.14.0`) in 10 historical dry runs. The single-Jev AI paper account was reset to a clean **$10,000** on 23 Oct 2026, and `TradingBotAIPaper` runs at 07:15 daily. The seven-agent squad is a separate **$10,000** paper account; `TradingBotAISquad` runs at 07:25 daily and writes to `artifacts/ai_squad/`. Both AI scorecards are still `insufficient_data`; the hard live gate is `NO_GO`. See `artifacts/LIVE_GATE.md`.
+
+The deterministic intraday lane is a separate **$10,000** paper account updated on completed 1h crypto bars. `TradingBotIntraday` runs at :01 every hour and writes to `artifacts/intraday/`. It is an unvalidated hourly variant of the daily sleeves, not a replacement for the 56-day daily evidence. See `docs/26_INTRADAY_TRADING.md`.
 
 ### Quick start on this repo
 
@@ -284,7 +287,7 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + dashboard (Both / Deterministic / AI agent / AI squad views)
+# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad views)
 uv run python -m tradingbot evaluate --strategy trend
 powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
@@ -299,7 +302,13 @@ uv run python scripts/export_deploy_status.py
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
 powershell -ExecutionPolicy Bypass -File scripts/run_campaign.ps1
 
-# Campaign health check (includes ai_squad); scheduled at 07:30 local
+# Hourly deterministic intraday paper lane (1h completed bars; separate account)
+uv run python -m tradingbot --config config/intraday_meta.yaml refresh-bars
+powershell -ExecutionPolicy Bypass -File scripts/run_intraday_cycle.ps1 -DryRun
+uv run python -m tradingbot --config config/intraday_meta.yaml run --mode paper --once --no-evaluate
+powershell -ExecutionPolicy Bypass -File scripts/register_intraday_campaign.ps1
+
+# Campaign health check (includes ai_squad and intraday_meta); scheduled at 07:30 local
 uv run python -m tradingbot health
 powershell -ExecutionPolicy Bypass -File scripts/register_health.ps1
 
@@ -429,6 +438,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/23_DEPLOYMENT.md` | Vercel lite status app, Streamlit/Render/Docker, dashboard auth, live-refresh |
 | `docs/24_AI_SQUAD.md` | Seven-agent AI squad memory, guardrails, and runbook |
 | `docs/25_AI_SQUAD_ARCHITECTURE.md` | AI squad system design, Mermaid architecture/sequence diagrams, agent dependencies, and authority model |
+| `docs/26_INTRADAY_TRADING.md` | Hourly intraday paper lane: completed-bar data refresh, H rebalance, schedule, limits |
 
 ---
 

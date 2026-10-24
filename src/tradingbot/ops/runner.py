@@ -12,6 +12,7 @@ from typing import Literal
 import polars as pl
 
 from tradingbot.config import AppConfig, load_config
+from tradingbot.data.intraday import completed_bars, refresh_recent_bars
 from tradingbot.data.universe import load_bars_with_universe
 from tradingbot.execution.broker import OrderRequest, OrderResult, Position
 from tradingbot.execution.factory import build_broker
@@ -90,11 +91,8 @@ def _assert_live_ready(config: AppConfig, confirm_live: bool) -> None:
 
 
 def _completed_bars(bars: pl.DataFrame, interval: str) -> pl.DataFrame:
-    """Drop the current, still-forming daily bar."""
-    if interval != "1d" or bars.is_empty():
-        return bars
-    today = datetime.now(UTC).date()
-    return bars.filter(pl.col("timestamp").dt.date() < today)
+    """Drop the current, still-forming bar for any supported interval."""
+    return completed_bars(bars, interval)
 
 
 def _last_prices(bars: pl.DataFrame) -> dict[str, float]:
@@ -344,6 +342,7 @@ def run_forever(
     once: bool = False,
     reset: bool = False,
     strategy_override: str | None = None,
+    evaluate: bool = True,
     root: Path | None = None,
 ) -> int:
     root = root or Path.cwd()
@@ -355,6 +354,12 @@ def run_forever(
                 config.strategy.name = strategy_override  # type: ignore[assignment]
             if mode == "live":
                 _assert_live_ready(config, confirm_live)
+            if config.data.interval != "1d" and config.data.source == "binance":
+                refresh_recent_bars(
+                    config.data,
+                    root,
+                    limit=config.data.recent_limit,
+                )
             result = run_cycle(
                 config,
                 mode,
@@ -366,7 +371,7 @@ def run_forever(
                 f"[{result.mode}] status={result.status} equity={result.equity:,.2f} "
                 f"cash={result.cash:,.2f} orders={len(result.orders)} fills={len(result.fills)}"
             )
-            if result.status == "ok":
+            if result.status == "ok" and evaluate:
                 try:
                     from tradingbot.ops.evaluation import (
                         build_report,

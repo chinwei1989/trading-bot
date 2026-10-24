@@ -39,6 +39,7 @@ DET_CONFIGS = {
 }
 AI_CONFIG = "config/ai_agent.yaml"
 AI_SQUAD_CONFIG = "config/ai_squad.yaml"
+INTRADAY_CONFIG = "config/intraday_meta.yaml"
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -588,6 +589,103 @@ def _render_ai_squad() -> None:
     )
 
 
+def _render_intraday() -> None:
+    config = _load_config(INTRADAY_CONFIG)
+    perf_path = (
+        ROOT / config.broker.performance_path
+        if config
+        else ROOT / "artifacts/intraday/performance.jsonl"
+    )
+    heartbeat_path = (
+        ROOT / config.broker.heartbeat_path
+        if config
+        else ROOT / "artifacts/intraday/heartbeat.json"
+    )
+    state_path = (
+        ROOT / config.broker.state_path
+        if config
+        else ROOT / "artifacts/intraday/paper_state.json"
+    )
+    perf = _perf_frame(perf_path)
+    heartbeat = read_heartbeat(heartbeat_path)
+    state = _load_json(state_path)
+
+    st.subheader("Deterministic intraday paper lane")
+    st.caption(
+        "Runs on completed 1h bars. The hourly task refreshes recent Binance "
+        "bars, rebalances trend/breakout/reversal/XSMOM through the meta "
+        "allocator, and trades the separate paper account. Paper only."
+    )
+    if perf.empty and state is None:
+        st.warning("No intraday performance or paper state yet.")
+        st.code(
+            "powershell -ExecutionPolicy Bypass -File scripts/run_intraday_cycle.ps1",
+            language="powershell",
+        )
+        return
+
+    latest = perf.iloc[-1] if not perf.empty else None
+    cash = float(state.get("cash", 0.0)) if state else 0.0
+    positions = state.get("positions", {}) if state else {}
+    equity = float(latest["equity"]) if latest is not None else cash
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Intraday equity", f"${equity:,.2f}")
+    c2.metric("Cash", f"${cash:,.2f}")
+    c3.metric(
+        "Gross exposure",
+        f"{float(latest['gross_exposure']):.1%}" if latest is not None else "0.0%",
+    )
+    c4.metric("Positions", f"{len(positions)}")
+    c5.metric(
+        "Latest bar",
+        str(latest["timestamp"]) if latest is not None else "n/a",
+    )
+    if latest is not None:
+        st.caption(
+            f"Last cycle: {latest['timestamp']} | orders "
+            f"{int(latest.get('n_orders', 0))} | fills "
+            f"{int(latest.get('n_fills', 0))}"
+        )
+
+    fig = go.Figure()
+    _add_equity_trace(fig, perf_path, "Intraday meta paper", "#00897B")
+    fig.update_layout(
+        title="Hourly intraday paper equity",
+        height=420,
+        margin=dict(l=20, r=20, t=40, b=20),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch")
+
+    left, right = st.columns(2)
+    with left:
+        st.subheader("Positions")
+        if positions:
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {"asset": asset, "qty": float(pos.get("qty", 0))}
+                        for asset, pos in positions.items()
+                    ]
+                ).sort_values("asset"),
+                width="stretch",
+                hide_index=True,
+            )
+        else:
+            st.info("No positions.")
+    with right:
+        st.subheader("Heartbeat")
+        if heartbeat:
+            st.json(heartbeat)
+        else:
+            st.info("No heartbeat yet.")
+
+    st.caption(
+        "This lane is separate from the daily campaign and its 56-day evidence. "
+        "Hourly signal horizons are unvalidated; transaction costs can dominate."
+    )
+
+
 def _render_both() -> None:
     sleeve_configs = {
         "Trend": "config/base.yaml",
@@ -785,7 +883,10 @@ def _render_both() -> None:
     )
 
 
-st.set_page_config(page_title="Trading Bot - Multi-Sleeve + AI Squad", layout="wide")
+st.set_page_config(
+    page_title="Trading Bot - Multi-Sleeve + AI Squad + Intraday",
+    layout="wide",
+)
 
 # Optional access gate for hosted deployments. Local use is unchanged when the
 # environment variable is absent. Set DASHBOARD_PASSWORD in the host's secret
@@ -802,15 +903,16 @@ if _expected_password and not st.session_state.get("dashboard_authenticated"):
         st.error("Invalid password.")
     st.stop()
 
-st.title("Trading Bot - Multi-Sleeve + AI Squad")
+st.title("Trading Bot - Multi-Sleeve + AI Squad + Intraday")
 st.caption(
-    "Read-only. Separate paper sleeves plus two isolated AI lanes. No order controls. "
-    "The AI paths have no broker credentials and cannot bypass the risk policy."
+    "Read-only. Separate daily paper sleeves, an hourly intraday paper lane, and "
+    "two isolated AI lanes. No order controls. The AI paths have no broker "
+    "credentials and cannot bypass the risk policy."
 )
 
 view = st.sidebar.radio(
     "Pipeline",
-    ["Both", "Deterministic", "AI agent", "AI squad", "3D Office"],
+    ["Both", "Deterministic", "Intraday", "AI agent", "AI squad", "3D Office"],
     index=0,
 )
 refresh_label = st.sidebar.selectbox(
@@ -826,6 +928,8 @@ def _render_selected(selected: str) -> None:
         _render_deterministic()
     elif selected == "AI agent":
         _render_ai()
+    elif selected == "Intraday":
+        _render_intraday()
     elif selected == "AI squad":
         _render_ai_squad()
     elif selected == "3D Office":

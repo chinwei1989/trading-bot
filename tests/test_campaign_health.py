@@ -27,9 +27,10 @@ def _spec() -> CampaignSpec:
     )
 
 
-def test_default_campaigns_include_ai_squad() -> None:
+def test_default_campaigns_include_ai_squad_and_intraday() -> None:
     names = {campaign.name for campaign in default_campaigns()}
     assert "ai_squad" in names
+    assert "intraday_meta" in names
 
 
 def test_fresh_campaign_is_ok(tmp_path: Path) -> None:

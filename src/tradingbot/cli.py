@@ -413,8 +413,29 @@ def cmd_run(args: argparse.Namespace) -> int:
         once=args.once,
         reset=args.reset,
         strategy_override=args.strategy,
+        evaluate=not args.no_evaluate,
         root=ROOT,
     )
+
+
+def cmd_refresh_bars(args: argparse.Namespace) -> int:
+    from tradingbot.data.intraday import refresh_recent_bars
+
+    config = load_config(args.config)
+    if config.data.source != "binance":
+        raise SystemExit("refresh-bars currently supports Binance data only")
+    bars = refresh_recent_bars(
+        config.data,
+        ROOT,
+        limit=args.limit or config.data.recent_limit,
+    )
+    asset_count = int(bars["asset"].n_unique())
+    latest = str(bars["timestamp"].max())
+    print(
+        f"Refreshed {bars.height:,} completed {config.data.interval} bars "
+        f"for {asset_count} assets through {latest}"
+    )
+    return 0
 
 
 def cmd_ai_run(args: argparse.Namespace) -> int:
@@ -823,8 +844,20 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--once", action="store_true", help="run one cycle and exit")
     p.add_argument("--reset", action="store_true", help="reset paper state before the first cycle")
     p.add_argument("--confirm-live", action="store_true")
+    p.add_argument(
+        "--no-evaluate",
+        action="store_true",
+        help="skip the daily evaluation report (recommended for intraday cycles)",
+    )
     p.add_argument("--strategy", choices=["trend", "xsmom", "breakout", "reversal", "meta"], default=None)
     p.set_defaults(func=cmd_run)
+
+    p = sub.add_parser(
+        "refresh-bars",
+        help="fetch recent completed bars for the intraday paper lane",
+    )
+    p.add_argument("--limit", type=int, default=None, help="bars per symbol")
+    p.set_defaults(func=cmd_refresh_bars)
 
     p = sub.add_parser("ai-run", help="run the separate AI-agent paper pipeline")
     p.add_argument("--reset", action="store_true", help="archive AI paper state and start fresh")

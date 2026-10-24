@@ -162,8 +162,12 @@ def combine_sleeves(
 
         if params.max_asset_vol is not None:
             hist = ret_np[max(0, i - max(params.vol_window, 20) + 1) : i + 1]
-            asset_vol = np.nanstd(hist, axis=0) * np.sqrt(periods_per_year)
-            combined = np.where(asset_vol > params.max_asset_vol, 0.0, combined)
+            # Early bars can be all-NaN. Computing nanstd there emits a
+            # degrees-of-freedom warning and provides no useful vol estimate.
+            valid = hist[np.isfinite(hist).all(axis=1)]
+            if valid.shape[0] >= 2:
+                asset_vol = np.nanstd(valid, axis=0) * np.sqrt(periods_per_year)
+                combined = np.where(asset_vol > params.max_asset_vol, 0.0, combined)
 
         if params.no_trade_band > 0:
             change = np.abs(combined - last_combined)

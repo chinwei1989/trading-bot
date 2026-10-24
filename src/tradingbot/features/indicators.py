@@ -89,9 +89,10 @@ def zscore(close: pl.DataFrame, window: int) -> pl.DataFrame:
 
 
 def rebalance_dates(dates: pl.Series, freq: str = "W") -> list:
-    """Last available date per day/week/month."""
+    """Rebalance timestamps: every bar (H/D), or the last bar per week/month."""
     frame = pl.DataFrame({"timestamp": dates}).unique().sort("timestamp")
-    if freq == "D":
+    if freq in {"H", "D"}:
+        # H means "every available bar"; for a 1h store that is hourly.
         return frame["timestamp"].to_list()
     if freq == "W":
         keys = [pl.col("timestamp").dt.year().alias("y"), pl.col("timestamp").dt.week().alias("w")]

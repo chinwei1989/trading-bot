@@ -26,8 +26,8 @@ def latest_weights(weights: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def _client_id(date: str, asset: str, side: str, qty: float) -> str:
-    raw = f"{date}|{asset}|{side}|{qty:.10f}".encode()
+def _client_id(stamp: str, asset: str, side: str, qty: float) -> str:
+    raw = f"{stamp}|{asset}|{side}|{qty:.10f}".encode()
     return "tb-" + hashlib.sha1(raw).hexdigest()[:16]
 
 
@@ -43,7 +43,7 @@ def plan_orders(
     latest = latest_weights(target_weights)
     if latest.is_empty():
         return []
-    date = str(latest["timestamp"].max())[:10]
+    stamp = str(latest["timestamp"].max())
     target_map = {r["asset"]: float(r["weight"]) for r in latest.iter_rows(named=True)}
     assets = sorted(set(target_map) | set(positions))
     orders: list[OrderRequest] = []
@@ -72,7 +72,7 @@ def plan_orders(
                 asset=asset,
                 side=side,
                 qty=round(qty, 10),
-                client_order_id=_client_id(date, asset, side, qty),
+                client_order_id=_client_id(stamp, asset, side, qty),
                 reference_price=price,
             )
         )

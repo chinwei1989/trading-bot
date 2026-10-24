@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-24T02:10:06.156081+00:00",
+  "generated_at": "2026-10-24T02:27:40.074365+00:00",
   "source": "local snapshot",
   "gate": {
     "status": "NO_GO",
@@ -90,7 +90,7 @@
   },
   "health": {
     "status": "OK",
-    "generated_at": "2026-10-24T02:10:05.755930+00:00",
+    "generated_at": "2026-10-24T02:27:20.709054+00:00",
     "required_days": 56,
     "max_age_hours": 26.0,
     "campaigns": [
@@ -98,7 +98,7 @@
         "name": "trend",
         "status": "ok",
         "latest": "2026-10-23T23:00:34.381924+00:00",
-        "age_hours": 3.16,
+        "age_hours": 3.45,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -107,7 +107,7 @@
         "name": "xsmom",
         "status": "ok",
         "latest": "2026-10-23T23:00:39.203342+00:00",
-        "age_hours": 3.16,
+        "age_hours": 3.44,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -116,7 +116,7 @@
         "name": "breakout",
         "status": "ok",
         "latest": "2026-10-23T23:20:05.839792+00:00",
-        "age_hours": 2.83,
+        "age_hours": 3.12,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -125,7 +125,7 @@
         "name": "reversal",
         "status": "ok",
         "latest": "2026-10-23T23:20:17.985961+00:00",
-        "age_hours": 2.83,
+        "age_hours": 3.12,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -134,7 +134,7 @@
         "name": "meta",
         "status": "ok",
         "latest": "2026-10-23T23:20:39.650878+00:00",
-        "age_hours": 2.82,
+        "age_hours": 3.11,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -143,7 +143,7 @@
         "name": "ai",
         "status": "ok",
         "latest": "2026-10-23T23:15:05.009278+00:00",
-        "age_hours": 2.92,
+        "age_hours": 3.2,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -152,7 +152,16 @@
         "name": "ai_squad",
         "status": "ok",
         "latest": "2026-10-24T02:09:38.508833+00:00",
-        "age_hours": 0.01,
+        "age_hours": 0.3,
+        "days": 1,
+        "heartbeat": "ok",
+        "detail": "fresh paper row"
+      },
+      {
+        "name": "intraday_meta",
+        "status": "ok",
+        "latest": "2026-10-24T02:26:08.073992+00:00",
+        "age_hours": 0.02,
         "days": 1,
         "heartbeat": "ok",
         "detail": "fresh paper row"

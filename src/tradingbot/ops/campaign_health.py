@@ -92,6 +92,11 @@ def default_campaigns() -> list[CampaignSpec]:
             Path("artifacts/ai_squad/performance.jsonl"),
             Path("artifacts/ai_squad/heartbeat.json"),
         ),
+        CampaignSpec(
+            "intraday_meta",
+            Path("artifacts/intraday/performance.jsonl"),
+            Path("artifacts/intraday/heartbeat.json"),
+        ),
     ]
 
 
@@ -197,7 +202,7 @@ def format_health(report: dict[str, Any]) -> str:
         age = campaign.get("age_hours")
         age_text = f"{age:.1f}h" if age is not None else "n/a"
         lines.append(
-            f"  [{campaign['status'].upper():>7}] {campaign['name']:<9} "
+            f"  [{campaign['status'].upper():>7}] {campaign['name']:<14} "
             f"days={campaign['days']:>2} latest_age={age_text:>6} "
             f"heartbeat={campaign.get('heartbeat') or 'n/a'} "
             f"({campaign['detail']})"
