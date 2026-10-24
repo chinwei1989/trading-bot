@@ -28,5 +28,7 @@ $code = $LASTEXITCODE
     Out-File -Append -Encoding utf8 "logs/health.log"
 & $uv run python scripts/build_readiness.py 2>&1 |
     Out-File -Append -Encoding utf8 "logs/health.log"
+& powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check_host.ps1 2>&1 |
+    Out-File -Append -Encoding utf8 "logs/health.log"
 
 exit $code
