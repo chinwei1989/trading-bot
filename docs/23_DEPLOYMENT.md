@@ -66,6 +66,12 @@ DASHBOARD_PASSWORD=use-a-long-random-password
 
 The lite app then uses HTTP Basic Auth. It remains read-only.
 
+If the production URL redirects to `vercel.com/sso-api`, the project has
+**Vercel Deployment Protection / Vercel Authentication** enabled. That is a
+platform-level login, separate from `DASHBOARD_PASSWORD`. To expose the app with
+only the app password, disable Vercel Authentication in the project's
+Deployment Protection settings; keep `DASHBOARD_PASSWORD` set.
+
 ## Streamlit Community Cloud
 
 1. Push the repository.
@@ -129,8 +135,19 @@ but it contains account/equity/strategy data.
 The sidebar has **Auto-refresh**: Off / 30 seconds / 60 seconds / 5 minutes.
 It refreshes read data only. It never runs a campaign and never places an order.
 
-The trading campaigns still run on their Windows scheduled tasks at 07:00,
-07:15, 07:20, and 07:25, with health at 07:30.
+All trading jobs are **one-shot daily** Windows scheduled tasks. There is no
+24/7 daemon and no intraday order loop:
+
+| Local time | Task |
+|---|---|
+| 07:00 | deterministic trend/XSMOM campaign |
+| 07:15 | single-Jev AI paper lane |
+| 07:20 | breakout/reversal/meta sleeves |
+| 07:25 | seven-agent AI squad |
+| 07:30 | campaign health check |
+
+The dashboard auto-refresh only reads files; it never triggers a cycle or sends
+an order.
 
 The full Streamlit dashboard has "Both", "Deterministic", "AI agent", "AI
 squad", and "3D Office" views. The AI squad view reads the separate
