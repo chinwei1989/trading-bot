@@ -95,7 +95,7 @@ def build_options_live_gate(
         OptionsGateCheck(
             "options live adapter",
             False,
-            "not implemented; only read-only Deribit public data exists",
+            "testnet adapter exists; live order submission is deliberately disabled",
         )
     )
     credentials = bool(

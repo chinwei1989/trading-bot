@@ -470,8 +470,9 @@ artifacts/OPTIONS_LIVE_GATE.md
 ```
 
 It requires paper days, fills, drawdown, kill switch, live broker/venue,
-credentials, adapter, and evidence checks. It is currently **NO_GO**; the live
-adapter is deliberately not implemented.
+credentials, adapter, and evidence checks. It is currently **NO_GO**. A Deribit
+**testnet** execution adapter exists, but live order submission is deliberately
+disabled until a reviewed live execution layer and all evidence gates pass.
 
 ## 6.3 Replay API
 

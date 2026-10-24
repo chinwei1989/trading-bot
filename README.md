@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **155 tests passing**, `ruff` pass, `mypy src` pass
+- **160 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -234,7 +234,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Eight-agent AI squad:** separate paper account; macro → trend → breakout → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
-- **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
+- **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, and `docs/31_DERIBIT_EXECUTION.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
@@ -392,6 +392,9 @@ uv run python scripts/build_readiness.py
 uv run python scripts/build_options_live_gate.py
 powershell -ExecutionPolicy Bypass -File scripts/check_host.ps1
 
+# Deribit testnet read-only smoke check (requires testnet credentials)
+uv run python scripts/deribit_testnet_check.py
+
 # Ten point-in-time dry decisions (no orders)
 uv run python scripts/jev_smoke.py
 
@@ -473,6 +476,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/27_PIPELINE_COST_BREAKDOWN.md` | Actual Jev usage, data/infra/electricity, trading-cost examples, and a $10k budget |
 | `docs/28_CRYPTO_OPTIONS_FLOW.md` | Planned 30m crypto-options architecture, option selection rules, venues, and animated data-flow link |
 | `docs/29_OPTIONS_TESTING_AND_BACKTEST.md` | Options test pyramid, historical data requirements, backtest design, and acceptance gates |
+| `docs/31_DERIBIT_EXECUTION.md` | Deribit testnet execution primitives, inverse settlement math, reconciliation, and live blockers |
 
 ---
 

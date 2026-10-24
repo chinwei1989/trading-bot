@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-24T15:27:06.636550+00:00",
+  "generated_at": "2026-10-24T16:03:01.683412+00:00",
   "source": "local snapshot",
   "gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-24T15:27:03.225685+00:00",
+    "generated_at": "2026-10-24T16:02:58.379522+00:00",
     "config_strategy": "trend",
     "checks": [
       {
@@ -84,89 +84,89 @@
     ]
   },
   "health": {
-    "status": "OK",
-    "generated_at": "2026-10-24T15:27:00.905523+00:00",
+    "status": "DEGRADED",
+    "generated_at": "2026-10-24T16:02:55.676368+00:00",
     "required_days": 56,
     "max_age_hours": 26.0,
     "campaigns": [
       {
         "name": "trend",
-        "status": "ok",
+        "status": "stale",
         "latest": "2026-10-23T23:00:34.381924+00:00",
-        "age_hours": 16.44,
+        "age_hours": 17.04,
         "days": 2,
         "heartbeat": "ok",
-        "detail": "fresh paper row"
+        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
       },
       {
         "name": "xsmom",
-        "status": "ok",
+        "status": "stale",
         "latest": "2026-10-23T23:00:39.203342+00:00",
-        "age_hours": 16.44,
+        "age_hours": 17.04,
         "days": 2,
         "heartbeat": "ok",
-        "detail": "fresh paper row"
+        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
       },
       {
         "name": "breakout",
-        "status": "ok",
+        "status": "stale",
         "latest": "2026-10-23T23:20:05.839792+00:00",
-        "age_hours": 16.12,
+        "age_hours": 16.71,
         "days": 2,
         "heartbeat": "ok",
-        "detail": "fresh paper row"
+        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
       },
       {
         "name": "reversal",
-        "status": "ok",
+        "status": "stale",
         "latest": "2026-10-23T23:20:17.985961+00:00",
-        "age_hours": 16.11,
+        "age_hours": 16.71,
         "days": 2,
         "heartbeat": "ok",
-        "detail": "fresh paper row"
+        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
       },
       {
         "name": "meta",
-        "status": "ok",
+        "status": "stale",
         "latest": "2026-10-23T23:20:39.650878+00:00",
-        "age_hours": 16.11,
+        "age_hours": 16.7,
         "days": 2,
         "heartbeat": "ok",
-        "detail": "fresh paper row"
+        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
       },
       {
         "name": "ai",
-        "status": "ok",
+        "status": "stale",
         "latest": "2026-10-23T23:15:05.009278+00:00",
-        "age_hours": 16.2,
+        "age_hours": 16.8,
         "days": 2,
         "heartbeat": "ok",
-        "detail": "fresh paper row"
+        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
       },
       {
         "name": "ai_squad",
-        "status": "ok",
+        "status": "stale",
         "latest": "2026-10-24T02:09:38.508833+00:00",
-        "age_hours": 13.29,
+        "age_hours": 13.89,
         "days": 1,
         "heartbeat": "ok",
-        "detail": "fresh paper row"
+        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
       },
       {
         "name": "intraday_meta",
         "status": "ok",
-        "latest": "2026-10-24T15:01:24.148606+00:00",
-        "age_hours": 0.43,
-        "days": 1,
+        "latest": "2026-10-24T16:01:25.005047+00:00",
+        "age_hours": 0.03,
+        "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "ai_options_30m",
         "status": "ok",
-        "latest": "2026-10-24T15:01:09.438305+00:00",
-        "age_hours": 0.43,
-        "days": 1,
+        "latest": "2026-10-24T16:01:10.271563+00:00",
+        "age_hours": 0.03,
+        "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       }
@@ -210,14 +210,14 @@
       "mode": null
     },
     "intraday": {
-      "equity": 9966.405874679585,
-      "timestamp": "2026-10-24T15:01:24.148606+00:00",
+      "equity": 9961.267249181248,
+      "timestamp": "2026-10-24T16:01:25.005047+00:00",
       "days": 1,
       "mode": "paper"
     },
     "ai_options_30m": {
       "equity": 10000.0,
-      "timestamp": "2026-10-24T15:01:09.438305+00:00",
+      "timestamp": "2026-10-24T16:01:10.271563+00:00",
       "days": 1,
       "mode": null
     }
@@ -369,16 +369,16 @@
     ]
   },
   "options_evidence": {
-    "generated_at": "2026-10-24T14:48:36.074774+00:00",
+    "generated_at": "2026-10-24T15:57:28.097001+00:00",
     "status": "insufficient",
     "target_paper_days": 56,
     "paper": {
       "paper_days": 1,
-      "cycles": 11,
-      "expected_cycles": 11,
+      "cycles": 13,
+      "expected_cycles": 13,
       "cycle_coverage": 1.0,
-      "flat_cycles": 11,
-      "risk_off_cycles": 11,
+      "flat_cycles": 13,
+      "risk_off_cycles": 13,
       "orders": 0,
       "fills": 0,
       "fees": 0,
@@ -389,7 +389,7 @@
       "return_pct": 0.0,
       "max_drawdown": 0.0,
       "first_timestamp": "2026-10-24T09:00:00+00:00",
-      "last_timestamp": "2026-10-24T14:00:00+00:00",
+      "last_timestamp": "2026-10-24T15:00:00+00:00",
       "cycle_rows": [
         {
           "timestamp": "2026-10-24T09:00:00+00:00",
@@ -544,21 +544,49 @@
           "n_orders": 0,
           "n_fills": 0,
           "positions": 0
+        },
+        {
+          "timestamp": "2026-10-24T14:30:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-24T15:00:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
         }
       ],
       "recent_fills": []
     },
     "squad": {
-      "runs": 14,
-      "runs_with_risk_veto": 14,
-      "runs_with_execution_block": 13,
-      "risk_veto_assets": 28,
-      "execution_block_assets": 23,
-      "macro_risk_off_runs": 14,
-      "chair_flat_runs": 14,
+      "runs": 16,
+      "runs_with_risk_veto": 16,
+      "runs_with_execution_block": 14,
+      "risk_veto_assets": 32,
+      "execution_block_assets": 25,
+      "macro_risk_off_runs": 16,
+      "chair_flat_runs": 16,
       "latest": {
-        "run_id": "20261024T143107495860Z_71fa3a97",
-        "as_of": "2026-10-24T14:00:00+00:00",
+        "run_id": "20261024T153107419940Z_6fada750",
+        "as_of": "2026-10-24T15:00:00+00:00",
         "macro_regime": "risk_off",
         "risk_regime": "risk_off",
         "execution_regime": "stressed",
@@ -642,7 +670,7 @@
   },
   "options_live_gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-24T15:27:04.765699+00:00",
+    "generated_at": "2026-10-24T16:02:59.887250+00:00",
     "checks": [
       {
         "name": "options paper days",
@@ -671,13 +699,13 @@
       },
       {
         "name": "options live venue",
-        "passed": false,
-        "detail": "exchange=kraken (allowed: ['bybit', 'deribit', 'okx'])"
+        "passed": true,
+        "detail": "exchange=deribit (allowed: ['bybit', 'deribit', 'okx'])"
       },
       {
         "name": "options live adapter",
         "passed": false,
-        "detail": "not implemented; only read-only Deribit public data exists"
+        "detail": "testnet adapter exists; live order submission is deliberately disabled"
       },
       {
         "name": "options credentials",
@@ -694,37 +722,37 @@
       "options paper days",
       "options paper fills",
       "options live broker config",
-      "options live venue",
       "options live adapter",
       "options credentials",
       "options evidence"
     ]
   },
   "readiness": {
-    "generated_at": "2026-10-24T15:27:06.265520+00:00",
+    "generated_at": "2026-10-24T16:03:01.319310+00:00",
     "generated_from": {
       "self_eval": true,
       "campaign_health": true,
       "live_gate": true,
       "options_evidence": true
     },
-    "code_status": "PASS",
-    "health_status": "OK",
+    "code_status": "FAIL",
+    "health_status": "DEGRADED",
     "live_gate": "NO_GO",
     "options_live_gate": "NO_GO",
     "host_status": "DEGRADED",
     "host_ready": false,
     "host_recommendations": [
-      "Run an elevated PowerShell: Set-Service w32time -StartupType Automatic; Start-Service w32time; w32tm /resync",
       "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
     ],
     "options_status": "insufficient",
     "paper_days": 1,
     "target_paper_days": 56,
-    "paper_ready": true,
+    "paper_ready": false,
     "paper_evidence_ready": false,
     "live_ready": false,
     "blockers": [
+      "code self-evaluation is not PASS",
+      "campaign health is not OK",
       "live gate is NO_GO",
       "host readiness is DEGRADED",
       "forward options evidence has 1 of 56 paper days",
@@ -745,13 +773,11 @@
       "options paper days",
       "options paper fills",
       "options live broker config",
-      "options live venue",
       "options live adapter",
       "options credentials",
       "options evidence"
     ],
     "host_blockers": [
-      "Run an elevated PowerShell: Set-Service w32time -StartupType Automatic; Start-Service w32time; w32tm /resync",
       "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
     ]
   }

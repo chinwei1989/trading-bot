@@ -56,7 +56,7 @@ risk:
 broker:
   name: paper
   paper: true
-  exchange: kraken
+  exchange: deribit
   sandbox: true
   quote_currency: USDT
   allow_short: false

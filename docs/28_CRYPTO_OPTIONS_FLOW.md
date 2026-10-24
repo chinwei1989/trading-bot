@@ -322,6 +322,8 @@ running options strategy.
 - `src/tradingbot/options/historical.py`: validated CSV/Parquet snapshot loader.
 - `src/tradingbot/options/tardis.py`: free Tardis first-day options-chain ingestion.
 - `src/tradingbot/options/audit.py`: append-only fill/settlement audit journal.
+- `src/tradingbot/options/deribit_execution.py`: testnet execution, inverse
+  settlement math, and position reconciliation; live orders disabled.
 - `src/tradingbot/options/live_gate.py`: options-specific hard live gate.
 - `src/tradingbot/ops/options_evidence.py`: read-only forward/replay evidence scorecard.
 - `src/tradingbot/ops/readiness.py`: paper/live readiness summary.
