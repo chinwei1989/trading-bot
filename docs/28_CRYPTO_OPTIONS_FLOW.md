@@ -10,7 +10,7 @@ public-chain adapter, a synthetic 30m replay, and a 30m AI options paper cycle.
 A purchased historical chain dataset and live execution are not built yet.
 
 The animation includes a proposed **breakout specialist** and a 30-minute
-options loop. Neither is running yet. The current AI squad is the seven-agent
+options loop. Neither is running yet. The current AI squad is the eight-agent
 daily spot squad; the current deterministic intraday lane is hourly spot.
 
 **Phase 1 scope:** BTC and ETH options, 30-minute decision loop, paper-only.

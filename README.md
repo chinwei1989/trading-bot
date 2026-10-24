@@ -232,7 +232,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Separate AI-agent paper pipeline:** own config, account, journal, performance, reports, and audit trail; deterministic policy retains veto power; see `docs/16_AI_AGENT_PIPELINE.md`
 - **Jev evaluation:** optional TypeSafe typed-decision provider; hosted/paid, no key means fail closed; see `docs/17_JEV_EVALUATION.md`
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
-- **Seven-agent AI squad:** separate paper account; macro → trend → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
+- **Eight-agent AI squad:** separate paper account; macro → trend → breakout → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
 - **Crypto options core:** 30m AI options paper lane, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, synthetic chain generator, historical snapshot loader, and event-driven replay; live execution is not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
@@ -240,7 +240,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
-- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the seven-agent AI squad, hourly intraday meta, and the 30m AI options paper lane; writes `artifacts/CAMPAIGN_HEALTH.md`
+- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the eight-agent AI squad, hourly intraday meta, and the 30m AI options paper lane; writes `artifacts/CAMPAIGN_HEALTH.md`
 - **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
 - **Carry research lane:** two-leg spot/perp funding/basis backtest + walk-forward; full-sample looks strong, OOS DSR 0.00 / PBO 0.57, so not added to meta
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
@@ -253,7 +253,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 
 Engineering checks pass, but the strategies are **not validated for live capital** (trend DSR ≈ 0.26, XSMOM PBO ≈ 0.39). See `docs/10_SELF_EVAL.md` and `artifacts/SELF_EVAL.md`.
 
-Jev is configured and returned real typed decisions (`jev-1.14.0`) in 10 historical dry runs. The single-Jev AI paper account was reset to a clean **$10,000** on 23 Oct 2026, and `TradingBotAIPaper` runs at 07:15 daily. The seven-agent squad is a separate **$10,000** paper account; `TradingBotAISquad` runs at 07:25 daily and writes to `artifacts/ai_squad/`. Both AI scorecards are still `insufficient_data`; the hard live gate is `NO_GO`. See `artifacts/LIVE_GATE.md`.
+Jev is configured and returned real typed decisions (`jev-1.14.0`) in 10 historical dry runs. The single-Jev AI paper account was reset to a clean **$10,000** on 23 Oct 2026, and `TradingBotAIPaper` runs at 07:15 daily. The eight-agent squad is a separate **$10,000** paper account; `TradingBotAISquad` runs at 07:25 daily and writes to `artifacts/ai_squad/`. Both AI scorecards are still `insufficient_data`; the hard live gate is `NO_GO`. See `artifacts/LIVE_GATE.md`.
 
 The deterministic intraday lane is a separate **$10,000** paper account updated on completed 1h crypto bars. `TradingBotIntraday` runs at :01 every hour and writes to `artifacts/intraday/`. It is an unvalidated hourly variant of the daily sleeves, not a replacement for the 56-day daily evidence. See `docs/26_INTRADAY_TRADING.md`.
 
@@ -355,8 +355,8 @@ powershell -ExecutionPolicy Bypass -File scripts/run_ai_pipeline.ps1
 # Optional separate daily task (07:15), after configuring a provider:
 powershell -ExecutionPolicy Bypass -File scripts/register_ai_campaign.ps1
 
-# Seven-agent AI squad paper lane
-# macro -> trend -> XSMOM -> sentiment -> risk -> execution -> chair
+# Eight-agent AI squad paper lane
+# macro -> trend -> breakout -> XSMOM -> sentiment -> risk -> execution -> chair
 # Separate $10,000 account under artifacts/ai_squad; scheduled at 07:25 local.
 uv run python -m tradingbot --config config/ai_squad.yaml ai-run --dry-run
 uv run python -m tradingbot --config config/ai_squad.yaml ai-run
@@ -449,7 +449,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/21_PIT_AND_FUNDING.md` | Campaign health, listing-aware PIT spans, funding data and carry caveats |
 | `docs/22_CARRY_AND_EXTENDED_PIT.md` | Two-leg carry research, walk-forward result, extended delisted sample |
 | `docs/23_DEPLOYMENT.md` | Vercel lite status app, Streamlit/Render/Docker, dashboard auth, live-refresh |
-| `docs/24_AI_SQUAD.md` | Seven-agent AI squad memory, guardrails, and runbook |
+| `docs/24_AI_SQUAD.md` | Eight-agent AI squad memory, guardrails, and runbook |
 | `docs/25_AI_SQUAD_ARCHITECTURE.md` | AI squad system design, Mermaid architecture/sequence diagrams, agent dependencies, and authority model |
 | `docs/26_INTRADAY_TRADING.md` | Hourly intraday paper lane: completed-bar data refresh, H rebalance, schedule, limits |
 | `docs/27_PIPELINE_COST_BREAKDOWN.md` | Actual Jev usage, data/infra/electricity, trading-cost examples, and a $10k budget |

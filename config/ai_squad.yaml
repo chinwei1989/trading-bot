@@ -1,4 +1,4 @@
-# Separate seven-agent AI squad paper lane.
+# Separate eight-agent AI squad paper lane.
 #
 # This account is intentionally separate from the single-provider Jev account
 # in config/ai_agent.yaml so the two designs can be compared without mixing
@@ -6,8 +6,8 @@
 # live execution path.
 #
 # Roster:
-#   macro_analyst -> trend_analyst -> xsmom_analyst -> sentiment_analyst
-#   -> risk_critic -> execution_analyst -> chair
+#   macro_analyst -> trend_analyst -> breakout_analyst -> xsmom_analyst
+#   -> sentiment_analyst -> risk_critic -> execution_analyst -> chair
 #
 # All specialists are role-scoped typed Jev calls. The chair produces the final
 # typed decision; deterministic policy and risk checks retain veto power.

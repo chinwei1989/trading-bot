@@ -1,8 +1,8 @@
 # 24 — AI Squad Memory
 
 **Saved:** 24 Oct 2026  
-**Status:** seven-agent squad built, tested, and scheduled daily at 07:25 local; paper-only; 1 paper day initialized.
-**Model:** all seven agents currently use **Jev** typed calls. No other LLM is used.
+**Status:** eight-agent squad built, tested, and scheduled daily at 07:25 local; paper-only; 1 paper day initialized.
+**Model:** all eight agents currently use **Jev** typed calls. No other LLM is used.
 **Architecture:** `docs/25_AI_SQUAD_ARCHITECTURE.md`.
 
 This document is the persistent project memory for the AI squad decision. The
@@ -22,6 +22,7 @@ AI SQUAD LANE — separate paper account
 data
   -> macro_analyst
   -> trend_analyst
+  -> breakout_analyst
   -> xsmom_analyst
   -> sentiment_analyst
   -> risk_critic
@@ -50,7 +51,7 @@ The deterministic quant lane does not call Jev at all.
 
 ### Will we use other LLM providers?
 
-Not in this build. All seven roles use `JevProvider.ask()`.
+Not in this build. All eight roles use `JevProvider.ask()`.
 
 That is intentional: Jev returns typed choices, is cheap at this scale, and
 avoids free-form agent chat. A future version could assign a different model to
@@ -66,15 +67,16 @@ needed for the current squad.
 |---|---|---|---|
 | 1 | `macro_analyst` | Macro/regime backdrop | `risk_on / neutral / risk_off` |
 | 2 | `trend_analyst` | Time-series trend | per-asset `long / flat` |
-| 3 | `xsmom_analyst` | Cross-sectional relative strength | per-asset leader/follower choice |
-| 4 | `sentiment_analyst` | Sentiment from a supplied feed | `supportive / neutral / negative / unavailable` |
-| 5 | `risk_critic` | Attack the proposals | per-asset `approve / reduce / veto` |
-| 6 | `execution_analyst` | Liquidity and feasibility | per-asset `allow / reduce / block` |
-| 7 | `chair` | Synthesise every memo | final regime + per-asset `long / flat` |
+| 3 | `breakout_analyst` | Range break and follow-through | per-asset `long / flat` |
+| 4 | `xsmom_analyst` | Cross-sectional relative strength | per-asset leader/follower choice |
+| 5 | `sentiment_analyst` | Sentiment from a supplied feed | `supportive / neutral / negative / unavailable` |
+| 6 | `risk_critic` | Attack the proposals | per-asset `approve / reduce / veto` |
+| 7 | `execution_analyst` | Liquidity and feasibility | per-asset `allow / reduce / block` |
+| 8 | `chair` | Synthesise every memo | final regime + per-asset `long / flat` |
 
 The sentiment agent **abstains without an LLM call** when
-`data/normalized/sentiment.parquet` is absent. The macro, trend, XSMOM, risk,
-execution, and chair agents always run.
+`data/normalized/sentiment.parquet` is absent. Macro, trend, breakout, XSMOM,
+risk, execution, and chair always run.
 
 ---
 
@@ -86,11 +88,12 @@ Each run writes:
 artifacts/ai_squad/squad/<run_id>/
   01_macro.json
   02_trend.json
-  03_xsmom.json
-  04_sentiment.json
-  05_risk.json
-  06_execution.json
-  07_chair.json
+  03_breakout.json
+  04_xsmom.json
+  05_sentiment.json
+  06_risk.json
+  07_execution.json
+  08_chair.json
   manifest.json
 ```
 
@@ -133,8 +136,8 @@ tool access.
 
 The squad makes **six to seven Jev calls per cycle**:
 
-- six when sentiment data is unavailable;
-- seven when a sentiment feed exists.
+- seven when sentiment data is unavailable;
+- eight when a sentiment feed exists.
 
 Everything else uses the same point-in-time context. Jev pricing is per input
 token; a few thousand tokens per call is a fraction of a cent per day. The
@@ -171,11 +174,11 @@ the chair chose flat for all eight assets. The dashboard has a dedicated
 **AI squad** view and the Vercel lite page has a separate squad status line.
 
 **Stage 1 history:** the original three-agent version (`trend -> risk -> chair`)
-completed one real three-call dry run on 24 Oct 2026. The full seven-agent
+completed one real three-call dry run on 24 Oct 2026. The full eight-agent
 version replaced it after the user asked to build the rest.
 
 **Full-roster smoke run:** 24 Oct 2026 completed with `jev-1.14.0`; sentiment
-abstained because no feed exists, so six Jev calls were made and all seven memos
+abstained because no feed exists, so seven Jev calls were made and all eight memos
 were written. The chair chose flat, risk issued several vetoes, and execution
 blocked several assets. No orders were sent. This validates orchestration, not
 trading skill.

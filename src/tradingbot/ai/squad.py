@@ -1,4 +1,4 @@
-"""A seven-agent, typed-decision squad for the separate AI paper lane.
+"""An eight-agent, typed-decision squad for the separate AI paper lane.
 
 Every specialist is a separate, role-scoped Jev call. They do not chat freely
 and they do not call tools. Each writes a typed memo to a shared blackboard;
@@ -346,6 +346,50 @@ class SquadProvider:
             }
         return questions
 
+    def _breakout_questions(self, assets: list[str]) -> dict[str, dict[str, Any]]:
+        criteria = {
+            "long": (
+                "Price has cleared a recent range high with confirming volume; "
+                "the breakout is not obviously exhausted."
+            ),
+            "flat": (
+                "No valid range break, the volume confirmation is weak, or the "
+                "move looks like a failed breakout."
+            ),
+        }
+        if self.config.policy.allow_short:
+            criteria["short"] = (
+                "Price has broken a recent range low with confirming volume; "
+                "the breakdown is not obviously exhausted."
+            )
+        questions: dict[str, dict[str, Any]] = {
+            "breakout_regime": {
+                "type": "choice",
+                "instructions": (
+                    "You are the breakout analyst. Classify the broad breakout "
+                    "environment using only the supplied state and prior memos. "
+                    "Do not choose position sizes or execution."
+                ),
+                "criteria": {
+                    "risk_on": "Range breaks are following through across the market.",
+                    "neutral": "Breakouts are mixed or unconfirmed.",
+                    "risk_off": "Breakdowns dominate or breakouts are failing.",
+                },
+            }
+        }
+        for asset in assets:
+            questions[f"breakout_{asset}"] = {
+                "type": "choice",
+                "instructions": (
+                    f"You are the breakout analyst. Judge {asset} using recent "
+                    "highs/lows, range position, volume and false-break risk. "
+                    "Choose long only when a range break is confirmed; choose "
+                    "flat when evidence is weak. Do not size the position."
+                ),
+                "criteria": criteria,
+            }
+        return questions
+
     def _xsmom_questions(self, assets: list[str]) -> dict[str, dict[str, Any]]:
         criteria = {
             "long": (
@@ -500,7 +544,7 @@ class SquadProvider:
             "regime": {
                 "type": "choice",
                 "instructions": (
-                    "You are the chair of a seven-agent paper-trading squad. "
+                    "You are the chair of an eight-agent paper-trading squad. "
                     "Synthesise every memo into one market regime. The risk "
                     "critic's veto and the execution analyst's block are "
                     "binding. Do not invent assets."
@@ -613,7 +657,45 @@ class SquadProvider:
         metas["trend"] = trend_meta
         board.write_memo(2, trend_memo)
 
-        # 3. Cross-sectional momentum.
+        # 3. Breakout.
+        breakout_answers, breakout_meta = self._ask(
+            self._stage_context(context, stage="breakout", memos=memos),
+            self._breakout_questions(assets),
+        )
+        breakout_choices, breakout_conf = _asset_choices(
+            breakout_answers,
+            assets,
+            prefix="breakout_",
+            allowed={"long", "flat", "short"},
+            default="flat",
+        )
+        if not self.config.policy.allow_short:
+            breakout_choices = {
+                asset: "flat" if choice == "short" else choice
+                for asset, choice in breakout_choices.items()
+            }
+        breakout_regime, _ = _choice(
+            breakout_answers,
+            "breakout_regime",
+            {"risk_on", "neutral", "risk_off"},
+            "neutral",
+        )
+        breakout_memo = _memo(
+            agent="breakout_analyst",
+            stage="breakout",
+            as_of=as_of_iso,
+            answers=breakout_answers,
+            meta=breakout_meta,
+            choices=breakout_choices,
+            choice_confidence=breakout_conf,
+            regime=breakout_regime,
+            notes="Breakout signal only; no sizing or execution.",
+        )
+        memos["breakout"] = breakout_memo
+        metas["breakout"] = breakout_meta
+        board.write_memo(3, breakout_memo)
+
+        # 4. Cross-sectional momentum.
         xs_answers, xs_meta = self._ask(
             self._stage_context(context, stage="xsmom", memos=memos),
             self._xsmom_questions(assets),
@@ -649,9 +731,9 @@ class SquadProvider:
         )
         memos["xsmom"] = xs_memo
         metas["xsmom"] = xs_meta
-        board.write_memo(3, xs_memo)
+        board.write_memo(4, xs_memo)
 
-        # 4. Sentiment. Abstain without a feed; no paid call for empty data.
+        # 5. Sentiment. Abstain without a feed; no paid call for empty data.
         if self._sentiment_available(context):
             sent_answers, sent_meta = self._ask(
                 self._stage_context(context, stage="sentiment", memos=memos),
@@ -693,9 +775,9 @@ class SquadProvider:
                 ),
             )
         memos["sentiment"] = sent_memo
-        board.write_memo(4, sent_memo)
+        board.write_memo(5, sent_memo)
 
-        # 5. Risk critic.
+        # 6. Risk critic.
         risk_answers, risk_meta = self._ask(
             self._stage_context(context, stage="risk", memos=memos),
             self._risk_questions(assets),
@@ -726,9 +808,9 @@ class SquadProvider:
         )
         memos["risk"] = risk_memo
         metas["risk"] = risk_meta
-        board.write_memo(5, risk_memo)
+        board.write_memo(6, risk_memo)
 
-        # 6. Execution / TCA critic.
+        # 7. Execution / TCA critic.
         exec_answers, exec_meta = self._ask(
             self._stage_context(context, stage="execution", memos=memos),
             self._execution_questions(assets),
@@ -762,9 +844,9 @@ class SquadProvider:
         )
         memos["execution"] = exec_memo
         metas["execution"] = exec_meta
-        board.write_memo(6, exec_memo)
+        board.write_memo(7, exec_memo)
 
-        # 7. Chair: final synthesis.
+        # 8. Chair: final synthesis.
         chair_answers, chair_meta = self._ask(
             self._stage_context(context, stage="chair", memos=memos),
             self._chair_questions(assets),
@@ -777,6 +859,7 @@ class SquadProvider:
         )
         if chair_regime == "risk_on" and (
             macro_regime == "risk_off"
+            or breakout_regime == "risk_off"
             or risk_regime == "risk_off"
             or exec_regime == "stressed"
         ):
@@ -842,7 +925,7 @@ class SquadProvider:
         )
         memos["chair"] = chair_memo
         metas["chair"] = chair_meta
-        board.write_memo(7, chair_memo)
+        board.write_memo(8, chair_memo)
 
         model = str(chair_meta.get("model") or macro_meta.get("model") or self.config.model)
         board.write_manifest(
@@ -852,6 +935,7 @@ class SquadProvider:
             agents=[
                 "macro_analyst",
                 "trend_analyst",
+                "breakout_analyst",
                 "xsmom_analyst",
                 "sentiment_analyst",
                 "risk_critic",
@@ -901,8 +985,8 @@ class SquadProvider:
             actions=actions,
             force_rebalance=force_rebalance,
             notes=(
-                "7-agent typed squad: macro -> trend -> xsmom -> sentiment -> "
-                "risk -> execution -> chair. Risk vetoes and execution blocks "
+                "8-agent typed squad: macro -> trend -> breakout -> xsmom -> "
+                "sentiment -> risk -> execution -> chair. Risk vetoes and execution blocks "
                 f"force a rebalance. Blackboard: {relative_board}."
             ),
             usage=total_usage,

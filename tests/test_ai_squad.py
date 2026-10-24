@@ -83,6 +83,11 @@ class FakeSquadLLM:
                 "trend_BTC": {"choice": "long", "confidence": 0.9},
                 "trend_ETH": {"choice": "long", "confidence": 0.8},
             },
+            "breakout": {
+                "breakout_regime": {"choice": "neutral", "confidence": 0.7},
+                "breakout_BTC": {"choice": "long", "confidence": 0.8},
+                "breakout_ETH": {"choice": "flat", "confidence": 0.6},
+            },
             "xsmom": {
                 "xs_regime": {"choice": "risk_on", "confidence": 0.8},
                 "xs_BTC": {"choice": "long", "confidence": 0.85},
@@ -117,6 +122,8 @@ class FakeSquadLLM:
             stage = "macro"
         elif "trend_BTC" in keys:
             stage = "trend"
+        elif "breakout_BTC" in keys:
+            stage = "breakout"
         elif "xs_BTC" in keys:
             stage = "xsmom"
         elif "sentiment_BTC" in keys:
@@ -150,44 +157,48 @@ def test_full_squad_writes_blackboard_and_enforces_guardrails(tmp_path: Path) ->
     assert actions["ETH"].action == "long"
     assert actions["ETH"].confidence == 0.45
     assert decision.force_rebalance is True
-    assert decision.usage == {"input_tokens": 700, "output_tokens": 70}
-    assert decision.latency_ms == 87.5
+    assert decision.usage == {"input_tokens": 800, "output_tokens": 80}
+    assert decision.latency_ms == 100.0
     assert decision.raw["run_id"]
 
     board = tmp_path / "artifacts" / "ai_squad" / "squad" / str(decision.raw["run_id"])
     for name in (
         "01_macro.json",
         "02_trend.json",
-        "03_xsmom.json",
-        "04_sentiment.json",
-        "05_risk.json",
-        "06_execution.json",
-        "07_chair.json",
+        "03_breakout.json",
+        "04_xsmom.json",
+        "05_sentiment.json",
+        "06_risk.json",
+        "07_execution.json",
+        "08_chair.json",
         "manifest.json",
     ):
         assert (board / name).exists(), name
 
     manifest = (board / "manifest.json").read_text(encoding="utf-8")
     assert "macro_analyst" in manifest
+    assert "breakout_analyst" in manifest
     assert "xsmom_analyst" in manifest
     assert "sentiment_analyst" in manifest
     assert "execution_analyst" in manifest
     assert "risk_critic" in manifest
     assert "chair" in manifest
 
-    assert len(llm.calls) == 7
-    risk_state = llm.calls[4][0]
-    exec_state = llm.calls[5][0]
-    chair_state = llm.calls[6][0]
+    assert len(llm.calls) == 8
+    risk_state = llm.calls[5][0]
+    exec_state = llm.calls[6][0]
+    chair_state = llm.calls[7][0]
     assert set(risk_state["squad"]["memos"]) == {
         "macro",
         "trend",
+        "breakout",
         "xsmom",
         "sentiment",
     }
     assert set(exec_state["squad"]["memos"]) == {
         "macro",
         "trend",
+        "breakout",
         "xsmom",
         "sentiment",
         "risk",
@@ -195,6 +206,7 @@ def test_full_squad_writes_blackboard_and_enforces_guardrails(tmp_path: Path) ->
     assert set(chair_state["squad"]["memos"]) == {
         "macro",
         "trend",
+        "breakout",
         "xsmom",
         "sentiment",
         "risk",
@@ -237,11 +249,11 @@ def test_sentiment_abstains_without_a_feed(tmp_path: Path) -> None:
     llm = FakeSquadLLM()
     provider = SquadProvider(_config(), llm=llm, root=tmp_path)
     decision = provider.decide(context)
-    assert len(llm.calls) == 6
+    assert len(llm.calls) == 7
     board = tmp_path / "artifacts" / "ai_squad" / "squad" / str(decision.raw["run_id"])
     import json
 
-    memo = json.loads((board / "04_sentiment.json").read_text(encoding="utf-8"))
+    memo = json.loads((board / "05_sentiment.json").read_text(encoding="utf-8"))
     assert memo["model"] == "none"
     assert set(memo["choices"].values()) == {"unavailable"}
     assert "without an LLM call" in memo["notes"]

@@ -208,14 +208,14 @@ All views are read-only. The dashboard has no order controls and no config mutat
 
 ---
 
-## 9. Seven-agent squad
+## 9. Eight-agent squad
 
-The AI lane now has an optional separate seven-agent paper account:
+The AI lane now has an optional separate eight-agent paper account:
 
-`macro -> trend -> XSMOM -> sentiment -> risk -> execution -> chair`
+`macro -> trend -> breakout -> XSMOM -> sentiment -> risk -> execution -> chair`
 
 Every specialist is a role-scoped Jev typed call. Each writes a memo to a
-shared blackboard, and the chair receives all six prior memos. The squad still
+shared blackboard, and the chair receives all seven prior memos. The squad still
 passes through this pipeline's deterministic policy and risk checks; risk
 vetoes and execution blocks are enforced by code. It is deliberately separate
 from the single-provider Jev account so the designs can be compared. See

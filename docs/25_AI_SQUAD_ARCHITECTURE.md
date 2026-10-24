@@ -1,7 +1,13 @@
 # 25 — AI Squad System Design
 
 **Status:** implemented, paper-only, scheduled daily at 07:25 local; 1 paper day initialized.
-**Scope:** the separate seven-agent AI paper lane. The deterministic quant lane is unchanged and does not use Jev.  
+**Scope:** the separate eight-agent AI paper lane. The deterministic quant lane is unchanged and does not use Jev.
+
+> **Roster update:** `breakout_analyst` was added as stage 3 after the original
+> diagrams below were written. The authoritative current roster and blackboard
+> file order are in `docs/24_AI_SQUAD.md`. The diagrams below describe the
+> original seven-stage dependency shape; inserting breakout after trend adds one
+> more memo between trend and XSMOM, and later agents receive it too.
 **Code:** `src/tradingbot/ai/squad.py`, `src/tradingbot/ai/pipeline.py`, `src/tradingbot/ai/policy.py`.  
 **Config:** `config/ai_squad.yaml`.  
 **Memory:** `docs/24_AI_SQUAD.md`.
@@ -78,15 +84,15 @@ state, reports, performance, or order paths.
 | Risk engine | Hard risk checks and kill switch | No |
 | Paper broker | Executes the approved paper orders | Paper only |
 
-**Jev is the model behind all seven agents, but Jev never receives broker
+**Jev is the model behind all eight agents, but Jev never receives broker
 credentials and never writes an order.** The chair is the final AI decision;
 the deterministic policy is the final capital-allocation authority.
 
-### Same model, seven roles
+### Same model, eight roles
 
 This is a multi-agent **orchestration**, not seven different models:
 
-- all seven roles call the same Jev endpoint/model;
+- all eight roles call the same Jev endpoint/model;
 - each call has a different role prompt and typed question set;
 - agents return typed choices, not free-form chat;
 - no agent calls tools, browses, or reads the broker;
@@ -554,7 +560,7 @@ become a different strategy.
 
 The dependencies are real: risk needs proposals, execution needs risk, and the
 chair needs every memo. Running sequentially makes the information flow
-auditable and deterministic. The cost is latency: six or seven Jev calls in
+auditable and deterministic. The cost is latency: seven or eight Jev calls in
 series. At Jev’s reported speed and this context size, that is still seconds,
 not minutes.
 
@@ -612,8 +618,8 @@ Current status:
 - included in campaign health;
 - dedicated **AI squad** Streamlit view and Vercel squad status line;
 - one full-roster dry run and one actual paper cycle completed;
-- six Jev calls because sentiment data is absent;
-- all seven memos were written;
+- seven Jev calls because sentiment data is absent;
+- all eight memos were written;
 - no orders were sent (the chair chose flat).
 
 The deterministic strategy freeze and the 56-day evidence window are unchanged.
