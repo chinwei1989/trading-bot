@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 from typing import Any
 
+from tradingbot.options.live_gate import build_options_live_gate
+
 
 def _load_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
@@ -23,6 +25,13 @@ def build_readiness(root: Path) -> dict[str, Any]:
     live_gate = _load_json(root / "artifacts" / "LIVE_GATE.json")
     options = _load_json(root / "artifacts" / "options_evidence" / "latest.json")
     paper = options.get("paper", {}) if options else {}
+    try:
+        options_live_gate = build_options_live_gate(root)
+    except Exception as exc:
+        options_live_gate = {
+            "status": "missing",
+            "failed": [f"{type(exc).__name__}: {exc}"],
+        }
     blockers: list[str] = []
     if not self_eval:
         blockers.append("self-evaluation has not been run")
@@ -40,6 +49,8 @@ def build_readiness(root: Path) -> dict[str, Any]:
         blockers.append(
             f"forward options evidence has {paper.get('paper_days', 0)} of 56 paper days"
         )
+    if options_live_gate.get("status") != "GO":
+        blockers.append("options live gate is NO_GO")
     blockers.append("no live options execution adapter or venue is configured")
     return {
         "generated_from": {
@@ -51,6 +62,7 @@ def build_readiness(root: Path) -> dict[str, Any]:
         "code_status": self_eval.get("status") if self_eval else "missing",
         "health_status": health.get("status") if health else "missing",
         "live_gate": live_gate.get("status") if live_gate else "missing",
+        "options_live_gate": options_live_gate.get("status", "missing"),
         "options_status": options.get("status") if options else "missing",
         "paper_days": int(paper.get("paper_days") or 0),
         "target_paper_days": int(
@@ -69,4 +81,5 @@ def build_readiness(root: Path) -> dict[str, Any]:
         "live_ready": False,
         "blockers": blockers,
         "live_gate_failed": live_gate.get("failed", []) if live_gate else [],
+        "options_live_gate_failed": options_live_gate.get("failed", []),
     }

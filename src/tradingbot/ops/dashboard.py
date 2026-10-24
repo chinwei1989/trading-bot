@@ -663,12 +663,13 @@ def _render_readiness() -> None:
         "Read-only operational summary. Paper readiness and live readiness are "
         "separate. No view or button can place an order."
     )
-    c1, c2, c3, c4, c5 = st.columns(5)
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
     c1.metric("Code checks", str(readiness["code_status"]))
     c2.metric("Campaign health", str(readiness["health_status"]))
-    c3.metric("Live gate", str(readiness["live_gate"]))
-    c4.metric("Options evidence", str(readiness["options_status"]))
-    c5.metric(
+    c3.metric("Spot live gate", str(readiness["live_gate"]))
+    c4.metric("Options live gate", str(readiness["options_live_gate"]))
+    c5.metric("Options evidence", str(readiness["options_status"]))
+    c6.metric(
         "Paper days",
         f"{readiness['paper_days']} / {readiness['target_paper_days']}",
     )
@@ -685,9 +686,17 @@ def _render_readiness() -> None:
         st.caption(f"• {blocker}")
     failed = readiness.get("live_gate_failed", [])
     if failed:
-        st.write("**Failed live-gate checks**")
+        st.write("**Failed spot live-gate checks**")
         st.dataframe(
             pd.DataFrame([{"check": item} for item in failed]),
+            width="stretch",
+            hide_index=True,
+        )
+    options_failed = readiness.get("options_live_gate_failed", [])
+    if options_failed:
+        st.write("**Failed options live-gate checks**")
+        st.dataframe(
+            pd.DataFrame([{"check": item} for item in options_failed]),
             width="stretch",
             hide_index=True,
         )

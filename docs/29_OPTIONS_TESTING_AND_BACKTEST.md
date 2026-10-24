@@ -7,8 +7,9 @@ event-driven snapshot replay are built and tested. A **free one-day Tardis
 Deribit options-chain sample** is loaded and replayed; no paid historical
 dataset has been purchased.
 **Current tests:** gates, selector, paper fills, expiry settlement, state
-round-trip, AI action mapping, Deribit fixture parsing, synthetic chains,
-historical snapshot loading, Tardis free-day ingestion, and snapshot replay.
+round-trip, kill switch, drawdown auto-kill, fill audit, AI action mapping,
+Deribit fixture parsing, synthetic chains, historical snapshot loading, Tardis
+free-day ingestion, options live gate, and snapshot replay.
 
 The animation in `web/ai_options_flow.html` is a **simulation**, not a backtest,
 not a paper run, and not evidence of edge.
@@ -446,6 +447,31 @@ not hidden by a passing code check.
 
 The options lane also checks the configured kill-switch file before refreshing
 data or calling Jev. An active kill switch fails the cycle closed.
+
+The options lane additionally:
+
+- stores the high-water equity in `artifacts/ai_options_30m/risk_state.json`;
+- writes the kill switch and fails closed if drawdown breaches
+  `risk.max_drawdown`;
+- appends paper fills and settlements to `artifacts/ai_options_30m/fills.jsonl`;
+- reports fees in the performance row.
+
+The separate options live gate is:
+
+```powershell
+uv run python scripts/build_options_live_gate.py
+```
+
+Output:
+
+```text
+artifacts/OPTIONS_LIVE_GATE.json
+artifacts/OPTIONS_LIVE_GATE.md
+```
+
+It requires paper days, fills, drawdown, kill switch, live broker/venue,
+credentials, adapter, and evidence checks. It is currently **NO_GO**; the live
+adapter is deliberately not implemented.
 
 ## 6.3 Replay API
 

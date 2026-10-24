@@ -321,6 +321,8 @@ running options strategy.
 - `src/tradingbot/options/ai_pipeline.py`: 30m Jev squad → options paper cycle.
 - `src/tradingbot/options/historical.py`: validated CSV/Parquet snapshot loader.
 - `src/tradingbot/options/tardis.py`: free Tardis first-day options-chain ingestion.
+- `src/tradingbot/options/audit.py`: append-only fill/settlement audit journal.
+- `src/tradingbot/options/live_gate.py`: options-specific hard live gate.
 - `src/tradingbot/ops/options_evidence.py`: read-only forward/replay evidence scorecard.
 - `src/tradingbot/ops/readiness.py`: paper/live readiness summary.
 - `scripts/ingest_tardis_options.py`, `scripts/run_options_tardis_replay.py`,
@@ -335,6 +337,8 @@ running options strategy.
   evidence**, and **Readiness** views.
 - Kill-switch enforcement before an AI options cycle can refresh data or call
   the model.
+- Drawdown auto-kill and append-only fill/settlement audit.
+- Separate options live gate, currently **NO_GO**.
 
 Still missing: a multi-day historical chain archive and live execution. The free
 one-day sample is not evidence of edge.

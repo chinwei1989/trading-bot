@@ -19,8 +19,10 @@ from tradingbot.config import (
     StrategyConfig,
 )
 from tradingbot.data.store import save_bars
+from tradingbot.ops.risk_state import save_peak
 from tradingbot.options.account import OptionCandidate
 from tradingbot.options.ai_pipeline import run_ai_options_cycle
+from tradingbot.options.audit import load_option_events
 
 
 def _bars() -> pl.DataFrame:
@@ -146,6 +148,15 @@ def test_ai_options_cycle_uses_decision_and_paper_broker(tmp_path: Path) -> None
     )
     assert report["pipeline"] == "ai_options"
     assert report["directions"]["ETH"] == "long"
+    events = load_option_events(tmp_path / config.agent.artifacts_dir / "fills.jsonl")
+    assert any(event["kind"] == "fill" and event["status"] == "filled" for event in events)
+    performance = [
+        json.loads(line)
+        for line in (tmp_path / config.broker.performance_path)
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert performance[-1]["fees"] > 0
 
 
 def test_ai_options_kill_switch_blocks_cycle(tmp_path: Path) -> None:
@@ -163,3 +174,21 @@ def test_ai_options_kill_switch_blocks_cycle(tmp_path: Path) -> None:
             chain_provider=FakeChain(),
             refresh=False,
         )
+
+
+def test_ai_options_drawdown_breach_writes_kill_switch(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    config.risk.max_drawdown = 0.01
+    config.risk.auto_kill_on_drawdown = True
+    save_bars(_bars(), tmp_path / config.data.bars_path)
+    save_peak(tmp_path / config.risk.state_path, 20_000.0)
+
+    with pytest.raises(PermissionError, match="drawdown limit"):
+        run_ai_options_cycle(
+            config,
+            root=tmp_path,
+            decision_provider=FakeProvider(),
+            chain_provider=FakeChain(),
+            refresh=False,
+        )
+    assert (tmp_path / config.risk.kill_switch_file).exists()

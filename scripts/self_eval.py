@@ -76,6 +76,11 @@ def _run(
             (line for line in lines if line.startswith("Live gate:")),
             summary,
         )[:240]
+    elif name == "options_live_gate":
+        summary = next(
+            (line for line in lines if line.startswith("Options live gate:")),
+            summary,
+        )[:240]
     elif name == "build":
         summary = next(
             (line for line in reversed(lines) if line.startswith("Successfully built")),
@@ -113,6 +118,11 @@ def main() -> int:
                 "live-gate",
                 "--include-ai",
             ],
+            allowed_codes=(0, 1),
+        ),
+        _run(
+            "options_live_gate",
+            [uv, "run", "python", "scripts/build_options_live_gate.py"],
             allowed_codes=(0, 1),
         ),
     ]

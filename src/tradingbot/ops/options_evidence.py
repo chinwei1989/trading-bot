@@ -170,9 +170,21 @@ def _deduped_performance(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     return [latest[key] for key in sorted(latest)]
 
 
-def _paper_evidence(performance_path: Path, decisions_path: Path) -> dict[str, Any]:
+def _paper_evidence(
+    performance_path: Path,
+    decisions_path: Path,
+    fills_path: Path,
+) -> dict[str, Any]:
     performance = _deduped_performance(_load_jsonl(performance_path))
     decisions = _load_jsonl(decisions_path)
+    fill_events = [
+        event
+        for event in _load_jsonl(fills_path)
+        if event.get("kind") == "fill" and event.get("status") == "filled"
+    ]
+    settlement_events = [
+        event for event in _load_jsonl(fills_path) if event.get("kind") == "settlement"
+    ]
     paper_decisions: dict[str, dict[str, Any]] = {}
     for row in decisions:
         if row.get("dry_run"):
@@ -295,6 +307,7 @@ def _paper_evidence(performance_path: Path, decisions_path: Path) -> dict[str, A
 
     initial_equity = equity_values[0] if equity_values else 0.0
     final_equity = equity_values[-1] if equity_values else 0.0
+    total_fees = sum(float(event.get("fee") or 0.0) for event in fill_events)
     return {
         "paper_days": len(paper_dates),
         "cycles": len(cycles),
@@ -303,7 +316,9 @@ def _paper_evidence(performance_path: Path, decisions_path: Path) -> dict[str, A
         "flat_cycles": flat_cycles,
         "risk_off_cycles": risk_off_cycles,
         "orders": total_orders,
-        "fills": total_fills,
+        "fills": len(fill_events) if fill_events else total_fills,
+        "fees": total_fees,
+        "settlements": len(settlement_events),
         "positions": last_positions,
         "initial_equity": initial_equity,
         "final_equity": final_equity,
@@ -312,6 +327,7 @@ def _paper_evidence(performance_path: Path, decisions_path: Path) -> dict[str, A
         "first_timestamp": first_ts.isoformat() if first_ts else None,
         "last_timestamp": last_ts.isoformat() if last_ts else None,
         "cycle_rows": cycles[-24:],
+        "recent_fills": fill_events[-10:],
     }
 
 
@@ -344,6 +360,7 @@ def build_options_evidence(root: str | Path = ROOT) -> dict[str, Any]:
     paper = _paper_evidence(
         ai_dir / "performance.jsonl",
         ai_dir / "decisions.jsonl",
+        ai_dir / "fills.jsonl",
     )
     squad = _squad_evidence(ai_dir / "squad")
     replay = _replay_evidence(base / REPLAY_PATH)
@@ -409,6 +426,8 @@ def write_options_evidence(
         f"- Flat cycles: **{paper['flat_cycles']}**",
         f"- Risk-off cycles: **{paper['risk_off_cycles']}**",
         f"- Orders / fills: **{paper['orders']} / {paper['fills']}**",
+        f"- Fees: **${paper.get('fees', 0):,.2f}**",
+        f"- Settlements: **{paper.get('settlements', 0)}**",
         f"- Equity: **${paper['final_equity']:,.2f}**",
         f"- Return: **{paper['return_pct']:.2%}**",
         f"- Max drawdown: **{paper['max_drawdown']:.2%}**",

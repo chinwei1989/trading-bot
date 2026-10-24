@@ -25,8 +25,14 @@ from tradingbot.data.intraday import completed_bars, refresh_recent_bars
 from tradingbot.data.store import load_bars
 from tradingbot.ops.heartbeat import write_heartbeat
 from tradingbot.ops.performance import append_performance
+from tradingbot.ops.risk_state import load_peak, save_peak
 from tradingbot.options.account import OptionLimits
-from tradingbot.options.broker import PaperOptionsBroker
+from tradingbot.options.audit import append_option_events
+from tradingbot.options.broker import (
+    OptionFill,
+    OptionSettlement,
+    PaperOptionsBroker,
+)
 from tradingbot.options.deribit import DeribitPublicClient
 from tradingbot.options.pipeline import result_payload, run_options_cycle
 from tradingbot.options.selector import Direction
@@ -132,6 +138,27 @@ def run_ai_options_cycle(
     if not reset:
         broker.load()
 
+    risk_peak_path = _resolve(root, config.risk.state_path)
+    peak = load_peak(risk_peak_path)
+    current_equity = broker.account().equity()
+    if peak is None:
+        if not dry_run:
+            save_peak(risk_peak_path, current_equity)
+    elif (
+        config.risk.auto_kill_on_drawdown
+        and peak > 0
+        and current_equity / peak - 1.0 < -config.risk.max_drawdown
+    ):
+        kill_path.parent.mkdir(parents=True, exist_ok=True)
+        kill_path.write_text(
+            f"drawdown {current_equity / peak - 1.0:.2%} breached "
+            f"max {config.risk.max_drawdown:.2%}",
+            encoding="utf-8",
+        )
+        raise PermissionError(
+            f"options drawdown limit breached; kill switch active: {kill_path}"
+        )
+
     chain_client = chain_provider or DeribitPublicClient()
     chain = chain_client.fetch_chain(("BTC", "ETH"), now=as_of)
     if not chain:
@@ -161,6 +188,9 @@ def run_ai_options_cycle(
         {"BTCUSDT": "BTC", "ETHUSDT": "ETH"},
     )
     paper: dict[str, Any]
+    cycle_fills: list[OptionFill] = []
+    cycle_settlements: list[OptionSettlement] = []
+    total_fees = 0.0
     if dry_run:
         paper = {
             "status": "dry_run",
@@ -184,9 +214,21 @@ def run_ai_options_cycle(
         )
         broker.save()
         paper = result_payload(cycle)
+        cycle_fills = cycle.fills
+        cycle_settlements = cycle.settlements
+        total_fees = sum(fill.fee for fill in cycle_fills)
 
     ai_dir = _resolve(root, config.agent.artifacts_dir)
     ai_dir.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        append_option_events(
+            ai_dir / "fills.jsonl",
+            as_of=as_of_iso,
+            equity=broker.account().equity(),
+            cash=broker.account().cash,
+            fills=cycle_fills,
+            settlements=cycle_settlements,
+        )
     report_status = "dry_run" if dry_run else "ok"
     report: dict[str, Any] = {
         "pipeline": "ai_options",
@@ -238,6 +280,7 @@ def run_ai_options_cycle(
     )
     account = broker.account()
     if not dry_run:
+        save_peak(risk_peak_path, max(peak or 0.0, account.equity()))
         append_performance(
             _resolve(root, config.broker.performance_path),
             {
@@ -252,6 +295,7 @@ def run_ai_options_cycle(
                 "gross_exposure": 0.0,
                 "n_orders": len(paper.get("fills", [])),
                 "n_fills": len(paper.get("fills", [])),
+                "fees": total_fees,
                 "positions": len(account.positions),
                 "directions": directions,
             },

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 from tradingbot.ops.readiness import build_readiness
+from tradingbot.options.live_gate import build_options_live_gate
 
 
 def _write(path: Path, payload: dict[str, object]) -> None:
@@ -39,4 +41,17 @@ def test_readiness_keeps_live_blocked_without_adapter(tmp_path: Path) -> None:
     assert readiness["live_ready"] is False
     assert readiness["live_gate"] == "NO_GO"
     assert readiness["paper_days"] == 1
+    assert readiness["options_live_gate"] == "missing"
     assert any("no live options execution" in item for item in readiness["blockers"])
+
+
+def test_options_live_gate_blocks_without_adapter(tmp_path: Path) -> None:
+    (tmp_path / "config").mkdir()
+    shutil.copy(
+        Path("config/ai_options_30m.yaml"),
+        tmp_path / "config" / "ai_options_30m.yaml",
+    )
+    gate = build_options_live_gate(tmp_path)
+    assert gate["status"] == "NO_GO"
+    assert "options live adapter" in gate["failed"]
+    assert "options paper days" in gate["failed"]
