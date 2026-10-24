@@ -26,6 +26,7 @@ from tradingbot.ops.evaluation import build_report, write_report
 from tradingbot.ops.heartbeat import read_heartbeat
 from tradingbot.ops.office3d import build_office_html
 from tradingbot.ops.options_evidence import build_options_evidence
+from tradingbot.ops.readiness import build_readiness
 
 ROOT = Path(__file__).resolve().parents[3]
 DET_CONFIGS = {
@@ -655,6 +656,47 @@ def _render_ai_options() -> None:
         st.json(heartbeat)
 
 
+def _render_readiness() -> None:
+    readiness = build_readiness(ROOT)
+    st.subheader("Readiness")
+    st.caption(
+        "Read-only operational summary. Paper readiness and live readiness are "
+        "separate. No view or button can place an order."
+    )
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Code checks", str(readiness["code_status"]))
+    c2.metric("Campaign health", str(readiness["health_status"]))
+    c3.metric("Live gate", str(readiness["live_gate"]))
+    c4.metric("Options evidence", str(readiness["options_status"]))
+    c5.metric(
+        "Paper days",
+        f"{readiness['paper_days']} / {readiness['target_paper_days']}",
+    )
+    if readiness["paper_ready"]:
+        st.success("Paper infrastructure is healthy.")
+    else:
+        st.warning("Paper infrastructure is not fully healthy.")
+    if readiness["live_ready"]:
+        st.success("Live gate is GO.")
+    else:
+        st.error("Live gate is NO_GO. Live trading is blocked.")
+    st.write("**Blockers**")
+    for blocker in readiness["blockers"]:
+        st.caption(f"• {blocker}")
+    failed = readiness.get("live_gate_failed", [])
+    if failed:
+        st.write("**Failed live-gate checks**")
+        st.dataframe(
+            pd.DataFrame([{"check": item} for item in failed]),
+            width="stretch",
+            hide_index=True,
+        )
+    st.caption(
+        "Run `uv run python scripts/self_eval.py` to refresh code, health, and "
+        "live-gate checks."
+    )
+
+
 def _render_options_evidence() -> None:
     evidence = build_options_evidence(ROOT)
     paper = evidence.get("paper", {})
@@ -1071,6 +1113,7 @@ view = st.sidebar.radio(
         "AI agent",
         "AI squad",
         "AI options 30m",
+        "Readiness",
         "Options evidence",
         "Options flow",
         "3D Office",
@@ -1096,6 +1139,8 @@ def _render_selected(selected: str) -> None:
         _render_ai_squad()
     elif selected == "AI options 30m":
         _render_ai_options()
+    elif selected == "Readiness":
+        _render_readiness()
     elif selected == "Options evidence":
         _render_options_evidence()
     elif selected == "Options flow":

@@ -101,6 +101,9 @@ def run_ai_options_cycle(
         config.broker.name != "paper" or not config.broker.paper
     ):
         raise PermissionError("AI options lane must use a paper broker")
+    kill_path = _resolve(root, config.risk.kill_switch_file)
+    if kill_path.exists():
+        raise PermissionError(f"kill switch active: {kill_path}")
 
     if refresh and config.data.interval != "1d" and config.data.source == "binance":
         refresh_recent_bars(config.data, root, limit=config.data.recent_limit)

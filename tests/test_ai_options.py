@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import polars as pl
+import pytest
 
 from tradingbot.ai.decision import AgentDecision, AssetDecision
 from tradingbot.config import (
@@ -145,3 +146,20 @@ def test_ai_options_cycle_uses_decision_and_paper_broker(tmp_path: Path) -> None
     )
     assert report["pipeline"] == "ai_options"
     assert report["directions"]["ETH"] == "long"
+
+
+def test_ai_options_kill_switch_blocks_cycle(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    save_bars(_bars(), tmp_path / config.data.bars_path)
+    kill = tmp_path / config.risk.kill_switch_file
+    kill.parent.mkdir(parents=True, exist_ok=True)
+    kill.write_text("stop", encoding="utf-8")
+
+    with pytest.raises(PermissionError, match="kill switch active"):
+        run_ai_options_cycle(
+            config,
+            root=tmp_path,
+            decision_provider=FakeProvider(),
+            chain_provider=FakeChain(),
+            refresh=False,
+        )

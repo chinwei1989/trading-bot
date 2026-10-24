@@ -422,6 +422,31 @@ that a rerun cannot inflate the cycle count. It labels the forward window as
 insufficient until 56 paper days exist and labels the free replay as one day,
 not evidence of edge.
 
+## 6.4 Readiness and self-evaluation
+
+Run:
+
+```powershell
+uv run python scripts/self_eval.py
+uv run python scripts/build_readiness.py
+```
+
+Outputs:
+
+```text
+artifacts/SELF_EVAL.json
+artifacts/SELF_EVAL.md
+artifacts/READINESS.json
+artifacts/READINESS.md
+```
+
+The self-evaluation runs tests, lint, type checks, package build, campaign
+health, and the live gate. A **NO_GO live gate is reported separately** and is
+not hidden by a passing code check.
+
+The options lane also checks the configured kill-switch file before refreshing
+data or calling Jev. An active kill switch fails the cycle closed.
+
 ## 6.3 Replay API
 
 The replay engine is:
