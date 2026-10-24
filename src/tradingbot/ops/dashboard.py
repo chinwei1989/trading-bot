@@ -40,6 +40,7 @@ DET_CONFIGS = {
 AI_CONFIG = "config/ai_agent.yaml"
 AI_SQUAD_CONFIG = "config/ai_squad.yaml"
 INTRADAY_CONFIG = "config/intraday_meta.yaml"
+OPTIONS_FLOW_PATH = ROOT / "web" / "ai_options_flow.html"
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -883,6 +884,21 @@ def _render_both() -> None:
     )
 
 
+def _render_options_flow() -> None:
+    if not OPTIONS_FLOW_PATH.exists():
+        st.warning("Options flow simulation is missing.")
+        return
+    st.caption(
+        "Simulation of the planned 30m crypto-options flow. This is a design "
+        "visualization, not a live order path."
+    )
+    components.html(
+        OPTIONS_FLOW_PATH.read_text(encoding="utf-8"),
+        height=1050,
+        scrolling=False,
+    )
+
+
 st.set_page_config(
     page_title="Trading Bot - Multi-Sleeve + AI Squad + Intraday",
     layout="wide",
@@ -912,7 +928,15 @@ st.caption(
 
 view = st.sidebar.radio(
     "Pipeline",
-    ["Both", "Deterministic", "Intraday", "AI agent", "AI squad", "3D Office"],
+    [
+        "Both",
+        "Deterministic",
+        "Intraday",
+        "AI agent",
+        "AI squad",
+        "Options flow",
+        "3D Office",
+    ],
     index=0,
 )
 refresh_label = st.sidebar.selectbox(
@@ -932,6 +956,8 @@ def _render_selected(selected: str) -> None:
         _render_intraday()
     elif selected == "AI squad":
         _render_ai_squad()
+    elif selected == "Options flow":
+        _render_options_flow()
     elif selected == "3D Office":
         try:
             components.html(build_office_html(ROOT), height=900, scrolling=False)

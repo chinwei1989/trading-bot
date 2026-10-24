@@ -287,7 +287,7 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad views)
+# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad / Options flow)
 uv run python -m tradingbot evaluate --strategy trend
 powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
@@ -373,6 +373,9 @@ uv run python -m tradingbot --config config/reversal.yaml backtest
 uv run python -m tradingbot --config config/meta.yaml backtest
 powershell -ExecutionPolicy Bypass -File scripts/run_sleeves.ps1
 
+# Options flow simulation (standalone HTML; dashboard has an "Options flow" view)
+# web/ai_options_flow.html
+
 # 3D office (standalone HTML; dashboard has a "3D Office" view)
 uv run python scripts/build_office3d.py
 
@@ -440,6 +443,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/25_AI_SQUAD_ARCHITECTURE.md` | AI squad system design, Mermaid architecture/sequence diagrams, agent dependencies, and authority model |
 | `docs/26_INTRADAY_TRADING.md` | Hourly intraday paper lane: completed-bar data refresh, H rebalance, schedule, limits |
 | `docs/27_PIPELINE_COST_BREAKDOWN.md` | Actual Jev usage, data/infra/electricity, trading-cost examples, and a $10k budget |
+| `docs/28_CRYPTO_OPTIONS_FLOW.md` | Planned 30m crypto-options architecture, option selection rules, venues, and animated data-flow link |
 
 ---
 
