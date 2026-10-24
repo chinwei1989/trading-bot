@@ -1,8 +1,12 @@
 # 28 — Crypto Options: 30m AI Squad Flow
 
-**Status:** design + interactive simulation. The current trading lanes are still
-spot/cash crypto paper accounts. Crypto options execution is **not implemented**
-and is not live.
+**Status:** design + interactive simulation + deterministic account gates. The
+current trading lanes are still spot/cash crypto paper accounts. Crypto options
+execution is **not implemented** and is not live.
+
+The account-gate module exists and is tested:
+`src/tradingbot/options/account.py`. The venue adapter, option paper broker,
+selector, and 30m runtime are not built yet.
 
 The animation includes a proposed **breakout specialist** and a 30-minute
 options loop. Neither is running yet. The current AI squad is the seven-agent
@@ -55,8 +59,10 @@ flowchart LR
     RISK --> EXEC[Execution critic]
     EXEC --> CHAIR[Chair<br/>direction only]
 
-    CHAIR --> SELECTOR[Deterministic options selector<br/>call/put, DTE, delta, strike]
-    SELECTOR --> RISKCHECK[Option risk checks<br/>premium, delta, theta, spread]
+    CHAIR --> PORTFOLIO[Portfolio + cash gate<br/>pre-selector]
+    PORTFOLIO --> SELECTOR[Deterministic options selector<br/>call/put, DTE, delta, strike]
+    SELECTOR --> CONTRACT[Contract gate<br/>post-selector]
+    CONTRACT --> RISKCHECK[Final option risk checks<br/>premium, delta, theta, spread]
     RISKCHECK --> BROKER[Paper options broker]
     BROKER --> STATE[(Option state + P&L)]
     STATE --> DASH[Blackboard + dashboard + audit]
@@ -73,8 +79,10 @@ sequenceDiagram
     participant D as Data adapter
     participant C as Context builder
     participant S as AI squad
+    participant PG as Portfolio gate
     participant O as Options selector
-    participant R as Risk/execution
+    participant CG as Contract gate
+    participant R as Final risk/execution
     participant P as Paper options broker
     participant A as Audit/dashboard
 
@@ -84,10 +92,14 @@ sequenceDiagram
     D->>C: underlying + chain + current option legs
     C->>S: macro, trend, breakout, XSMOM, sentiment
     S->>S: risk critic → execution critic → chair
-    S->>O: chair direction per underlying
+    S->>PG: chair direction per underlying
+    PG->>PG: equity, cash, reserve, premium at risk, legs, DTE, Greeks
+    PG->>O: allowed budget + allowed underlyings
     O->>O: choose call/put, expiry, delta, strike
-    O->>R: proposed option leg
-    R->>R: premium cap, spread, DTE, Greeks, liquidity
+    O->>CG: candidate leg
+    CG->>CG: exact premium, spread, OI, delta, DTE, max loss
+    CG->>R: approved candidate or no trade
+    R->>R: final risk veto and execution check
     R->>P: approved leg or no trade
     P->>A: paper fill, premium, fees, mark, P&L
     A-->>T: audit + blackboard + dashboard
@@ -116,7 +128,95 @@ persuasive agent cannot choose an illiquid or oversized contract.
 
 ---
 
-## 5. Option selection rules for phase 1
+## 5. Why one positions/cash snapshot is not enough
+
+The account snapshot is currently one input to the context. It is **not** a
+sufficient trade gate. Options add premium, expiry, Greeks, and contract-size
+risk that a spot cash check does not see.
+
+Use **three account checks** per cycle:
+
+| Check | When | What it answers |
+|---|---|---|
+| Context snapshot | Before agents | What is the current cash, equity, legs, DTE, and mark? |
+| **Portfolio + cash gate** | After chair, before selector | How much premium budget is available? Are we below reserve? Too many legs? Expired/near-expiry risk? |
+| **Contract gate** | After selector, before broker | Does this exact strike/expiry/quote fit the budget, spread, OI, delta, DTE, and max-loss rules? |
+| Final risk/execution | Before broker | Does the deterministic risk/execution layer still approve? |
+
+### Pre-selector portfolio gate
+
+Implemented in `src/tradingbot/options/account.py::check_account`.
+
+It calculates:
+
+- account equity = cash + current option mark value;
+- cash reserve = `min_cash_pct × equity`;
+- premium at risk = entry premium of all long legs;
+- total premium cap = `max_total_premium_pct × equity`;
+- available premium = `min(total cap - premium at risk, cash - reserve)`;
+- maximum new premium = `min(per-trade cap, available premium)`;
+- open legs and legs per underlying;
+- net delta, vega, and theta;
+- expired and near-expiry positions;
+- blockers and warnings.
+
+Example on $10,000:
+
+```text
+cash                         $10,000
+cash reserve (20%)            $2,000
+max total premium (5%)          $500
+premium at risk                   $0
+available premium               $500
+max new trade (2%)              $200
+open legs                       0 / 2
+```
+
+If $150 of premium is already at risk:
+
+```text
+premium at risk                 $150
+available premium               $350
+max new trade                   $200
+```
+
+If two legs are already open, the gate blocks a third leg even if cash remains.
+
+### Post-selector contract gate
+
+Implemented in `src/tradingbot/options/account.py::check_candidate`.
+
+Given a specific contract, it verifies:
+
+- expiry is within the DTE window;
+- bid/ask spread is under the cap;
+- open interest is above the minimum;
+- absolute delta is in the target band;
+- premium plus fee fits the new-trade budget;
+- the account is not already at the per-underlying leg limit;
+- contract count, estimated cost, fees, and maximum loss.
+
+If the candidate fails, the selector must try the next candidate or return
+“no trade.” It must not bypass the gate.
+
+### Why not skip the pre-selector gate?
+
+Without it, the selector can choose a “valid” option that is still wrong for the
+account:
+
+- premium is affordable individually but breaches the total premium cap;
+- cash is positive but below the reserve;
+- the account already has two legs;
+- an existing leg is about to expire;
+- the same underlying already has a position;
+- aggregate delta/theta is already too high.
+
+The pre-selector gate answers **“are we allowed to add risk at all?”** The
+contract gate answers **“is this exact contract allowed?”**
+
+---
+
+## 5.1 Option selection rules for phase 1
 
 Initial rules, subject to backtest and paper evidence:
 
@@ -129,7 +229,13 @@ Initial rules, subject to backtest and paper evidence:
 | Max bid/ask spread | 5% of mid |
 | Minimum open interest | venue-specific, initially 100 contracts |
 | Max premium at risk | 2% of equity per leg |
+| Max total premium at risk | 5% of equity |
+| Min cash reserve | 20% of equity |
 | Max simultaneous option legs | 2 |
+| Max legs per underlying | 1 |
+| Max net delta | 2.0 contract-delta units |
+| Max net vega | 100 |
+| Max net theta | 100 |
 | Position type | Long premium only; no naked short options |
 | Exit | Thesis flip, 50% premium stop, 100% gain, or 2 DTE |
 | Settlement | Cash settlement; expiry handled by the paper broker |
@@ -196,6 +302,14 @@ running options strategy.
 ---
 
 ## 9. Build order
+
+### Implemented now
+
+- `src/tradingbot/options/account.py`: pre-selector account gate and
+  post-selector contract gate.
+- `tests/test_options_account.py`: budget, reserve, leg-count, expiry, spread,
+  open-interest, delta, DTE, and premium-cap tests.
+- Interactive flow animation and dashboard **Options flow** view.
 
 ### Step 1 — Data adapter
 

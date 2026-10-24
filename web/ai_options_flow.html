@@ -265,11 +265,27 @@
         <span class="status"></span>
       </div>
       <div class="connector">↓</div>
+      <div class="node risk" id="portfolio">
+        <div class="eyebrow"><span>PRE-SELECTOR</span><span>ACCOUNT</span></div>
+        <h3>Portfolio + cash gate</h3>
+        <p>Equity, free cash, reserve, premium at risk, expiry, legs, Greeks.</p>
+        <span class="pill">hard gate</span>
+        <span class="status"></span>
+      </div>
+      <div class="connector">↓</div>
       <div class="node options" id="selector">
         <div class="eyebrow"><span>DETERMINISTIC</span><span>OPTIONS</span></div>
         <h3>Options selector</h3>
         <p>Direction → call/put. Picks DTE, delta, strike, spread and premium cap.</p>
         <span class="pill">no LLM</span>
+        <span class="status"></span>
+      </div>
+      <div class="connector">↓</div>
+      <div class="node risk" id="contract">
+        <div class="eyebrow"><span>POST-SELECTOR</span><span>CONTRACT</span></div>
+        <h3>Contract gate</h3>
+        <p>Exact premium, spread, OI, delta, DTE, fee, max loss, contract count.</p>
+        <span class="pill">hard gate</span>
         <span class="status"></span>
       </div>
       <div class="connector">↓</div>
@@ -306,6 +322,8 @@
         <div class="metric"><span>Chair signal</span><strong id="m-signal">pending</strong></div>
         <div class="metric"><span>Option plan</span><strong id="m-option">pending</strong></div>
         <div class="metric"><span>Premium at risk</span><strong id="m-risk">0.0%</strong></div>
+        <div class="metric"><span>Available premium</span><strong id="m-budget">$200</strong></div>
+        <div class="metric"><span>Open legs</span><strong id="m-legs">0/2</strong></div>
         <div class="metric"><span>Cycle</span><strong id="m-cycle">:01</strong></div>
       </div>
       <div class="foot" id="step-label">Ready. Press Play or Step.</div>
@@ -330,6 +348,8 @@ const metrics = {
   signal: document.getElementById('m-signal'),
   option: document.getElementById('m-option'),
   risk: document.getElementById('m-risk'),
+  budget: document.getElementById('m-budget'),
+  legs: document.getElementById('m-legs'),
   cycle: document.getElementById('m-cycle'),
 };
 
@@ -404,6 +424,13 @@ const steps = [
     state: { signal: 'ETH long', option: 'selecting' },
   },
   {
+    title: 'Portfolio + cash gate',
+    targets: ['portfolio', 'account'],
+    log: 'Pre-selector gate: equity $10k; cash $10k; reserve $2k; premium at risk $0; available $200; 0/2 legs; net delta 0.04 → allowed.',
+    kind: 'warn',
+    state: { budget: '$200', legs: '0/2' },
+  },
+  {
     title: 'Options selector',
     targets: ['selector'],
     log: 'Map ETH long → call. Select 9 DTE, delta 0.46, strike near spot, max spread 5%.',
@@ -411,9 +438,9 @@ const steps = [
     state: { option: 'ETH call' },
   },
   {
-    title: 'Risk budget',
-    targets: ['selector', 'risk'],
-    log: 'Premium $185 = 1.85% equity. Cap 2.0%; one leg; DTE 9; net delta within limit.',
+    title: 'Contract gate',
+    targets: ['contract', 'risk'],
+    log: 'Post-selector gate: premium $185; fee $0.06; spread 1.8%; OI 1,200; delta .46; DTE 9; max loss $185.06 = 1.85% → allowed.',
     kind: 'warn',
     state: { risk: '1.85%' },
   },
@@ -475,6 +502,8 @@ function applyState(state) {
   if (state.signal) metrics.signal.textContent = state.signal;
   if (state.option) metrics.option.textContent = state.option;
   if (state.risk) metrics.risk.textContent = state.risk;
+  if (state.budget) metrics.budget.textContent = state.budget;
+  if (state.legs) metrics.legs.textContent = state.legs;
   if (state.cycle) metrics.cycle.textContent = state.cycle;
 }
 
@@ -510,6 +539,8 @@ function reset() {
   metrics.signal.textContent = 'pending';
   metrics.option.textContent = 'pending';
   metrics.risk.textContent = '0.0%';
+  metrics.budget.textContent = '$200';
+  metrics.legs.textContent = '0/2';
   metrics.cycle.textContent = ':01';
   stepLabel.textContent = 'Ready. Press Play or Step.';
   renderTimeline();
