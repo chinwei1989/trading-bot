@@ -439,6 +439,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/24_AI_SQUAD.md` | Seven-agent AI squad memory, guardrails, and runbook |
 | `docs/25_AI_SQUAD_ARCHITECTURE.md` | AI squad system design, Mermaid architecture/sequence diagrams, agent dependencies, and authority model |
 | `docs/26_INTRADAY_TRADING.md` | Hourly intraday paper lane: completed-bar data refresh, H rebalance, schedule, limits |
+| `docs/27_PIPELINE_COST_BREAKDOWN.md` | Actual Jev usage, data/infra/electricity, trading-cost examples, and a $10k budget |
 
 ---
 

@@ -1,6 +1,7 @@
-# 09 — Running Cost Breakdown
+# 09 - Running Cost Breakdown
 
 **Date:** 22 October 2026  
+**Current implemented pipeline:** see `docs/27_PIPELINE_COST_BREAKDOWN.md` for actual Jev usage and the current paper-stack cost.
 **Assumption:** US resident, existing PC, paper first, then small live. Prices verified from provider pages where noted; estimates are labeled.
 
 ---
