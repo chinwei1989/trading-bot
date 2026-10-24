@@ -50,15 +50,17 @@ def _close_direction(
     underlying: str,
     desired: Direction,
     now: datetime,
+    limits: OptionLimits,
 ) -> list[OptionFill]:
-    """Close holdings that no longer match the desired direction."""
+    """Close holdings that no longer match the desired direction or are expiring."""
     quotes = {candidate.instrument: candidate for candidate in chain}
     fills: list[OptionFill] = []
     for instrument, holding in list(broker.holdings.items()):
         if holding.underlying != underlying:
             continue
         desired_type = "call" if desired == "long" else "put"
-        if desired != "flat" and holding.option_type == desired_type:
+        expiring = (holding.expiry - now.date()).days <= limits.exit_dte
+        if not expiring and desired != "flat" and holding.option_type == desired_type:
             continue
         quote = quotes.get(instrument)
         if quote is None:
@@ -117,6 +119,7 @@ def run_options_cycle(
                 underlying=underlying,
                 desired=direction,
                 now=now,
+                limits=limits,
             )
         )
 

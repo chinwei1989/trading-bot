@@ -234,7 +234,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Seven-agent AI squad:** separate paper account; macro → trend → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
-- **Crypto options core:** 30m flow design, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, and event-driven snapshot replay; venue adapter and live execution are not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
+- **Crypto options core:** 30m flow design, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, synthetic chain generator, and event-driven snapshot replay; live execution and the 30m AI options task are not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038

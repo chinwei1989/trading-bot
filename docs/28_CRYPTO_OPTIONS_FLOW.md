@@ -5,9 +5,9 @@ current trading lanes are still spot/cash crypto paper accounts. Crypto options
 execution is **not implemented** and is not live.
 
 The deterministic options core exists and is tested: account gates, selector,
-paper options broker, one-cycle pipeline, and snapshot replay. The venue adapter,
-AI-squad signal integration, real historical chain data, and 30m runtime are not
-built yet.
+paper options broker, one-cycle pipeline, snapshot replay, a read-only Deribit
+public-chain adapter, and a synthetic 30m replay. AI-squad signal integration,
+real historical chain data, and the 30m runtime are not built yet.
 
 The animation includes a proposed **breakout specialist** and a 30-minute
 options loop. Neither is running yet. The current AI squad is the seven-agent
@@ -316,13 +316,23 @@ running options strategy.
   gate, select, buy, mark, and settle steps.
 - `src/tradingbot/options/backtest.py`: event-driven replay over recorded or
   synthetic chain snapshots.
-- Tests for gates, selection, paper fills, expiry, state, and replay.
+- `src/tradingbot/options/deribit.py`: read-only Deribit public option-chain
+  adapter and inverse-premium USD approximation.
+- `src/tradingbot/options/synthetic.py`: constant-IV Black-Scholes synthetic
+  chains for mechanics replay.
+- Tests for gates, selection, paper fills, expiry, state, replay, Deribit
+  fixtures, and synthetic chains.
 - Interactive flow animation and dashboard **Options flow** view.
 
-Still missing: venue data adapter, AI-squad signal adapter, historical chain
-dataset, live paper scheduler, and live execution.
+Still missing: AI-squad signal adapter, historical chain dataset, live paper
+scheduler, and live execution.
 
-### Step 1 — Data adapter
+### Step 0 — Implemented adapter and synthetic replay
+
+A read-only Deribit public-chain adapter and a synthetic constant-IV chain
+generator are implemented. They are research tools, not evidence of profitability.
+
+### Step 1 — Production data adapter
 
 - Deribit public option chain and ticker endpoints.
 - Parse expiry, strike, call/put, bid/ask, mark IV, Greeks, OI, volume.

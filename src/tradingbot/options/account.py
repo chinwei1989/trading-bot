@@ -97,6 +97,7 @@ class OptionLimits:
     max_legs_per_underlying: int = 1
     min_dte: int = 3
     max_dte: int = 21
+    exit_dte: int = 2
     target_delta_min: float = 0.30
     target_delta_max: float = 0.60
     max_spread_pct: float = 0.05

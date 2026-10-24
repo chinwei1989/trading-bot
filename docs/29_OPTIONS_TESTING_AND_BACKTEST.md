@@ -1,11 +1,12 @@
 # 29 — Testing and Backtesting the Options Flow
 
 **Status:** account gates, selector, paper broker, one-cycle pipeline, AI
-decision-to-direction adapter, and event-driven snapshot replay are built and
-tested. The venue data adapter and historical chain dataset are **not built
-yet**.
+decision-to-direction adapter, Deribit public-chain adapter, synthetic chain
+generator, and event-driven snapshot replay are built and tested. A real
+historical chain dataset is **not built yet**.
 **Current tests:** gates, selector, paper fills, expiry settlement, state
-round-trip, AI action mapping, and snapshot replay.
+round-trip, AI action mapping, Deribit fixture parsing, synthetic chains, and
+snapshot replay.
 
 The animation in `web/ai_options_flow.html` is a **simulation**, not a backtest,
 not a paper run, and not evidence of edge.
@@ -23,9 +24,11 @@ not a paper run, and not evidence of edge.
 | One-cycle flow | **Built** | Close → gate → select → buy → mark |
 | Snapshot replay backtester | **Built** | Event-driven replay over recorded or synthetic chains |
 | AI decision adapter | **Built** | Maps typed actions/weights to long/short/flat option directions |
-| Options data adapter | Not built | No venue chain ingestion yet |
+| Deribit public-chain adapter | **Built** | Read-only chain and USD approximation; fixture-tested |
+| Synthetic chain generator | **Built** | Constant-IV Black-Scholes mechanics test |
 | Historical chain dataset | Not built | No paid historical quote archive yet |
-| End-to-end live-data test | Not built | Needs venue adapter |
+| End-to-end live-data test | Not built | Needs recorded/live chain wiring |
+| 30m options task | Not built | No scheduler or AI signal integration |
 | Live options | Blocked | No live gate approval |
 
 Run the existing gate tests:
@@ -255,7 +258,45 @@ integration test pass.**
 
 ---
 
-## 6.1 Replay API
+## 6.1 Synthetic replay result
+
+A synthetic 30m BTC/ETH replay was run on 999 recent bars with:
+
+- constant 50% IV;
+- 7/14/30-day synthetic expiries;
+- 2% synthetic spread;
+- 3 bps fee;
+- 200-bar trend signal;
+- long-premium only.
+
+Observed mechanics result:
+
+```text
+snapshots       999
+fills            53
+final equity     $9,768.02
+return          -2.32%
+max drawdown    -3.29%
+fees            $1.49
+```
+
+This is **not evidence of edge**. It shows that the pipeline can open, mark,
+roll, and close synthetic option positions. The loss is driven by synthetic
+spreads and signal churn.
+
+Script:
+
+```powershell
+uv run python scripts/run_options_synthetic.py
+```
+
+Output:
+
+```text
+artifacts/options_synthetic/synthetic_replay.json
+```
+
+## 6.2 Replay API
 
 The replay engine is:
 
@@ -327,9 +368,10 @@ The current live gate remains **NO_GO**.
 | Paper options broker | **Built** |
 | Option selector and gates | **Built** |
 | Snapshot replay engine | **Built** |
-| One venue data adapter | **Next** |
-| Synthetic 30m options backtest | Next |
-| Paid historical chain replay | Later, only if synthetic results are plausible |
+| Deribit public data adapter | **Built** |
+| Synthetic 30m options replay | **Built** |
+| Paid historical chain replay | Next |
+| AI-squad 30m signal integration | Next |
 | 30m live paper forward | 20-56 days |
 | Live pilot | Only after the hard gate |
 
