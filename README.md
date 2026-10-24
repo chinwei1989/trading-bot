@@ -445,6 +445,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/26_INTRADAY_TRADING.md` | Hourly intraday paper lane: completed-bar data refresh, H rebalance, schedule, limits |
 | `docs/27_PIPELINE_COST_BREAKDOWN.md` | Actual Jev usage, data/infra/electricity, trading-cost examples, and a $10k budget |
 | `docs/28_CRYPTO_OPTIONS_FLOW.md` | Planned 30m crypto-options architecture, option selection rules, venues, and animated data-flow link |
+| `docs/29_OPTIONS_TESTING_AND_BACKTEST.md` | Options test pyramid, historical data requirements, backtest design, and acceptance gates |
 
 ---
 

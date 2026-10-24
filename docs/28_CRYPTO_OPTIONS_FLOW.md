@@ -349,7 +349,15 @@ running options strategy.
 
 ---
 
-## 10. Interactive animation
+## 10. Testing and backtesting
+
+See `docs/29_OPTIONS_TESTING_AND_BACKTEST.md` for the test pyramid, fixture
+integration test design, historical options data requirements, backtest fill
+rules, and acceptance gates.
+
+---
+
+## 11. Interactive animation
 
 `web/ai_options_flow.html` is a self-contained browser animation with:
 
