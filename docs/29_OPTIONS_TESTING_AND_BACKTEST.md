@@ -1,9 +1,11 @@
 # 29 — Testing and Backtesting the Options Flow
 
-**Status:** account gates are unit-tested; the options data adapter, selector,
-paper broker, and event-driven options backtester are **not built yet**.  
-**Current tests:** `tests/test_options_account.py` covers the pre-selector and
-post-selector gates.
+**Status:** account gates, selector, paper broker, one-cycle pipeline, AI
+decision-to-direction adapter, and event-driven snapshot replay are built and
+tested. The venue data adapter and historical chain dataset are **not built
+yet**.
+**Current tests:** gates, selector, paper fills, expiry settlement, state
+round-trip, AI action mapping, and snapshot replay.
 
 The animation in `web/ai_options_flow.html` is a **simulation**, not a backtest,
 not a paper run, and not evidence of edge.
@@ -16,11 +18,14 @@ not a paper run, and not evidence of edge.
 |---|---|---|
 | Account gate unit tests | **Built** | Budget, reserve, leg count, expiry, spread, OI, delta, DTE, fees |
 | Animated flow | **Built** | The intended sequence is understandable |
-| Options data adapter | Not built | Nothing yet |
-| Options selector | Not built | Nothing yet |
-| Paper options broker | Not built | Nothing yet |
-| End-to-end flow test | Not built | Nothing yet |
-| Historical options backtest | Not built | Nothing yet |
+| Options selector | **Built** | Calls/puts, candidate ranking, gates |
+| Paper options broker | **Built** | Cash, premium, fees, marks, settlement, state |
+| One-cycle flow | **Built** | Close → gate → select → buy → mark |
+| Snapshot replay backtester | **Built** | Event-driven replay over recorded or synthetic chains |
+| AI decision adapter | **Built** | Maps typed actions/weights to long/short/flat option directions |
+| Options data adapter | Not built | No venue chain ingestion yet |
+| Historical chain dataset | Not built | No paid historical quote archive yet |
+| End-to-end live-data test | Not built | Needs venue adapter |
 | Live options | Blocked | No live gate approval |
 
 Run the existing gate tests:
@@ -250,6 +255,35 @@ integration test pass.**
 
 ---
 
+## 6.1 Replay API
+
+The replay engine is:
+
+```python
+from tradingbot.options.backtest import OptionSnapshot, replay_options
+
+snapshots = [
+    OptionSnapshot(timestamp=ts, chain=chain, underlying_prices=prices),
+]
+
+def signal(snapshot):
+    return {"BTC": "long", "ETH": "flat"}
+
+result = replay_options(snapshots, signal)
+
+# Or map a typed AI decision:
+from tradingbot.options.signals import directions_from_decision
+directions = directions_from_decision(
+    decision,
+    {"BTCUSDT": "BTC", "ETHUSDT": "ETH"},
+)
+```
+
+This is a framework. It is **not** a profitable backtest until the snapshots are
+real historical option-chain data with bid/ask and Greeks.
+
+---
+
 ## 7. Metrics to report
 
 | Metric | Why |
@@ -287,15 +321,17 @@ The current live gate remains **NO_GO**.
 
 ## 9. Practical build order
 
-1. **Fixture integration test** — fake Jev, fake chain, fake clock, fake broker.
-2. **Option data adapter** — one venue, public chain and tickers.
-3. **Paper options broker** — premium, fees, mark, expiry.
-4. **Options selector** — call/put, DTE, delta, strike, gates.
-5. **Synthetic backtest** — 30m spot + DVOL + Black-Scholes, conservative costs.
-6. **Recorded chain replay** — buy a limited data sample only if step 5 looks
-   plausible.
-7. **30m live paper forward** — 20-56 days.
-8. **Live pilot** — only after the hard gate.
+| Step | Status |
+|---|---|
+| Fixture integration test | **Built** |
+| Paper options broker | **Built** |
+| Option selector and gates | **Built** |
+| Snapshot replay engine | **Built** |
+| One venue data adapter | **Next** |
+| Synthetic 30m options backtest | Next |
+| Paid historical chain replay | Later, only if synthetic results are plausible |
+| 30m live paper forward | 20-56 days |
+| Live pilot | Only after the hard gate |
 
-The first code to write is not the live adapter. It is the fixture-based
-integration test and the event-driven paper accounting.
+The first code milestone is complete. The next build is the **venue data adapter**
+and its recorded-fixture contract tests.

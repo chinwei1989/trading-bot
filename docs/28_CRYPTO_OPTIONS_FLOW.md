@@ -4,9 +4,10 @@
 current trading lanes are still spot/cash crypto paper accounts. Crypto options
 execution is **not implemented** and is not live.
 
-The account-gate module exists and is tested:
-`src/tradingbot/options/account.py`. The venue adapter, option paper broker,
-selector, and 30m runtime are not built yet.
+The deterministic options core exists and is tested: account gates, selector,
+paper options broker, one-cycle pipeline, and snapshot replay. The venue adapter,
+AI-squad signal integration, real historical chain data, and 30m runtime are not
+built yet.
 
 The animation includes a proposed **breakout specialist** and a 30-minute
 options loop. Neither is running yet. The current AI squad is the seven-agent
@@ -307,9 +308,19 @@ running options strategy.
 
 - `src/tradingbot/options/account.py`: pre-selector account gate and
   post-selector contract gate.
-- `tests/test_options_account.py`: budget, reserve, leg-count, expiry, spread,
-  open-interest, delta, DTE, and premium-cap tests.
+- `src/tradingbot/options/selector.py`: deterministic call/put selection and
+  contract ranking.
+- `src/tradingbot/options/broker.py`: paper premiums, cash, fees, marks,
+  expiry settlement, and state persistence.
+- `src/tradingbot/options/pipeline.py`: one paper options cycle with close,
+  gate, select, buy, mark, and settle steps.
+- `src/tradingbot/options/backtest.py`: event-driven replay over recorded or
+  synthetic chain snapshots.
+- Tests for gates, selection, paper fills, expiry, state, and replay.
 - Interactive flow animation and dashboard **Options flow** view.
+
+Still missing: venue data adapter, AI-squad signal adapter, historical chain
+dataset, live paper scheduler, and live execution.
 
 ### Step 1 — Data adapter
 
