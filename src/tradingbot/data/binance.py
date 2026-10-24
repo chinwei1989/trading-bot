@@ -8,6 +8,7 @@ import time
 import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import httpx
 import polars as pl
@@ -139,6 +140,93 @@ def parse_kline_rows(rows: list[list[object]]) -> pl.DataFrame:
         raise ValueError("empty kline response")
     df = pl.DataFrame(rows, schema=COLUMNS, orient="row")
     return _normalize_kline_frame(df)
+
+
+def _interval_milliseconds(interval: str) -> int:
+    multipliers = {"m": 60_000, "h": 3_600_000, "d": 86_400_000}
+    try:
+        unit = interval[-1]
+        value = int(interval[:-1])
+        return value * multipliers[unit]
+    except (KeyError, ValueError, IndexError) as exc:
+        raise ValueError(f"unsupported interval: {interval}") from exc
+
+
+def _as_utc(value: datetime | str) -> datetime:
+    if isinstance(value, datetime):
+        dt = value
+    else:
+        dt = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    return dt.astimezone(UTC) if dt.tzinfo else dt.replace(tzinfo=UTC)
+
+
+def fetch_window(
+    symbol: str,
+    interval: str = "30m",
+    *,
+    start: datetime | str,
+    end: datetime | str,
+    market: str = "spot",
+    client: httpx.Client | None = None,
+) -> pl.DataFrame:
+    """Fetch a bounded public kline window, paginating at Binance's 1000 limit.
+
+    ``start`` and ``end`` are inclusive UTC timestamps. The function does not
+    require an API key and never places an order.
+    """
+    if market == "spot":
+        url = "https://data-api.binance.vision/api/v3/klines"
+    elif market == "futures":
+        url = "https://fapi.binance.com/fapi/v1/klines"
+    else:
+        raise ValueError(f"unknown market: {market}")
+
+    start_dt = _as_utc(start)
+    end_dt = _as_utc(end)
+    if end_dt < start_dt:
+        raise ValueError("end must be >= start")
+    step_ms = _interval_milliseconds(interval)
+    cursor = int(start_dt.timestamp() * 1000)
+    end_ms = int(end_dt.timestamp() * 1000)
+    rows: list[list[Any]] = []
+    owns_client = client is None
+    http = client or httpx.Client(timeout=30, follow_redirects=True)
+    try:
+        while cursor <= end_ms:
+            response = _get_with_retry(
+                http,
+                url,
+                params={
+                    "symbol": symbol,
+                    "interval": interval,
+                    "startTime": cursor,
+                    "endTime": end_ms,
+                    "limit": 1000,
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, list) or not payload:
+                break
+            rows.extend(payload)
+            last_open = int(payload[-1][0])
+            next_cursor = last_open + step_ms
+            if next_cursor <= cursor:
+                raise RuntimeError("Binance kline pagination made no progress")
+            cursor = next_cursor
+    finally:
+        if owns_client:
+            http.close()
+
+    if not rows:
+        raise ValueError(f"no Binance data for {symbol} {start}..{end}")
+    frame = parse_kline_rows(rows)
+    frame = frame.filter(
+        (pl.col("timestamp") >= start_dt) & (pl.col("timestamp") <= end_dt)
+    )
+    if frame.is_empty():
+        raise ValueError(f"no Binance bars for {symbol} {start}..{end}")
+    return normalize_bars(frame.with_columns(pl.lit(symbol).alias("asset")))
 
 
 def fetch_recent(

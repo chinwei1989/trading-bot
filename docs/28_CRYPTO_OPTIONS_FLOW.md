@@ -321,12 +321,16 @@ running options strategy.
 - `src/tradingbot/options/ai_pipeline.py`: 30m Jev squad → options paper cycle.
 - `src/tradingbot/options/historical.py`: validated CSV/Parquet snapshot loader.
 - `src/tradingbot/options/tardis.py`: free Tardis first-day options-chain ingestion.
-- `scripts/ingest_tardis_options.py`, `scripts/run_options_tardis_replay.py`.
+- `src/tradingbot/ops/options_evidence.py`: read-only forward/replay evidence scorecard.
+- `scripts/ingest_tardis_options.py`, `scripts/run_options_tardis_replay.py`,
+  `scripts/build_options_evidence.py`.
 - `config/ai_options_30m.yaml`: separate paper account.
 - `scripts/run_ai_options_30m.ps1`, `scripts/register_ai_options_30m.ps1`.
 - Tests for gates, selection, paper fills, expiry, state, replay, Deribit
-  fixtures, synthetic chains, historical loading, and AI options cycle.
-- Interactive flow animation and dashboard **Options flow** view.
+  fixtures, synthetic chains, historical loading, Tardis ingestion, and the
+  AI options cycle.
+- Interactive flow animation plus dashboard **Options flow** and **Options
+  evidence** views.
 
 Still missing: a multi-day historical chain archive and live execution. The free
 one-day sample is not evidence of edge.

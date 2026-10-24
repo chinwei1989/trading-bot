@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **149 tests passing**, `ruff` pass, `mypy src` pass
+- **151 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -234,7 +234,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Eight-agent AI squad:** separate paper account; macro → trend → breakout → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
-- **Crypto options core:** 30m AI options paper lane, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis Deribit chain replay; live execution is not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
+- **Crypto options core:** 30m AI options paper lane, read-only options evidence scorecard, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is not built; see `docs/28_CRYPTO_OPTIONS_FLOW.md` and `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
@@ -288,7 +288,7 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad / Options flow)
+# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad / AI options 30m / Options evidence / Options flow)
 uv run python -m tradingbot evaluate --strategy trend
 powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
@@ -381,6 +381,9 @@ uv run python scripts/ingest_tardis_options.py `
   data/raw/tardis/deribit_options_chain_2026-10-01.csv.gz `
   data/normalized/options_tardis_2026-10-01.csv
 uv run python scripts/run_options_tardis_replay.py
+
+# Read-only options evidence scorecard (forward paper + free replay)
+uv run python scripts/build_options_evidence.py
 
 # Ten point-in-time dry decisions (no orders)
 uv run python scripts/jev_smoke.py

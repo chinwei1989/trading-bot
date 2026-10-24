@@ -369,8 +369,10 @@ uv run python scripts/run_options_tardis_replay.py
 The replay uses real bid/ask, Greeks, open interest, and underlying prices.
 Deribit inverse premiums are converted to a USD approximation by multiplying
 the coin-denominated premium by the underlying index price. The signal is a
-simple 200-bar SMA, not the AI squad, and one day cannot establish edge. No
-paid vendor data is used.
+simple 200-bar SMA on real Binance 30-minute bars, shifted to bar-close
+timestamps so a 00:30 decision uses only the completed 00:00-00:30 bar. It is
+not the AI squad, and one day cannot establish edge. No paid vendor data is
+used.
 
 Observed result for the free 2026-10-01 day:
 
@@ -395,6 +397,30 @@ Output:
 ```text
 artifacts/options_tardis/tardis_replay_2026-10-01.json
 ```
+
+## 6.3 Options evidence scorecard
+
+The read-only scorecard combines forward paper, squad controls, and the free
+replay:
+
+```powershell
+uv run python scripts/build_options_evidence.py
+```
+
+Outputs:
+
+```text
+artifacts/options_evidence/latest.json
+artifacts/options_evidence/report.md
+```
+
+Dashboard view: **Options evidence**. It is password-gated like the rest of the
+dashboard and never writes to the trading account.
+
+The scorecard deduplicates manual/retried runs by the decision `as_of` slot so
+that a rerun cannot inflate the cycle count. It labels the forward window as
+insufficient until 56 paper days exist and labels the free replay as one day,
+not evidence of edge.
 
 ## 6.3 Replay API
 
@@ -471,6 +497,7 @@ The current live gate remains **NO_GO**.
 | Deribit public data adapter | **Built** |
 | Synthetic 30m options replay | **Built** |
 | Free Tardis one-day real-chain replay | **Built** |
+| Options evidence scorecard | **Built** |
 | AI-squad 30m signal integration | **Built** |
 | 30m scheduled paper forward | **Started** |
 | Paid multi-day historical replay | Not purchased |

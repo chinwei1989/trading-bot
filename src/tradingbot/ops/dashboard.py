@@ -25,6 +25,7 @@ from tradingbot.config import AppConfig, load_config
 from tradingbot.ops.evaluation import build_report, write_report
 from tradingbot.ops.heartbeat import read_heartbeat
 from tradingbot.ops.office3d import build_office_html
+from tradingbot.ops.options_evidence import build_options_evidence
 
 ROOT = Path(__file__).resolve().parents[3]
 DET_CONFIGS = {
@@ -584,7 +585,7 @@ def _render_ai_squad() -> None:
         st.caption(f"Audit: `{report.get('audit_path', '')}`")
 
     st.caption(
-        "Seven role-scoped Jev calls share typed memos through a blackboard. "
+        "Eight role-scoped Jev calls share typed memos through a blackboard. "
         "Risk vetoes and execution blocks are enforced by deterministic code; "
         "sizing and paper execution remain outside the LLM. Paper only."
     )
@@ -652,6 +653,77 @@ def _render_ai_options() -> None:
     heartbeat = read_heartbeat(ROOT / "artifacts/ai_options_30m/heartbeat.json")
     if heartbeat:
         st.json(heartbeat)
+
+
+def _render_options_evidence() -> None:
+    evidence = build_options_evidence(ROOT)
+    paper = evidence.get("paper", {})
+    squad = evidence.get("squad", {})
+    replay = evidence.get("replay") or {}
+    st.subheader("Options evidence")
+    st.caption(
+        "Read-only summary of the forward paper lane and the free real-chain "
+        "replay. This page never places an order or changes policy."
+    )
+    status = str(evidence.get("status", "?"))
+    if status != "target_days_reached":
+        st.warning(
+            f"Evidence status: {status}. "
+            f"Forward paper days: {paper.get('paper_days', 0)} / "
+            f"{evidence.get('target_paper_days', 56)}."
+        )
+    for warning in evidence.get("warnings", []):
+        st.caption(f"• {warning}")
+
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1.metric("Paper days", f"{paper.get('paper_days', 0)}")
+    c2.metric("Cycles", f"{paper.get('cycles', 0)}")
+    c3.metric("Flat cycles", f"{paper.get('flat_cycles', 0)}")
+    c4.metric("Fills", f"{paper.get('fills', 0)}")
+    c5.metric("Equity", f"${float(paper.get('final_equity', 0)):,.2f}")
+    c6.metric("Max drawdown", f"{float(paper.get('max_drawdown', 0)):.2%}")
+
+    st.write("**Forward paper**")
+    st.caption(
+        f"Coverage: {paper.get('cycles', 0)} / {paper.get('expected_cycles', 0)} "
+        f"expected 30m slots · risk-off cycles: {paper.get('risk_off_cycles', 0)} "
+        f"· orders: {paper.get('orders', 0)}"
+    )
+    cycles = paper.get("cycle_rows", [])
+    if cycles:
+        frame = pd.DataFrame(cycles)
+        if "directions" in frame.columns:
+            frame["directions"] = frame["directions"].apply(
+                lambda value: json.dumps(value, sort_keys=True)
+            )
+        st.dataframe(frame, width="stretch", hide_index=True)
+    else:
+        st.info("No forward paper cycles recorded.")
+
+    st.write("**Squad controls**")
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Squad runs", f"{squad.get('runs', 0)}")
+    c2.metric("Risk vetoes", f"{squad.get('risk_veto_assets', 0)}")
+    c3.metric("Execution blocks", f"{squad.get('execution_block_assets', 0)}")
+    c4.metric("Chair flat runs", f"{squad.get('chair_flat_runs', 0)}")
+    latest = squad.get("latest")
+    if latest:
+        st.json(latest)
+
+    st.write("**Free real-chain replay**")
+    if replay:
+        r1, r2, r3, r4, r5 = st.columns(5)
+        r1.metric("Date", str(replay.get("chain_date", "?")))
+        r2.metric("Snapshots", f"{int(replay.get('snapshots') or 0)}")
+        r3.metric("Fills", f"{int(replay.get('total_fills') or 0)}")
+        r4.metric("Return", f"{float(replay.get('total_return') or 0):.2%}")
+        r5.metric("Max drawdown", f"{float(replay.get('max_drawdown') or 0):.2%}")
+        st.caption(
+            "One free Tardis first-day sample. Tardis is a paid vendor; this "
+            "is not a continuous backtest and not evidence of edge."
+        )
+    else:
+        st.info("No free real-chain replay artifact found.")
 
 
 def _render_intraday() -> None:
@@ -999,6 +1071,7 @@ view = st.sidebar.radio(
         "AI agent",
         "AI squad",
         "AI options 30m",
+        "Options evidence",
         "Options flow",
         "3D Office",
     ],
@@ -1023,6 +1096,8 @@ def _render_selected(selected: str) -> None:
         _render_ai_squad()
     elif selected == "AI options 30m":
         _render_ai_options()
+    elif selected == "Options evidence":
+        _render_options_evidence()
     elif selected == "Options flow":
         _render_options_flow()
     elif selected == "3D Office":

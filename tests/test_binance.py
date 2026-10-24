@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import io
 import zipfile
+from datetime import UTC, datetime
+from typing import Any
 
-from tradingbot.data.binance import parse_kline_rows, parse_zip
+import httpx
+
+from tradingbot.data.binance import fetch_window, parse_kline_rows, parse_zip
 
 
 def _zip(csv: str, name: str = "BTCUSDT-1d-2024-01.csv") -> bytes:
@@ -54,6 +58,57 @@ def test_parse_recent_json_rows() -> None:
     df = parse_kline_rows(rows)
     assert df.height == 1
     assert df["close"][0] == 105.0
+
+
+def _kline(open_ms: int, close: str = "105") -> list[Any]:
+    return [
+        open_ms,
+        "100",
+        "110",
+        "90",
+        close,
+        "1000",
+        open_ms + 1_799_999,
+        "105000",
+        10,
+        "500",
+        "52500",
+        "0",
+    ]
+
+
+def test_fetch_window_paginates() -> None:
+    calls: list[int] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        start = int(request.url.params["startTime"])
+        calls.append(start)
+        if start == 1704067200000:
+            return httpx.Response(
+                200,
+                json=[_kline(start), _kline(start + 1_800_000)],
+            )
+        if start == 1704070800000:
+            return httpx.Response(200, json=[_kline(start)])
+        return httpx.Response(200, json=[])
+
+    client = httpx.Client(transport=httpx.MockTransport(handler))
+    try:
+        frame = fetch_window(
+            "BTCUSDT",
+            "30m",
+            start=datetime(2024, 1, 1, 0, 0, tzinfo=UTC),
+            end=datetime(2024, 1, 1, 1, 30, tzinfo=UTC),
+            client=client,
+        )
+    finally:
+        client.close()
+
+    assert calls == [1704067200000, 1704070800000, 1704072600000]
+    assert frame.height == 3
+    assert frame["asset"].to_list() == ["BTCUSDT", "BTCUSDT", "BTCUSDT"]
+    assert frame["timestamp"][0] == datetime(2024, 1, 1, 0, 0, tzinfo=UTC)
+    assert frame["close"][2] == 105.0
 
 
 def test_parse_header_variant() -> None:

@@ -239,6 +239,7 @@ def run_ai_options_cycle(
             _resolve(root, config.broker.performance_path),
             {
                 "pipeline": "ai_options",
+                "as_of": as_of_iso,
                 "provider": decision.provider,
                 "model": decision.model,
                 "regime": decision.regime,
