@@ -325,6 +325,7 @@ running options strategy.
 - `src/tradingbot/options/live_gate.py`: options-specific hard live gate.
 - `src/tradingbot/ops/options_evidence.py`: read-only forward/replay evidence scorecard.
 - `src/tradingbot/ops/readiness.py`: paper/live readiness summary.
+- `scripts/check_host.ps1`: always-on Windows host readiness check.
 - `scripts/ingest_tardis_options.py`, `scripts/run_options_tardis_replay.py`,
   `scripts/build_options_evidence.py`, `scripts/self_eval.py`,
   `scripts/build_readiness.py`.

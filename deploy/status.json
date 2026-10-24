@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-24T14:48:26.203189+00:00",
+  "generated_at": "2026-10-24T15:27:06.636550+00:00",
   "source": "local snapshot",
   "gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-24T14:48:22.873955+00:00",
+    "generated_at": "2026-10-24T15:27:03.225685+00:00",
     "config_strategy": "trend",
     "checks": [
       {
@@ -85,7 +85,7 @@
   },
   "health": {
     "status": "OK",
-    "generated_at": "2026-10-24T14:48:20.462460+00:00",
+    "generated_at": "2026-10-24T15:27:00.905523+00:00",
     "required_days": 56,
     "max_age_hours": 26.0,
     "campaigns": [
@@ -93,7 +93,7 @@
         "name": "trend",
         "status": "ok",
         "latest": "2026-10-23T23:00:34.381924+00:00",
-        "age_hours": 15.8,
+        "age_hours": 16.44,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -102,7 +102,7 @@
         "name": "xsmom",
         "status": "ok",
         "latest": "2026-10-23T23:00:39.203342+00:00",
-        "age_hours": 15.79,
+        "age_hours": 16.44,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -111,7 +111,7 @@
         "name": "breakout",
         "status": "ok",
         "latest": "2026-10-23T23:20:05.839792+00:00",
-        "age_hours": 15.47,
+        "age_hours": 16.12,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -120,7 +120,7 @@
         "name": "reversal",
         "status": "ok",
         "latest": "2026-10-23T23:20:17.985961+00:00",
-        "age_hours": 15.47,
+        "age_hours": 16.11,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -129,7 +129,7 @@
         "name": "meta",
         "status": "ok",
         "latest": "2026-10-23T23:20:39.650878+00:00",
-        "age_hours": 15.46,
+        "age_hours": 16.11,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -138,7 +138,7 @@
         "name": "ai",
         "status": "ok",
         "latest": "2026-10-23T23:15:05.009278+00:00",
-        "age_hours": 15.55,
+        "age_hours": 16.2,
         "days": 2,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -147,7 +147,7 @@
         "name": "ai_squad",
         "status": "ok",
         "latest": "2026-10-24T02:09:38.508833+00:00",
-        "age_hours": 12.64,
+        "age_hours": 13.29,
         "days": 1,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -155,8 +155,8 @@
       {
         "name": "intraday_meta",
         "status": "ok",
-        "latest": "2026-10-24T14:01:24.099307+00:00",
-        "age_hours": 0.78,
+        "latest": "2026-10-24T15:01:24.148606+00:00",
+        "age_hours": 0.43,
         "days": 1,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -164,8 +164,8 @@
       {
         "name": "ai_options_30m",
         "status": "ok",
-        "latest": "2026-10-24T14:31:09.606327+00:00",
-        "age_hours": 0.29,
+        "latest": "2026-10-24T15:01:09.438305+00:00",
+        "age_hours": 0.43,
         "days": 1,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -210,14 +210,14 @@
       "mode": null
     },
     "intraday": {
-      "equity": 9971.124507814959,
-      "timestamp": "2026-10-24T14:01:24.099307+00:00",
+      "equity": 9966.405874679585,
+      "timestamp": "2026-10-24T15:01:24.148606+00:00",
       "days": 1,
       "mode": "paper"
     },
     "ai_options_30m": {
       "equity": 10000.0,
-      "timestamp": "2026-10-24T14:31:09.606327+00:00",
+      "timestamp": "2026-10-24T15:01:09.438305+00:00",
       "days": 1,
       "mode": null
     }
@@ -369,7 +369,7 @@
     ]
   },
   "options_evidence": {
-    "generated_at": "2026-10-24T14:31:39.338557+00:00",
+    "generated_at": "2026-10-24T14:48:36.074774+00:00",
     "status": "insufficient",
     "target_paper_days": 56,
     "paper": {
@@ -381,6 +381,8 @@
       "risk_off_cycles": 11,
       "orders": 0,
       "fills": 0,
+      "fees": 0,
+      "settlements": 0,
       "positions": 0,
       "initial_equity": 10000.0,
       "final_equity": 10000.0,
@@ -543,7 +545,8 @@
           "n_fills": 0,
           "positions": 0
         }
-      ]
+      ],
+      "recent_fills": []
     },
     "squad": {
       "runs": 14,
@@ -639,7 +642,7 @@
   },
   "options_live_gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-24T14:48:24.393665+00:00",
+    "generated_at": "2026-10-24T15:27:04.765699+00:00",
     "checks": [
       {
         "name": "options paper days",
@@ -698,7 +701,7 @@
     ]
   },
   "readiness": {
-    "generated_at": "2026-10-24T14:48:25.832737+00:00",
+    "generated_at": "2026-10-24T15:27:06.265520+00:00",
     "generated_from": {
       "self_eval": true,
       "campaign_health": true,
@@ -709,6 +712,12 @@
     "health_status": "OK",
     "live_gate": "NO_GO",
     "options_live_gate": "NO_GO",
+    "host_status": "DEGRADED",
+    "host_ready": false,
+    "host_recommendations": [
+      "Run an elevated PowerShell: Set-Service w32time -StartupType Automatic; Start-Service w32time; w32tm /resync",
+      "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
+    ],
     "options_status": "insufficient",
     "paper_days": 1,
     "target_paper_days": 56,
@@ -717,6 +726,7 @@
     "live_ready": false,
     "blockers": [
       "live gate is NO_GO",
+      "host readiness is DEGRADED",
       "forward options evidence has 1 of 56 paper days",
       "options live gate is NO_GO",
       "no live options execution adapter or venue is configured"
@@ -739,6 +749,10 @@
       "options live adapter",
       "options credentials",
       "options evidence"
+    ],
+    "host_blockers": [
+      "Run an elevated PowerShell: Set-Service w32time -StartupType Automatic; Start-Service w32time; w32tm /resync",
+      "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
     ]
   }
 }

@@ -13,7 +13,7 @@ def _load_json(path: Path) -> dict[str, Any] | None:
     if not path.exists():
         return None
     try:
-        payload = json.loads(path.read_text(encoding="utf-8"))
+        payload = json.loads(path.read_text(encoding="utf-8-sig"))
     except (OSError, json.JSONDecodeError):
         return None
     return payload if isinstance(payload, dict) else None
@@ -25,6 +25,7 @@ def build_readiness(root: Path) -> dict[str, Any]:
     live_gate = _load_json(root / "artifacts" / "LIVE_GATE.json")
     options = _load_json(root / "artifacts" / "options_evidence" / "latest.json")
     paper = options.get("paper", {}) if options else {}
+    host = _load_json(root / "artifacts" / "HOST_READINESS.json")
     try:
         options_live_gate = build_options_live_gate(root)
     except Exception as exc:
@@ -43,6 +44,10 @@ def build_readiness(root: Path) -> dict[str, Any]:
         blockers.append("live gate has not been run")
     elif live_gate.get("status") != "GO":
         blockers.append("live gate is NO_GO")
+    if not host:
+        blockers.append("host readiness has not been checked")
+    elif host.get("status") != "READY":
+        blockers.append(f"host readiness is {host.get('status')}")
     if not options:
         blockers.append("options evidence has not been generated")
     else:
@@ -63,6 +68,9 @@ def build_readiness(root: Path) -> dict[str, Any]:
         "health_status": health.get("status") if health else "missing",
         "live_gate": live_gate.get("status") if live_gate else "missing",
         "options_live_gate": options_live_gate.get("status", "missing"),
+        "host_status": host.get("status") if host else "missing",
+        "host_ready": (host or {}).get("status") == "READY",
+        "host_recommendations": host.get("recommendations", []) if host else [],
         "options_status": options.get("status") if options else "missing",
         "paper_days": int(paper.get("paper_days") or 0),
         "target_paper_days": int(
@@ -82,4 +90,5 @@ def build_readiness(root: Path) -> dict[str, Any]:
         "blockers": blockers,
         "live_gate_failed": live_gate.get("failed", []) if live_gate else [],
         "options_live_gate_failed": options_live_gate.get("failed", []),
+        "host_blockers": host.get("recommendations", []) if host else [],
     }

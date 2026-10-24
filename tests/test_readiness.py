@@ -34,10 +34,15 @@ def test_readiness_keeps_live_blocked_without_adapter(tmp_path: Path) -> None:
             "paper": {"paper_days": 1},
         },
     )
+    _write(
+        tmp_path / "artifacts" / "HOST_READINESS.json",
+        {"status": "READY", "recommendations": []},
+    )
 
     readiness = build_readiness(tmp_path)
     assert readiness["paper_ready"] is True
     assert readiness["paper_evidence_ready"] is False
+    assert readiness["host_ready"] is True
     assert readiness["live_ready"] is False
     assert readiness["live_gate"] == "NO_GO"
     assert readiness["paper_days"] == 1

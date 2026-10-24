@@ -32,6 +32,7 @@ def main() -> int:
         "| Check | Value |",
         "|---|---|",
         f"| Code checks | {report['code_status']} |",
+        f"| Host | {report['host_status']} |",
         f"| Campaign health | {report['health_status']} |",
         f"| Spot live gate | {report['live_gate']} |",
         f"| Options live gate | {report['options_live_gate']} |",
@@ -42,6 +43,9 @@ def main() -> int:
         "",
     ]
     lines.extend(f"- {blocker}" for blocker in report["blockers"])
+    if report.get("host_recommendations"):
+        lines.extend(["", "## Host recommendations", ""])
+        lines.extend(f"- {item}" for item in report["host_recommendations"])
     lines.extend(
         [
             "",

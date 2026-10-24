@@ -241,6 +241,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
 - **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the eight-agent AI squad, hourly intraday meta, and the 30m AI options paper lane; writes `artifacts/CAMPAIGN_HEALTH.md`
+- **Host readiness:** `scripts/check_host.ps1` checks sleep, wake timers, network, time service, disk, task logon, and last task results; writes `artifacts/HOST_READINESS.md`
 - **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
 - **Carry research lane:** two-leg spot/perp funding/basis backtest + walk-forward; full-sample looks strong, OOS DSR 0.00 / PBO 0.57, so not added to meta
 - **Extended PIT sample:** 8 current + 3 delisted assets with active spans; extended meta DSR 0.13 / PBO 0.05, still NO_GO
@@ -389,6 +390,7 @@ uv run python scripts/build_options_evidence.py
 uv run python scripts/self_eval.py
 uv run python scripts/build_readiness.py
 uv run python scripts/build_options_live_gate.py
+powershell -ExecutionPolicy Bypass -File scripts/check_host.ps1
 
 # Ten point-in-time dry decisions (no orders)
 uv run python scripts/jev_smoke.py

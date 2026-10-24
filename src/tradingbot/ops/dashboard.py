@@ -663,13 +663,14 @@ def _render_readiness() -> None:
         "Read-only operational summary. Paper readiness and live readiness are "
         "separate. No view or button can place an order."
     )
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
     c1.metric("Code checks", str(readiness["code_status"]))
     c2.metric("Campaign health", str(readiness["health_status"]))
-    c3.metric("Spot live gate", str(readiness["live_gate"]))
-    c4.metric("Options live gate", str(readiness["options_live_gate"]))
-    c5.metric("Options evidence", str(readiness["options_status"]))
-    c6.metric(
+    c3.metric("Host", str(readiness["host_status"]))
+    c4.metric("Spot live gate", str(readiness["live_gate"]))
+    c5.metric("Options live gate", str(readiness["options_live_gate"]))
+    c6.metric("Options evidence", str(readiness["options_status"]))
+    c7.metric(
         "Paper days",
         f"{readiness['paper_days']} / {readiness['target_paper_days']}",
     )
@@ -700,6 +701,11 @@ def _render_readiness() -> None:
             width="stretch",
             hide_index=True,
         )
+    host_blockers = readiness.get("host_blockers", [])
+    if host_blockers:
+        st.write("**Host recommendations**")
+        for item in host_blockers:
+            st.caption(f"• {item}")
     st.caption(
         "Run `uv run python scripts/self_eval.py` to refresh code, health, and "
         "live-gate checks."
