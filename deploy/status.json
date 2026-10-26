@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-24T16:03:01.683412+00:00",
+  "generated_at": "2026-10-26T15:24:12.442338+00:00",
   "source": "local snapshot",
   "gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-24T16:02:58.379522+00:00",
+    "generated_at": "2026-10-26T15:23:52.403705+00:00",
     "config_strategy": "trend",
     "checks": [
       {
@@ -19,12 +19,12 @@
       {
         "name": "paper campaign",
         "passed": false,
-        "detail": "1 unique days vs required 56"
+        "detail": "3 unique days vs required 56"
       },
       {
         "name": "TCA",
         "passed": true,
-        "detail": "5.0 bps, 7 fills (max 10.0 bps)"
+        "detail": "5.0 bps, 15 fills (max 10.0 bps)"
       },
       {
         "name": "data freshness",
@@ -54,7 +54,7 @@
       {
         "name": "AI paper days",
         "passed": false,
-        "detail": "1 vs required 56"
+        "detail": "3 vs required 56"
       },
       {
         "name": "AI is not fallback",
@@ -84,89 +84,89 @@
     ]
   },
   "health": {
-    "status": "DEGRADED",
-    "generated_at": "2026-10-24T16:02:55.676368+00:00",
+    "status": "OK",
+    "generated_at": "2026-10-26T15:23:50.073304+00:00",
     "required_days": 56,
     "max_age_hours": 26.0,
     "campaigns": [
       {
         "name": "trend",
-        "status": "stale",
-        "latest": "2026-10-23T23:00:34.381924+00:00",
-        "age_hours": 17.04,
-        "days": 2,
+        "status": "ok",
+        "latest": "2026-10-25T23:00:30.592675+00:00",
+        "age_hours": 16.39,
+        "days": 4,
         "heartbeat": "ok",
-        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
+        "detail": "fresh paper row"
       },
       {
         "name": "xsmom",
-        "status": "stale",
-        "latest": "2026-10-23T23:00:39.203342+00:00",
-        "age_hours": 17.04,
-        "days": 2,
+        "status": "ok",
+        "latest": "2026-10-25T23:00:36.210599+00:00",
+        "age_hours": 16.39,
+        "days": 4,
         "heartbeat": "ok",
-        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
+        "detail": "fresh paper row"
       },
       {
         "name": "breakout",
-        "status": "stale",
-        "latest": "2026-10-23T23:20:05.839792+00:00",
-        "age_hours": 16.71,
-        "days": 2,
+        "status": "ok",
+        "latest": "2026-10-25T23:20:06.559431+00:00",
+        "age_hours": 16.06,
+        "days": 4,
         "heartbeat": "ok",
-        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
+        "detail": "fresh paper row"
       },
       {
         "name": "reversal",
-        "status": "stale",
-        "latest": "2026-10-23T23:20:17.985961+00:00",
-        "age_hours": 16.71,
-        "days": 2,
+        "status": "ok",
+        "latest": "2026-10-25T23:20:20.525787+00:00",
+        "age_hours": 16.06,
+        "days": 4,
         "heartbeat": "ok",
-        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
+        "detail": "fresh paper row"
       },
       {
         "name": "meta",
-        "status": "stale",
-        "latest": "2026-10-23T23:20:39.650878+00:00",
-        "age_hours": 16.7,
-        "days": 2,
+        "status": "ok",
+        "latest": "2026-10-25T23:20:50.095698+00:00",
+        "age_hours": 16.05,
+        "days": 4,
         "heartbeat": "ok",
-        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
+        "detail": "fresh paper row"
       },
       {
         "name": "ai",
-        "status": "stale",
-        "latest": "2026-10-23T23:15:05.009278+00:00",
-        "age_hours": 16.8,
-        "days": 2,
+        "status": "ok",
+        "latest": "2026-10-25T23:15:05.735596+00:00",
+        "age_hours": 16.15,
+        "days": 4,
         "heartbeat": "ok",
-        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
+        "detail": "fresh paper row"
       },
       {
         "name": "ai_squad",
-        "status": "stale",
-        "latest": "2026-10-24T02:09:38.508833+00:00",
-        "age_hours": 13.89,
-        "days": 1,
+        "status": "ok",
+        "latest": "2026-10-25T23:25:07.499509+00:00",
+        "age_hours": 15.98,
+        "days": 3,
         "heartbeat": "ok",
-        "detail": "no row for 2026-10-25; latest local date 2026-10-24"
+        "detail": "fresh paper row"
       },
       {
         "name": "intraday_meta",
         "status": "ok",
-        "latest": "2026-10-24T16:01:25.005047+00:00",
-        "age_hours": 0.03,
-        "days": 2,
+        "latest": "2026-10-26T15:01:34.271513+00:00",
+        "age_hours": 0.37,
+        "days": 3,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "ai_options_30m",
         "status": "ok",
-        "latest": "2026-10-24T16:01:10.271563+00:00",
-        "age_hours": 0.03,
-        "days": 2,
+        "latest": "2026-10-26T15:01:09.627333+00:00",
+        "age_hours": 0.38,
+        "days": 3,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       }
@@ -174,185 +174,145 @@
   },
   "campaigns": {
     "trend": {
-      "equity": 9995.261014610773,
-      "timestamp": "2026-10-23T23:00:34.381924+00:00",
-      "days": 1,
+      "equity": 9964.14980646749,
+      "timestamp": "2026-10-25T23:00:30.592675+00:00",
+      "days": 3,
       "mode": "paper"
     },
     "xsmom": {
-      "equity": 9990.999999999978,
-      "timestamp": "2026-10-23T23:00:39.203342+00:00",
-      "days": 1,
+      "equity": 9965.514988827577,
+      "timestamp": "2026-10-25T23:00:36.210599+00:00",
+      "days": 3,
       "mode": "paper"
     },
     "breakout": {
-      "equity": 9995.097914285167,
-      "timestamp": "2026-10-23T23:20:05.839792+00:00",
-      "days": 1,
+      "equity": 9960.821423963314,
+      "timestamp": "2026-10-25T23:20:06.559431+00:00",
+      "days": 3,
       "mode": "paper"
     },
     "reversal": {
-      "equity": 10000.0,
-      "timestamp": "2026-10-23T23:20:17.985961+00:00",
-      "days": 1,
+      "equity": 9978.698136478499,
+      "timestamp": "2026-10-25T23:20:20.525787+00:00",
+      "days": 3,
       "mode": "paper"
     },
     "meta": {
-      "equity": 9996.288076828423,
-      "timestamp": "2026-10-23T23:20:39.650878+00:00",
-      "days": 1,
+      "equity": 9969.246381888275,
+      "timestamp": "2026-10-25T23:20:50.095698+00:00",
+      "days": 3,
       "mode": "paper"
     },
     "ai": {
       "equity": 10000.0,
-      "timestamp": "2026-10-23T23:15:05.009278+00:00",
-      "days": 1,
+      "timestamp": "2026-10-25T23:15:05.735596+00:00",
+      "days": 3,
       "mode": null
     },
     "intraday": {
-      "equity": 9961.267249181248,
-      "timestamp": "2026-10-24T16:01:25.005047+00:00",
-      "days": 1,
+      "equity": 9954.133364857867,
+      "timestamp": "2026-10-26T15:01:34.271513+00:00",
+      "days": 3,
       "mode": "paper"
     },
     "ai_options_30m": {
       "equity": 10000.0,
-      "timestamp": "2026-10-24T16:01:10.271563+00:00",
+      "timestamp": "2026-10-26T15:01:09.627333+00:00",
+      "days": 3,
+      "mode": null
+    },
+    "swing": {
+      "equity": 10000.0,
+      "timestamp": "2026-10-26T14:30:25.410044+00:00",
       "days": 1,
       "mode": null
     }
   },
   "ai_scorecard": {
     "pipeline": "ai_agent",
-    "generated_at": "2026-10-23T23:15:07.869499+00:00",
+    "generated_at": "2026-10-25T23:15:08.834932+00:00",
     "status": "insufficient_data",
-    "n_days": 1,
+    "n_days": 3,
     "metrics": {
-      "status": "insufficient_data",
-      "n_days": 1,
-      "final_equity": 10000.0,
       "total_return": 0.0,
       "cagr": 0.0,
       "vol": 0.0,
       "sharpe": 0.0,
       "sortino": 0.0,
       "max_dd": 0.0,
-      "avg_gross": 0.0,
-      "avg_cash_pct": 1.0
-    },
-    "benchmarks": {
-      "trend": {
-        "status": "insufficient_data",
-        "n_days": 1,
-        "final_equity": 9995.261014610773,
-        "total_return": 0.0,
-        "cagr": 0.0,
-        "vol": 0.0,
-        "sharpe": 0.0,
-        "sortino": 0.0,
-        "max_dd": 0.0,
-        "avg_gross": 0.31597682454293663,
-        "avg_cash_pct": 0.6840231754570633
-      },
-      "xsmom": {
-        "status": "insufficient_data",
-        "n_days": 1,
-        "final_equity": 9990.999999999978,
-        "total_return": 0.0,
-        "cagr": 0.0,
-        "vol": 0.0,
-        "sharpe": 0.0,
-        "sortino": 0.0,
-        "max_dd": 0.0,
-        "avg_gross": 0.6005404864392925,
-        "avg_cash_pct": 1.0000000000024045
-      }
-    },
-    "provider": {
-      "decisions": 2,
-      "fallback": 0,
-      "fallback_rate": 0.0,
-      "dry_runs": 0,
-      "errors": 0,
-      "mean_latency_ms": 375.62980000075186,
-      "providers": {
-        "jev": 2
-      }
-    },
-    "confidence_calibration": [],
-    "tca": {
-      "fills": 0.0,
-      "weighted_slip_bps": 0.0,
-      "median_slip_bps": 0.0,
-      "p95_abs_slip_bps": 0.0,
-      "notional": 0.0
-    },
-    "notes": [
-      "Need at least 20 paper days for meaningful metrics.",
-      "Only one performance point exists."
-    ]
-  },
-  "ai_squad": {
-    "equity": 10000.0,
-    "timestamp": "2026-10-24T02:09:38.508833+00:00",
-    "days": 1,
-    "mode": null
-  },
-  "ai_squad_scorecard": {
-    "pipeline": "ai_agent",
-    "generated_at": "2026-10-24T02:09:42.036856+00:00",
-    "status": "insufficient_data",
-    "n_days": 1,
-    "metrics": {
-      "status": "insufficient_data",
-      "n_days": 1,
+      "calmar": 0.0,
+      "hit_rate": 0.0,
+      "profit_factor": 0.0,
+      "var_95": 0.0,
+      "cvar_95": 0.0,
+      "n_days": 3,
+      "turnover_annual": 0.0,
+      "gross_exposure_avg": 0.0,
+      "net_exposure_avg": 0.0,
+      "status": "ok",
       "final_equity": 10000.0,
-      "total_return": 0.0,
-      "cagr": 0.0,
-      "vol": 0.0,
-      "sharpe": 0.0,
-      "sortino": 0.0,
-      "max_dd": 0.0,
       "avg_gross": 0.0,
-      "avg_cash_pct": 1.0
+      "avg_cash_pct": 1.0,
+      "start": "2026-10-23 23:15:05.009278+00:00",
+      "end": "2026-10-25 23:15:05.735596+00:00"
     },
     "benchmarks": {
       "trend": {
-        "status": "insufficient_data",
-        "n_days": 1,
-        "final_equity": 9995.261014610773,
-        "total_return": 0.0,
-        "cagr": 0.0,
-        "vol": 0.0,
-        "sharpe": 0.0,
-        "sortino": 0.0,
-        "max_dd": 0.0,
-        "avg_gross": 0.31597682454293663,
-        "avg_cash_pct": 0.6840231754570633
+        "total_return": -0.003112595868962731,
+        "cagr": -0.4338717509030592,
+        "vol": 0.005853457038005091,
+        "sharpe": -97.11916891235647,
+        "sortino": -97.11916891235647,
+        "max_dd": -0.003112595868962731,
+        "calmar": -244.55417096731202,
+        "hit_rate": 0.0,
+        "profit_factor": 0.0,
+        "var_95": -0.0017524688983537727,
+        "cvar_95": -0.0017741335148237542,
+        "n_days": 3,
+        "turnover_annual": 0.0,
+        "gross_exposure_avg": 0.329004420306867,
+        "net_exposure_avg": 0.0,
+        "status": "ok",
+        "final_equity": 9964.14980646749,
+        "avg_gross": 0.329004420306867,
+        "avg_cash_pct": 0.6710052498168717,
+        "start": "2026-10-23 23:00:34.381924+00:00",
+        "end": "2026-10-25 23:00:30.592675+00:00"
       },
       "xsmom": {
-        "status": "insufficient_data",
-        "n_days": 1,
-        "final_equity": 9990.999999999978,
-        "total_return": 0.0,
-        "cagr": 0.0,
-        "vol": 0.0,
-        "sharpe": 0.0,
+        "total_return": -0.002550796834391078,
+        "cagr": -0.372564974192895,
+        "vol": 0.07848378136255729,
+        "sharpe": -5.9155632531346525,
         "sortino": 0.0,
-        "max_dd": 0.0,
-        "avg_gross": 0.6005404864392925,
-        "avg_cash_pct": 1.0000000000024045
+        "max_dd": -0.004176803490488101,
+        "calmar": 0.0,
+        "hit_rate": 0.5,
+        "profit_factor": 0.3909273337554951,
+        "var_95": -0.0038863219833558497,
+        "cvar_95": -0.004176803490488113,
+        "n_days": 3,
+        "turnover_annual": 0.0,
+        "gross_exposure_avg": 0.5996341757711365,
+        "net_exposure_avg": 0.0,
+        "status": "ok",
+        "final_equity": 9965.514988827577,
+        "avg_gross": 0.5996341757711365,
+        "avg_cash_pct": 1.0007187174030823,
+        "start": "2026-10-23 23:00:39.203342+00:00",
+        "end": "2026-10-25 23:00:36.210599+00:00"
       }
     },
     "provider": {
       "decisions": 4,
       "fallback": 0,
       "fallback_rate": 0.0,
-      "dry_runs": 2,
+      "dry_runs": 0,
       "errors": 0,
-      "mean_latency_ms": 1750.2400250086794,
+      "mean_latency_ms": 392.67829999516835,
       "providers": {
-        "squad": 4
+        "jev": 4
       }
     },
     "confidence_calibration": [],
@@ -364,21 +324,125 @@
       "notional": 0.0
     },
     "notes": [
-      "Need at least 20 paper days for meaningful metrics.",
-      "Only one performance point exists."
+      "Need at least 20 paper days for meaningful metrics."
+    ]
+  },
+  "ai_squad": {
+    "equity": 10000.0,
+    "timestamp": "2026-10-25T23:25:07.499509+00:00",
+    "days": 2,
+    "mode": null
+  },
+  "ai_squad_scorecard": {
+    "pipeline": "ai_agent",
+    "generated_at": "2026-10-25T23:25:11.897658+00:00",
+    "status": "insufficient_data",
+    "n_days": 2,
+    "metrics": {
+      "total_return": 0.0,
+      "cagr": 0.0,
+      "vol": 0.0,
+      "sharpe": 0.0,
+      "sortino": 0.0,
+      "max_dd": 0.0,
+      "calmar": 0.0,
+      "hit_rate": 0.0,
+      "profit_factor": 0.0,
+      "var_95": 0.0,
+      "cvar_95": 0.0,
+      "n_days": 2,
+      "turnover_annual": 0.0,
+      "gross_exposure_avg": 0.0,
+      "net_exposure_avg": 0.0,
+      "status": "ok",
+      "final_equity": 10000.0,
+      "avg_gross": 0.0,
+      "avg_cash_pct": 1.0,
+      "start": "2026-10-24 23:25:07.461055+00:00",
+      "end": "2026-10-25 23:25:07.499509+00:00"
+    },
+    "benchmarks": {
+      "trend": {
+        "total_return": -0.003112595868962731,
+        "cagr": -0.4338717509030592,
+        "vol": 0.005853457038005091,
+        "sharpe": -97.11916891235647,
+        "sortino": -97.11916891235647,
+        "max_dd": -0.003112595868962731,
+        "calmar": -244.55417096731202,
+        "hit_rate": 0.0,
+        "profit_factor": 0.0,
+        "var_95": -0.0017524688983537727,
+        "cvar_95": -0.0017741335148237542,
+        "n_days": 3,
+        "turnover_annual": 0.0,
+        "gross_exposure_avg": 0.329004420306867,
+        "net_exposure_avg": 0.0,
+        "status": "ok",
+        "final_equity": 9964.14980646749,
+        "avg_gross": 0.329004420306867,
+        "avg_cash_pct": 0.6710052498168717,
+        "start": "2026-10-23 23:00:34.381924+00:00",
+        "end": "2026-10-25 23:00:30.592675+00:00"
+      },
+      "xsmom": {
+        "total_return": -0.002550796834391078,
+        "cagr": -0.372564974192895,
+        "vol": 0.07848378136255729,
+        "sharpe": -5.9155632531346525,
+        "sortino": 0.0,
+        "max_dd": -0.004176803490488101,
+        "calmar": 0.0,
+        "hit_rate": 0.5,
+        "profit_factor": 0.3909273337554951,
+        "var_95": -0.0038863219833558497,
+        "cvar_95": -0.004176803490488113,
+        "n_days": 3,
+        "turnover_annual": 0.0,
+        "gross_exposure_avg": 0.5996341757711365,
+        "net_exposure_avg": 0.0,
+        "status": "ok",
+        "final_equity": 9965.514988827577,
+        "avg_gross": 0.5996341757711365,
+        "avg_cash_pct": 1.0007187174030823,
+        "start": "2026-10-23 23:00:39.203342+00:00",
+        "end": "2026-10-25 23:00:36.210599+00:00"
+      }
+    },
+    "provider": {
+      "decisions": 6,
+      "fallback": 0,
+      "fallback_rate": 0.0,
+      "dry_runs": 2,
+      "errors": 0,
+      "mean_latency_ms": 1933.4480499916633,
+      "providers": {
+        "squad": 6
+      }
+    },
+    "confidence_calibration": [],
+    "tca": {
+      "fills": 0.0,
+      "weighted_slip_bps": 0.0,
+      "median_slip_bps": 0.0,
+      "p95_abs_slip_bps": 0.0,
+      "notional": 0.0
+    },
+    "notes": [
+      "Need at least 20 paper days for meaningful metrics."
     ]
   },
   "options_evidence": {
-    "generated_at": "2026-10-24T15:57:28.097001+00:00",
+    "generated_at": "2026-10-26T13:49:53.703022+00:00",
     "status": "insufficient",
     "target_paper_days": 56,
     "paper": {
-      "paper_days": 1,
-      "cycles": 13,
-      "expected_cycles": 13,
+      "paper_days": 3,
+      "cycles": 105,
+      "expected_cycles": 105,
       "cycle_coverage": 1.0,
-      "flat_cycles": 13,
-      "risk_off_cycles": 13,
+      "flat_cycles": 105,
+      "risk_off_cycles": 105,
       "orders": 0,
       "fills": 0,
       "fees": 0,
@@ -389,10 +453,10 @@
       "return_pct": 0.0,
       "max_drawdown": 0.0,
       "first_timestamp": "2026-10-24T09:00:00+00:00",
-      "last_timestamp": "2026-10-24T15:00:00+00:00",
+      "last_timestamp": "2026-10-26T13:00:00+00:00",
       "cycle_rows": [
         {
-          "timestamp": "2026-10-24T09:00:00+00:00",
+          "timestamp": "2026-10-26T01:30:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -406,7 +470,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T09:30:00+00:00",
+          "timestamp": "2026-10-26T02:00:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -420,7 +484,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T10:00:00+00:00",
+          "timestamp": "2026-10-26T02:30:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -434,7 +498,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T10:30:00+00:00",
+          "timestamp": "2026-10-26T03:00:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -448,7 +512,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T11:00:00+00:00",
+          "timestamp": "2026-10-26T03:30:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -462,7 +526,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T11:30:00+00:00",
+          "timestamp": "2026-10-26T04:00:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -476,7 +540,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T12:00:00+00:00",
+          "timestamp": "2026-10-26T04:30:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -490,7 +554,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T12:30:00+00:00",
+          "timestamp": "2026-10-26T05:00:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -504,7 +568,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T13:00:00+00:00",
+          "timestamp": "2026-10-26T05:30:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -518,7 +582,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T13:30:00+00:00",
+          "timestamp": "2026-10-26T06:00:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -532,7 +596,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T14:00:00+00:00",
+          "timestamp": "2026-10-26T06:30:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -546,7 +610,7 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T14:30:00+00:00",
+          "timestamp": "2026-10-26T07:00:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -560,7 +624,161 @@
           "positions": 0
         },
         {
-          "timestamp": "2026-10-24T15:00:00+00:00",
+          "timestamp": "2026-10-26T07:30:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T08:00:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T08:30:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T09:00:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T09:30:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T10:00:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T10:30:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T11:00:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T11:30:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T12:00:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T12:30:00+00:00",
+          "equity": 10000.0,
+          "cash": 10000.0,
+          "regime": "risk_off",
+          "confidence": 0.0,
+          "directions": {
+            "BTC": "flat",
+            "ETH": "flat"
+          },
+          "n_orders": 0,
+          "n_fills": 0,
+          "positions": 0
+        },
+        {
+          "timestamp": "2026-10-26T13:00:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -577,16 +795,16 @@
       "recent_fills": []
     },
     "squad": {
-      "runs": 16,
-      "runs_with_risk_veto": 16,
-      "runs_with_execution_block": 14,
-      "risk_veto_assets": 32,
-      "execution_block_assets": 25,
-      "macro_risk_off_runs": 16,
-      "chair_flat_runs": 16,
+      "runs": 108,
+      "runs_with_risk_veto": 106,
+      "runs_with_execution_block": 80,
+      "risk_veto_assets": 187,
+      "execution_block_assets": 116,
+      "macro_risk_off_runs": 108,
+      "chair_flat_runs": 108,
       "latest": {
-        "run_id": "20261024T153107419940Z_6fada750",
-        "as_of": "2026-10-24T15:00:00+00:00",
+        "run_id": "20261026T133107044494Z_768ead4a",
+        "as_of": "2026-10-26T13:00:00+00:00",
         "macro_regime": "risk_off",
         "risk_regime": "risk_off",
         "execution_regime": "stressed",
@@ -663,19 +881,19 @@
       "limitations": "One free chain day only. Real bid/ask/Greeks/OI, but inverse premiums are converted to a USD approximation. The underlying signal is a simple SMA on Binance bars, not the AI squad. Long premium only; no expiry settlement occurs within a single day. This is a data and plumbing test, not evidence of edge."
     },
     "warnings": [
-      "Forward paper has 1 day(s); the target is 56.",
+      "Forward paper has 3 day(s); the target is 56.",
       "Forward paper has no option fills yet.",
       "The free replay is one day only and is not evidence of edge. Tardis is a paid vendor; only its first-day export was used."
     ]
   },
   "options_live_gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-24T16:02:59.887250+00:00",
+    "generated_at": "2026-10-26T15:23:53.982232+00:00",
     "checks": [
       {
         "name": "options paper days",
         "passed": false,
-        "detail": "1 vs required 56"
+        "detail": "3 vs required 56"
       },
       {
         "name": "options paper fills",
@@ -705,12 +923,17 @@
       {
         "name": "options live adapter",
         "passed": false,
-        "detail": "testnet adapter exists; live order submission is deliberately disabled"
+        "detail": "testnet execution/reconciliation exists; live submission is disabled"
       },
       {
         "name": "options credentials",
         "passed": false,
-        "detail": "missing"
+        "detail": "live credentials missing; testnet credentials do not count"
+      },
+      {
+        "name": "options live confirmation",
+        "passed": false,
+        "detail": "DERIBIT_LIVE_CONFIRM not set"
       },
       {
         "name": "options evidence",
@@ -724,19 +947,20 @@
       "options live broker config",
       "options live adapter",
       "options credentials",
+      "options live confirmation",
       "options evidence"
     ]
   },
   "readiness": {
-    "generated_at": "2026-10-24T16:03:01.319310+00:00",
+    "generated_at": "2026-10-26T13:49:56.832673+00:00",
     "generated_from": {
       "self_eval": true,
       "campaign_health": true,
       "live_gate": true,
       "options_evidence": true
     },
-    "code_status": "FAIL",
-    "health_status": "DEGRADED",
+    "code_status": "PASS",
+    "health_status": "OK",
     "live_gate": "NO_GO",
     "options_live_gate": "NO_GO",
     "host_status": "DEGRADED",
@@ -745,17 +969,15 @@
       "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
     ],
     "options_status": "insufficient",
-    "paper_days": 1,
+    "paper_days": 3,
     "target_paper_days": 56,
-    "paper_ready": false,
+    "paper_ready": true,
     "paper_evidence_ready": false,
     "live_ready": false,
     "blockers": [
-      "code self-evaluation is not PASS",
-      "campaign health is not OK",
       "live gate is NO_GO",
       "host readiness is DEGRADED",
-      "forward options evidence has 1 of 56 paper days",
+      "forward options evidence has 3 of 56 paper days",
       "options live gate is NO_GO",
       "no live options execution adapter or venue is configured"
     ],
@@ -780,5 +1002,173 @@
     "host_blockers": [
       "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
     ]
+  },
+  "host_readiness": {
+    "status": "DEGRADED",
+    "time_service": "Running",
+    "network_binance": true,
+    "network_deribit": true,
+    "tasks": [
+      {
+        "name": "TradingBotAIOptions30m",
+        "state": "Ready",
+        "last_run": "2026-10-26T23:01:01.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-26T23:31:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotAIPaper",
+        "state": "Ready",
+        "last_run": "2026-10-26T07:15:01.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T07:15:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotAISquad",
+        "state": "Ready",
+        "last_run": "2026-10-26T07:25:01.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T07:25:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotDeribitCanary",
+        "state": "Ready",
+        "last_run": "2026-10-26T21:48:43.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T06:45:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotHealth",
+        "state": "Ready",
+        "last_run": "2026-10-26T07:30:01.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T07:30:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotIntraday",
+        "state": "Ready",
+        "last_run": "2026-10-26T23:01:01.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T00:01:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotOptionsSwing",
+        "state": "Ready",
+        "last_run": "2026-10-26T22:29:18.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T07:40:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotPaperCampaign",
+        "state": "Ready",
+        "last_run": "2026-10-26T07:00:01.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T07:00:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotSleeves",
+        "state": "Ready",
+        "last_run": "2026-10-26T07:20:01.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T07:20:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      }
+    ],
+    "recommendations": [
+      "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
+    ]
+  },
+  "options_swing_report": {
+    "pipeline": "options_swing",
+    "status": "ok",
+    "as_of": "2026-10-24T00:00:00+00:00",
+    "signals": {
+      "BTC": {
+        "underlying": "BTC",
+        "direction": "flat",
+        "close": 80888.16,
+        "sma50": 81847.1058,
+        "sma200": 72942.35495000001,
+        "momentum20": -0.06520097076158549,
+        "reason": "trend and momentum not aligned"
+      },
+      "ETH": {
+        "underlying": "ETH",
+        "direction": "flat",
+        "close": 2358.82,
+        "sma50": 2547.7222,
+        "sma200": 2157.79505,
+        "momentum20": -0.1349938025772477,
+        "reason": "trend and momentum not aligned"
+      }
+    },
+    "exits": [],
+    "fills": [],
+    "settlements": [],
+    "selections": [],
+    "account_before": {
+      "cash": 10000.0,
+      "equity": 10000.0,
+      "legs": 0
+    },
+    "account_after": {
+      "cash": 10000.0,
+      "equity": 10000.0,
+      "legs": 0
+    },
+    "limits": {
+      "min_dte": 21,
+      "max_dte": 45,
+      "exit_dte": 7,
+      "max_open_legs": 2,
+      "max_premium_per_trade_pct": 0.02,
+      "max_total_premium_pct": 0.05
+    },
+    "alerts": [],
+    "limitation": "Paper-only long-premium swing options; no live order path."
+  },
+  "testnet_canary": {
+    "generated_at": "2026-10-26T13:48:44.718634+00:00",
+    "mode": "cycle",
+    "ok": true,
+    "issues": [],
+    "cancelled": [
+      "tb-596b235266bf6721da7501c5"
+    ],
+    "final_reconcile": {
+      "ok": true,
+      "issues": [],
+      "open_orders": [],
+      "resolved_orders": [],
+      "local_positions": {},
+      "remote_positions": [],
+      "position_differences": {}
+    }
   }
 }

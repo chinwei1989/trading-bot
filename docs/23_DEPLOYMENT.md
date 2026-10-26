@@ -36,14 +36,22 @@ app = FastAPI()
 
 It reads `deploy/status.json` and shows:
 
-- live-capital gate status
-- campaign health
-- paper equity and unique days for all six deterministic/single-AI campaigns
-- a separate seven-agent AI squad paper account
+- live-capital gate status and failed checks
+- campaign health and host readiness
+- paper equity and unique days for all deterministic, AI, intraday, options,
+  and swing campaigns
+- a separate eight-agent AI squad paper account
+- swing-options signals and scheduled-task status
+- testnet canary status
 - a 60-second browser refresh
 
 It has no Streamlit, pandas, polars, pyarrow, or plotly dependency, so the Vercel
 bundle stays well below 500 MB.
+
+The lite page was rebuilt to match the Streamlit operations-console visual
+language. Regenerate the snapshot before every redeploy. Pushing to GitHub only
+updates the Vercel page if the project is connected and redeployment is
+triggered; the local repo has no Vercel CLI or project link.
 
 Regenerate the snapshot before redeploying:
 

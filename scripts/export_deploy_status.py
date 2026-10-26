@@ -19,6 +19,7 @@ CAMPAIGNS = {
     "ai": Path("artifacts/ai/performance.jsonl"),
     "intraday": Path("artifacts/intraday/performance.jsonl"),
     "ai_options_30m": Path("artifacts/ai_options_30m/performance.jsonl"),
+    "swing": Path("artifacts/options_swing/performance.jsonl"),
 }
 
 
@@ -71,6 +72,35 @@ def main() -> int:
     )
     options_live_gate = _json(ROOT / "artifacts" / "OPTIONS_LIVE_GATE.json")
     readiness = _json(ROOT / "artifacts" / "READINESS.json")
+    raw_host = _json(ROOT / "artifacts" / "HOST_READINESS.json")
+    host_readiness = None
+    if raw_host:
+        # The Vercel snapshot may be public. Do not publish the machine name,
+        # Windows username, or local path details.
+        host_readiness = {
+            "status": raw_host.get("status"),
+            "time_service": raw_host.get("time_service"),
+            "network_binance": raw_host.get("network_binance"),
+            "network_deribit": raw_host.get("network_deribit"),
+            "tasks": raw_host.get("tasks", []),
+            "recommendations": raw_host.get("recommendations", []),
+        }
+    raw_canary = _json(
+        ROOT / "artifacts" / "ai_options_30m" / "testnet_canary" / "latest.json"
+    )
+    testnet_canary = None
+    if raw_canary:
+        testnet_canary = {
+            "generated_at": raw_canary.get("generated_at"),
+            "mode": raw_canary.get("mode"),
+            "ok": raw_canary.get("ok"),
+            "issues": raw_canary.get("issues", []),
+            "cancelled": raw_canary.get("cancelled", []),
+            "final_reconcile": raw_canary.get("final_reconcile", {}),
+        }
+    options_swing_report = _json(
+        ROOT / "artifacts" / "options_swing" / "reports" / "latest.json"
+    )
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
         "source": "local snapshot",
@@ -83,6 +113,9 @@ def main() -> int:
         "options_evidence": options_evidence,
         "options_live_gate": options_live_gate,
         "readiness": readiness,
+        "host_readiness": host_readiness,
+        "options_swing_report": options_swing_report,
+        "testnet_canary": testnet_canary,
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, indent=2, default=str), encoding="utf-8")

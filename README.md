@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **175 tests passing**, `ruff` pass, `mypy src` pass
+- **177 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -299,6 +299,7 @@ streamlit run streamlit_app.py
 # Vercel lite status app (small FastAPI bundle; snapshot-backed)
 uv run python scripts/export_deploy_status.py
 # Vercel entrypoint: app.py; install requirements-vercel.txt
+# Includes deterministic lanes, AI, options, swing options, host, and canary.
 # Set DASHBOARD_PASSWORD in the host secrets for a public deployment.
 
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
