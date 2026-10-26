@@ -95,7 +95,7 @@ def build_options_live_gate(
         OptionsGateCheck(
             "options live adapter",
             False,
-            "testnet adapter exists; live order submission is deliberately disabled",
+            "testnet execution/reconciliation exists; live submission is disabled",
         )
     )
     credentials = bool(
