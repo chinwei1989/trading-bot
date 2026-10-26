@@ -109,6 +109,16 @@ cancel                 CANCELLED
 final reconciliation   flat, issues 0
 ```
 
+The scheduled canary was also tested end to end:
+
+```text
+open-only process      left one order OPEN
+new recover process    reconciled and CANCELLED it
+final reconciliation   flat, issues 0
+scheduled task         TradingBotDeribitCanary, LastResult 0
+daily health           canary ok, open orders 0, positions 0
+```
+
 No live order was placed.
 
 ## 7. Known limitations
@@ -121,7 +131,49 @@ No live order was placed.
 - No automatic canary activation in the AI pipeline yet.
 - No live credential storage in this repository.
 
-## 8. Live status
+## 8. Scheduled canary
+
+The scheduled task is:
+
+```text
+TradingBotDeribitCanary
+daily at 06:45 local
+```
+
+It runs `scripts/run_deribit_testnet_canary.ps1`, which loads the testnet
+credentials from the Windows user environment into the child process without
+printing them.
+
+The daily cycle:
+
+1. reconciles local state and the testnet account;
+2. cancels tracked stale canary orders if necessary;
+3. places one far-from-market testnet limit order;
+4. verifies it is open;
+5. cancels it;
+6. reconciles back to flat.
+
+The latest result is written to:
+
+```text
+artifacts/ai_options_30m/testnet_canary/latest.json
+artifacts/ai_options_30m/testnet_canary/latest.md
+```
+
+`scripts/check_testnet_canary.py` validates freshness, status, open orders, and
+positions. `scripts/run_health.ps1` now runs that check as part of daily health.
+
+Manual restart test:
+
+```powershell
+powershell -File scripts/run_deribit_testnet_canary.ps1 --mode open-only
+powershell -File scripts/run_deribit_testnet_canary.ps1 --mode recover-only
+```
+
+The first command leaves a testnet order open. The second command runs in a new
+process, reconciles it, cancels it, and verifies the account is flat.
+
+## 9. Live status
 
 The options live gate remains **NO_GO**. This module does not enable live
 trading and must not be used with live credentials.

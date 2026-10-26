@@ -28,7 +28,11 @@ $code = $LASTEXITCODE
     Out-File -Append -Encoding utf8 "logs/health.log"
 & $uv run python scripts/build_readiness.py 2>&1 |
     Out-File -Append -Encoding utf8 "logs/health.log"
+& $uv run python scripts/check_testnet_canary.py 2>&1 |
+    Out-File -Append -Encoding utf8 "logs/health.log"
+$canaryCode = $LASTEXITCODE
 & powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts\check_host.ps1 2>&1 |
     Out-File -Append -Encoding utf8 "logs/health.log"
 
+if ($code -eq 0 -and $canaryCode -ne 0) { $code = $canaryCode }
 exit $code

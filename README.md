@@ -234,7 +234,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Eight-agent AI squad:** separate paper account; macro → trend → breakout → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
-- **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, persistent testnet order/fill state, restart reconciliation, idempotency and canary guards, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, `docs/31_DERIBIT_EXECUTION.md`, and `docs/32_DERIBIT_TESTNET_EXECUTION.md`
+- **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, persistent testnet order/fill state, restart reconciliation, idempotency and canary guards, a scheduled daily testnet canary with health validation, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, `docs/31_DERIBIT_EXECUTION.md`, and `docs/32_DERIBIT_TESTNET_EXECUTION.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
@@ -397,6 +397,12 @@ uv run python scripts/deribit_testnet_check.py
 
 # Read-only testnet order/position reconciliation against local persisted state
 uv run python scripts/deribit_testnet_reconcile.py
+
+# Validate the latest scheduled testnet canary result
+uv run python scripts/check_testnet_canary.py
+
+# Register the daily testnet canary task (06:45 local; testnet only)
+powershell -ExecutionPolicy Bypass -File scripts/register_deribit_testnet_canary.ps1
 
 # Ten point-in-time dry decisions (no orders)
 uv run python scripts/jev_smoke.py
