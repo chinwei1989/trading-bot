@@ -11,6 +11,7 @@ and the AI-agent campaign are separate accounts with separate artifacts.
 from __future__ import annotations
 
 import hmac
+import html
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,7 @@ from typing import Any
 
 import pandas as pd  # type: ignore[import-untyped]
 import plotly.graph_objects as go  # type: ignore[import-untyped]
+import plotly.io as pio  # type: ignore[import-untyped]
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -29,6 +31,7 @@ from tradingbot.ops.options_evidence import build_options_evidence
 from tradingbot.ops.readiness import build_readiness
 
 ROOT = Path(__file__).resolve().parents[3]
+pio.templates.default = "plotly_dark"
 DET_CONFIGS = {
     "Crypto trend": "config/base.yaml",
     "Crypto XSMOM": "config/xsmom.yaml",
@@ -43,6 +46,379 @@ AI_CONFIG = "config/ai_agent.yaml"
 AI_SQUAD_CONFIG = "config/ai_squad.yaml"
 INTRADAY_CONFIG = "config/intraday_meta.yaml"
 OPTIONS_FLOW_PATH = ROOT / "web" / "ai_options_flow.html"
+
+_NAV_ITEMS = [
+    "Overview",
+    "Deterministic",
+    "Intraday",
+    "AI agent",
+    "AI squad",
+    "AI options 30m",
+    "Swing options",
+    "Readiness",
+    "Options evidence",
+    "Options flow",
+    "3D Office",
+]
+
+_PAGE_META = {
+    "Overview": (
+        "Operations overview",
+        "A single read-only view of paper capital, live gates, and every execution lane.",
+    ),
+    "Deterministic": (
+        "Deterministic sleeves",
+        "Trend, XSMOM, breakout, reversal, and meta-allocation paper books.",
+    ),
+    "Intraday": (
+        "Intraday paper",
+        "Hourly signal horizon, separate paper account, and its own risk state.",
+    ),
+    "AI agent": (
+        "AI agent",
+        "Single-provider decision lane with deterministic policy and risk vetoes.",
+    ),
+    "AI squad": (
+        "AI squad",
+        "Eight role-scoped agents, a shared memo blackboard, and binding risk guards.",
+    ),
+    "AI options 30m": (
+        "AI options 30m",
+        "30-minute directional long-premium options paper lane.",
+    ),
+    "Swing options": (
+        "Swing options",
+        "Daily BTC/ETH trend signals expressed with 21-45 DTE long premium.",
+    ),
+    "Readiness": (
+        "Readiness & live gates",
+        "Code, host, paper evidence, and live-capital gates in one place.",
+    ),
+    "Options evidence": (
+        "Options evidence",
+        "Forward paper evidence and free real-chain replay quality.",
+    ),
+    "Options flow": (
+        "Options flow",
+        "A visualization of the planned 30-minute options workflow.",
+    ),
+    "3D Office": (
+        "3D office",
+        "The agent office rendered as an interactive Three.js floor.",
+    ),
+}
+
+_THEME_CSS = """
+<style>
+    :root {
+        --tb-bg: #070b16;
+        --tb-panel: rgba(15, 23, 42, 0.82);
+        --tb-panel-solid: #0f172a;
+        --tb-line: rgba(148, 163, 184, 0.16);
+        --tb-text: #e2e8f0;
+        --tb-muted: #94a3b8;
+        --tb-cyan: #38bdf8;
+        --tb-teal: #2dd4bf;
+        --tb-green: #4ade80;
+        --tb-amber: #fbbf24;
+        --tb-red: #fb7185;
+        --tb-purple: #c084fc;
+    }
+    html, body, [class*="css"] {
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    .stApp {
+        background:
+            radial-gradient(1100px 600px at 12% -10%, rgba(56, 189, 248, 0.12), transparent 60%),
+            radial-gradient(900px 550px at 95% 0%, rgba(192, 132, 252, 0.08), transparent 55%),
+            var(--tb-bg);
+    }
+    [data-testid="stHeader"] {
+        background: transparent;
+    }
+    [data-testid="stToolbar"], [data-testid="stDecoration"] {
+        visibility: hidden;
+        height: 0;
+    }
+    html, body, .stApp, [data-testid="stSidebar"] {
+        overflow-x: hidden;
+    }
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #080e1a 0%, #0a1322 100%);
+        border-right: 1px solid var(--tb-line);
+    }
+    [data-testid="stSidebar"] > div:first-child {
+        padding-top: 1.1rem;
+    }
+    .block-container {
+        max-width: 1480px;
+        padding-top: 1.4rem;
+        padding-bottom: 4rem;
+    }
+    #MainMenu, footer { visibility: hidden; }
+    h1, h2, h3 { letter-spacing: -0.03em; }
+    p, label, .stMarkdown { color: var(--tb-text); }
+    .tb-brand {
+        display: flex;
+        align-items: center;
+        gap: 0.7rem;
+        padding: 0.1rem 0.2rem 1.25rem 0.2rem;
+    }
+    .tb-mark {
+        width: 2.15rem;
+        height: 2.15rem;
+        border-radius: 0.7rem;
+        display: grid;
+        place-items: center;
+        color: #06111f;
+        font-weight: 900;
+        letter-spacing: -0.08em;
+        background: linear-gradient(135deg, var(--tb-cyan), var(--tb-teal));
+        box-shadow: 0 8px 26px rgba(45, 212, 191, 0.22);
+    }
+    .tb-brand-name { font-weight: 800; font-size: 1.02rem; line-height: 1.1; }
+    .tb-brand-sub { color: var(--tb-muted); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    [data-testid="stSidebar"] label:has(input[type="radio"]) {
+        padding: 0.18rem 0.35rem;
+        border-radius: 0.5rem;
+        transition: background 120ms ease, color 120ms ease;
+    }
+    [data-testid="stSidebar"] label:has(input[type="radio"]:hover) {
+        background: rgba(148, 163, 184, 0.08);
+    }
+    [data-testid="stSidebar"] label:has(input[type="radio"]:checked) {
+        background: rgba(56, 189, 248, 0.1);
+        color: #bae6fd;
+    }
+    .tb-side-label {
+        color: #64748b;
+        font-size: 0.68rem;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+        font-weight: 700;
+        padding: 0.8rem 0.2rem 0.35rem;
+    }
+    .tb-hero {
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 1.55rem 1.7rem;
+        margin-bottom: 1.1rem;
+        border: 1px solid rgba(56, 189, 248, 0.18);
+        border-radius: 1.15rem;
+        background:
+            linear-gradient(110deg, rgba(15, 23, 42, 0.96), rgba(8, 18, 33, 0.88)),
+            radial-gradient(600px 300px at 80% 20%, rgba(56, 189, 248, 0.15), transparent 70%);
+        box-shadow: 0 20px 70px rgba(0, 0, 0, 0.24);
+    }
+    .tb-hero::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.05), transparent);
+        pointer-events: none;
+    }
+    .tb-eyebrow {
+        color: var(--tb-teal);
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        font-weight: 800;
+        margin-bottom: 0.45rem;
+    }
+    .tb-title { font-size: clamp(1.55rem, 3vw, 2.5rem); font-weight: 850; line-height: 1.03; margin: 0; }
+    .tb-subtitle { color: var(--tb-muted); max-width: 720px; margin: 0.55rem 0 0; font-size: 0.94rem; }
+    .tb-hero-side {
+        display: grid;
+        grid-template-columns: repeat(2, max-content);
+        justify-content: end;
+        align-content: start;
+        gap: 0.45rem;
+        min-width: 230px;
+    }
+    @media (max-width: 650px) {
+        .tb-hero-side { grid-template-columns: 1fr; justify-content: start; min-width: 0; }
+    }
+    .tb-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        border: 1px solid var(--tb-line);
+        background: rgba(15, 23, 42, 0.72);
+        border-radius: 999px;
+        padding: 0.35rem 0.65rem;
+        font-size: 0.72rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+    .tb-chip::before { content: ""; width: 0.4rem; height: 0.4rem; border-radius: 50%; background: currentColor; }
+    .tb-good { color: var(--tb-green); border-color: rgba(74, 222, 128, 0.25); background: rgba(74, 222, 128, 0.08); }
+    .tb-bad { color: var(--tb-red); border-color: rgba(251, 113, 133, 0.25); background: rgba(251, 113, 133, 0.08); }
+    .tb-warn { color: var(--tb-amber); border-color: rgba(251, 191, 36, 0.25); background: rgba(251, 191, 36, 0.08); }
+    .tb-neutral { color: var(--tb-muted); }
+    .tb-info { color: var(--tb-cyan); border-color: rgba(56, 189, 248, 0.25); background: rgba(56, 189, 248, 0.08); }
+    .tb-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-bottom: 1.25rem;
+    }
+    .tb-stat {
+        min-height: 4.1rem;
+        border: 1px solid var(--tb-line);
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.68));
+        border-radius: 0.85rem;
+        padding: 0.8rem 0.85rem;
+    }
+    .tb-stat-label { color: #7c8ca3; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 750; }
+    .tb-stat-value { color: var(--tb-text); font-size: 1.22rem; line-height: 1.25; font-weight: 800; margin-top: 0.25rem; }
+    .tb-stat-detail { color: var(--tb-muted); font-size: 0.72rem; margin-top: 0.2rem; }
+    .tb-section {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 1rem;
+        margin: 1.35rem 0 0.7rem;
+        padding-bottom: 0.45rem;
+        border-bottom: 1px solid var(--tb-line);
+    }
+    .tb-section-title { font-size: 1.02rem; font-weight: 800; }
+    .tb-section-sub { color: var(--tb-muted); font-size: 0.78rem; }
+    .tb-page-head { margin: 0.1rem 0 1.15rem; }
+    .tb-page-kicker { color: var(--tb-cyan); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 800; }
+    .tb-page-title { font-size: 1.45rem; font-weight: 850; margin-top: 0.18rem; }
+    .tb-page-sub { color: var(--tb-muted); font-size: 0.85rem; margin-top: 0.18rem; }
+    .tb-lane-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+    .tb-lane {
+        border: 1px solid var(--tb-line);
+        border-radius: 0.9rem;
+        padding: 0.95rem 1rem;
+        background: linear-gradient(145deg, rgba(15, 23, 42, 0.92), rgba(9, 16, 29, 0.8));
+        transition: border-color 120ms ease, transform 120ms ease;
+    }
+    .tb-lane:hover { border-color: rgba(56, 189, 248, 0.38); transform: translateY(-1px); }
+    .tb-lane-top { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .tb-lane-name { font-size: 0.88rem; font-weight: 800; }
+    .tb-lane-value { font-size: 1.38rem; font-weight: 850; margin-top: 0.4rem; }
+    .tb-lane-detail { color: var(--tb-muted); font-size: 0.73rem; margin-top: 0.25rem; }
+    .tb-gate-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+    .tb-gate-list .tb-chip { font-weight: 600; }
+    .tb-callout {
+        border-left: 3px solid var(--tb-amber);
+        padding: 0.5rem 0.75rem;
+        background: rgba(251, 191, 36, 0.06);
+        border-radius: 0 0.55rem 0.55rem 0;
+        color: #d6c28c;
+        font-size: 0.8rem;
+        margin-top: 0.6rem;
+    }
+    [data-testid="stMetric"] {
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.68));
+        border: 1px solid var(--tb-line);
+        border-radius: 0.85rem;
+        padding: 0.75rem 0.85rem;
+    }
+    [data-testid="stMetric"] {
+        overflow: visible;
+        padding: 0.65rem 0.6rem;
+    }
+    [data-testid="stMetricLabel"] {
+        color: #8da0b8 !important;
+        font-size: 0.63rem !important;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        white-space: normal !important;
+        line-height: 1.2;
+        min-height: 2.2em;
+    }
+    [data-testid="stMetricValue"] {
+        color: var(--tb-text);
+        font-weight: 800;
+        font-size: clamp(0.95rem, 1.3vw, 1.3rem) !important;
+        line-height: 1.15;
+        white-space: normal !important;
+        overflow: visible !important;
+    }
+    [data-testid="stMetric"] .stMarkdownEllipsis {
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: clip !important;
+    }
+    [data-testid="stMetricValue"] p, [data-testid="stMetricLabel"] p {
+        overflow-wrap: anywhere;
+    }
+    [data-testid="stDataFrame"] { border: 1px solid var(--tb-line); border-radius: 0.8rem; overflow: hidden; }
+    .stButton > button {
+        border-radius: 0.6rem;
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        background: rgba(56, 189, 248, 0.1);
+        color: #bae6fd;
+        font-weight: 700;
+    }
+    .stButton > button:hover { border-color: var(--tb-cyan); background: rgba(56, 189, 248, 0.18); }
+    div[data-testid="stAlert"] { border-radius: 0.8rem; border: 1px solid var(--tb-line); }
+    @media (max-width: 1000px) {
+        .tb-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .tb-lane-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 650px) {
+        .tb-hero { align-items: flex-start; flex-direction: column; padding: 1.2rem; }
+        .tb-stat-grid, .tb-lane-grid { grid-template-columns: 1fr; }
+    }
+</style>
+"""
+
+
+def _tone(value: Any) -> str:
+    text = str(value).upper()
+    if text in {"GO", "READY", "PASS", "OK", "HEALTHY", "TRUE", "ACTIVE"}:
+        return "good"
+    if text in {"NO_GO", "DEGRADED", "FAIL", "ERROR", "FALSE", "OFFLINE"}:
+        return "bad"
+    if text in {"UNKNOWN", "MISSING", "STALE", "INSUFFICIENT"}:
+        return "warn"
+    return "neutral"
+
+
+def _chip(label: str, value: Any, tone: str | None = None) -> str:
+    css = tone or _tone(value)
+    return (
+        f'<span class="tb-chip tb-{css}">{html.escape(str(label))} '
+        f"· {html.escape(str(value))}</span>"
+    )
+
+
+def _stat(label: str, value: Any, detail: str = "") -> str:
+    return (
+        '<div class="tb-stat">'
+        f'<div class="tb-stat-label">{html.escape(str(label))}</div>'
+        f'<div class="tb-stat-value">{html.escape(str(value))}</div>'
+        f'<div class="tb-stat-detail">{html.escape(str(detail))}</div>'
+        "</div>"
+    )
+
+
+def _section(title: str, subtitle: str = "") -> None:
+    st.markdown(
+        f'<div class="tb-section"><span class="tb-section-title">{html.escape(title)}</span>'
+        f'<span class="tb-section-sub">{html.escape(subtitle)}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _page_intro(view: str) -> None:
+    title, subtitle = _PAGE_META.get(view, (view, ""))
+    st.markdown(
+        '<div class="tb-page-head">'
+        '<div class="tb-page-kicker">PAPER OPERATIONS</div>'
+        f'<div class="tb-page-title">{html.escape(title)}</div>'
+        f'<div class="tb-page-sub">{html.escape(subtitle)}</div>'
+        "</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def _load_json(path: Path) -> dict[str, Any] | None:
@@ -97,6 +473,10 @@ def _perf_frame(path: Path) -> pd.DataFrame:
         frame = pd.read_json(path, lines=True)
     except ValueError:
         return pd.DataFrame()
+    if "timestamp" not in frame.columns and "as_of" in frame.columns:
+        frame["timestamp"] = pd.to_datetime(
+            frame["as_of"], utc=True, errors="coerce"
+        )
     if "timestamp" in frame.columns:
         frame["timestamp"] = pd.to_datetime(frame["timestamp"], utc=True, errors="coerce")
     return frame.sort_values("timestamp") if "timestamp" in frame.columns else frame
@@ -134,6 +514,188 @@ def _metric_row(report: dict[str, Any] | None) -> dict[str, Any]:
     }
 
 
+def _lane_card(
+    name: str,
+    equity: Any,
+    detail: str,
+    *,
+    value: str | None = None,
+    tone: str = "neutral",
+) -> str:
+    shown = value if value is not None else (f"${float(equity):,.2f}" if equity is not None else "NO REPORT")
+    return (
+        '<div class="tb-lane">'
+        '<div class="tb-lane-top">'
+        f'<span class="tb-lane-name">{html.escape(name)}</span>'
+        f'<span class="tb-chip tb-{tone}">{"ON" if tone == "good" else "PAPER"}</span>'
+        "</div>"
+        f'<div class="tb-lane-value">{html.escape(shown)}</div>'
+        f'<div class="tb-lane-detail">{html.escape(detail)}</div>'
+        "</div>"
+    )
+
+
+def _render_overview() -> None:
+    readiness = _load_json(ROOT / "artifacts" / "READINESS.json") or {}
+    trend = _load_json(ROOT / "artifacts" / "reports" / "evaluation_trend.json")
+    xsmom = _load_json(ROOT / "artifacts" / "reports" / "evaluation_xsmom.json")
+    ai_agent = _load_json(ROOT / "artifacts" / "ai" / "reports" / "latest.json")
+    ai_squad = _load_json(ROOT / "artifacts" / "ai_squad" / "reports" / "latest.json")
+    ai_options = _load_json(
+        ROOT / "artifacts" / "ai_options_30m" / "reports" / "latest.json"
+    )
+    swing = _load_json(ROOT / "artifacts" / "options_swing" / "reports" / "latest.json")
+
+    def account_equity(
+        report: dict[str, Any] | None, path: tuple[str, ...] = ("account",)
+    ) -> float | None:
+        if not report:
+            return None
+        node: Any = report
+        for key in path:
+            if not isinstance(node, dict):
+                return None
+            node = node.get(key, {})
+        value = node.get("equity") if isinstance(node, dict) else None
+        try:
+            return float(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
+
+    def last_as_of(report: dict[str, Any] | None, *, options: bool = False) -> str:
+        if not report:
+            return "no report"
+        value = report.get("as_of") or (report.get("paper", {}) or {}).get("as_of", "?")
+        return str(value)[:16].replace("T", " ")
+
+    lanes = [
+        ("Trend", account_equity(trend), "Daily deterministic sleeve", "good" if trend else "warn"),
+        ("XSMOM", account_equity(xsmom), "Daily cross-sectional sleeve", "good" if xsmom else "warn"),
+        ("AI agent", account_equity(ai_agent), "Single-provider paper lane", "info" if ai_agent else "warn"),
+        ("AI squad", account_equity(ai_squad), "Eight-agent paper lane", "info" if ai_squad else "warn"),
+        ("Options 30m", account_equity(ai_options, ("paper", "account_after")), "AI long-premium paper lane", "warn"),
+        ("Swing options", account_equity(swing, ("account_after",)), "Deterministic 21-45 DTE lane", "warn"),
+    ]
+    reporting = sum(1 for lane in lanes if lane[1] is not None)
+    last_swing = last_as_of(swing)
+    paper_days = readiness.get("paper_days", "?")
+    target_days = readiness.get("target_paper_days", 56)
+    live_gate = readiness.get("live_gate", "NO_GO")
+    options_gate = readiness.get("options_live_gate", "NO_GO")
+    host = readiness.get("host_status", "UNKNOWN")
+    paper = readiness.get("paper_ready", False)
+
+    _section("Command center", "Read-only monitor · paper accounts are separate")
+    st.markdown(
+        '<div class="tb-stat-grid">'
+        + _stat("Paper infrastructure", "READY" if paper else "CHECK", str(readiness.get("health_status", "unknown")))
+        + _stat("Reporting lanes", f"{reporting} / {len(lanes)}", "latest account snapshots")
+        + _stat("Paper evidence", f"{paper_days} / {target_days}", "days toward live gate")
+        + _stat("Host", str(host), "scheduler and network")
+        + _stat("Spot live", str(live_gate), "capital gate")
+        + _stat("Options live", str(options_gate), "options gate")
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+    _section("Lanes", "Separate books, separate risk state")
+    st.markdown(
+        '<div class="tb-lane-grid">'
+        + "".join(_lane_card(name, equity, detail, tone=tone) for name, equity, detail, tone in lanes)
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+    _section("Equity curves", "Latest paper equity by lane")
+    fig = go.Figure()
+    configs = {
+        "Trend": "config/base.yaml",
+        "XSMOM": "config/xsmom.yaml",
+        "AI agent": "config/ai_agent.yaml",
+        "AI squad": "config/ai_squad.yaml",
+        "Options 30m": "config/ai_options_30m.yaml",
+        "Swing options": "config/options_swing.yaml",
+    }
+    colors = {
+        "Trend": "#38bdf8",
+        "XSMOM": "#2dd4bf",
+        "AI agent": "#c084fc",
+        "AI squad": "#f472b6",
+        "Options 30m": "#fbbf24",
+        "Swing options": "#4ade80",
+    }
+    for name, path in configs.items():
+        config = _load_config(path)
+        if config:
+            _add_equity_trace(
+                fig,
+                ROOT / config.broker.performance_path,
+                name,
+                colors[name],
+            )
+    if fig.data:
+        fig.update_layout(
+            height=390,
+            margin=dict(l=12, r=12, t=20, b=12),
+            hovermode="x unified",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(15,23,42,0.25)",
+            legend=dict(orientation="h", y=-0.2),
+        )
+        st.plotly_chart(fig, width="stretch")
+    else:
+        st.info("No performance history yet.")
+
+    _section("Live-capital gates", "A GO requires every check; no button here can enable it")
+    gate_left, gate_right = st.columns(2)
+    with gate_left:
+        spot = _load_json(ROOT / "artifacts" / "LIVE_GATE.json")
+        if spot:
+            failed = spot.get("failed", [])
+            st.markdown(
+                f'<div class="tb-lane"><div class="tb-lane-top">'
+                f'<span class="tb-lane-name">Spot gate</span>{_chip("STATUS", spot.get("status", "?"))}</div>'
+                f'<div class="tb-lane-detail">Failed: {html.escape(", ".join(map(str, failed[:5])) or "none")}</div></div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info("Spot gate report missing.")
+    with gate_right:
+        options = _load_json(ROOT / "artifacts" / "OPTIONS_LIVE_GATE.json")
+        if options:
+            failed = options.get("failed", [])
+            st.markdown(
+                f'<div class="tb-lane"><div class="tb-lane-top">'
+                f'<span class="tb-lane-name">Options gate</span>{_chip("STATUS", options.get("status", "?"))}</div>'
+                f'<div class="tb-lane-detail">Failed: {html.escape(", ".join(map(str, failed[:5])) or "none")}</div></div>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info("Options gate report missing.")
+
+    alerts: list[str] = []
+    for label, report in (
+        ("AI agent", ai_agent),
+        ("AI squad", ai_squad),
+        ("Options 30m", ai_options),
+        ("Swing options", swing),
+    ):
+        if not report:
+            continue
+        for alert in report.get("alerts", [])[:2]:
+            alerts.append(f"{label}: {alert}")
+    if readiness.get("host_blockers"):
+        alerts.extend(str(item) for item in readiness.get("host_blockers", [])[:2])
+    if alerts:
+        st.markdown(
+            '<div class="tb-callout">Needs attention: '
+            + html.escape(" | ".join(alerts[:4]))
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+    st.caption(f"Swing options last report: {last_swing} · all values are paper-only.")
+
+
 def _render_deterministic() -> None:
     label = st.sidebar.selectbox("Config", list(DET_CONFIGS))
     config = _load_config(DET_CONFIGS[label])
@@ -165,7 +727,7 @@ def _render_deterministic() -> None:
     c2.metric("Cash", f"${metrics.get('cash', 0):,.2f}")
     c3.metric("Data age", f"{metrics.get('data_age', '?')}d")
     c4.metric("TCA slip", f"{metrics.get('tca', 0):.1f} bps")
-    c5.metric("Signal drift", f"{(metrics.get('drift') or 0):.1%}")
+    c5.metric("Drift", f"{(metrics.get('drift') or 0):.1%}")
 
     alerts = metrics.get("alerts", [])
     if alerts:
@@ -397,13 +959,13 @@ def _render_ai_squad() -> None:
     config = _load_config(AI_SQUAD_CONFIG)
     report = _load_json(ROOT / "artifacts" / "ai_squad" / "reports" / "latest.json")
     if report is None:
-        st.warning("No seven-agent AI squad report yet.")
+        st.warning("No eight-agent AI squad report yet.")
         st.code(
             "powershell -ExecutionPolicy Bypass -File scripts/run_ai_squad.ps1",
             language="powershell",
         )
         st.caption(
-            "The squad uses role-scoped Jev calls. The deterministic policy and "
+            "The squad uses eight role-scoped Jev calls. The deterministic policy and "
             "risk checks still own sizing and execution."
         )
         return
@@ -412,12 +974,12 @@ def _render_ai_squad() -> None:
     decision = report.get("decision", {})
     policy = report.get("policy", {})
     c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("Squad equity", f"${account.get('equity', 0):,.2f}")
+    c1.metric("Equity", f"${account.get('equity', 0):,.2f}")
     c2.metric("Cash", f"${account.get('cash', 0):,.2f}")
     c3.metric("Confidence", f"{float(decision.get('confidence', 0)):.1%}")
     c4.metric("Regime", str(decision.get("regime", "?")))
-    c5.metric("Data age", f"{report.get('data_age_days', '?')}d")
-    c6.metric("Force rebalance", "yes" if decision.get("force_rebalance") else "no")
+    c5.metric("Age", f"{report.get('data_age_days', '?')}d")
+    c6.metric("Rebalance", "yes" if decision.get("force_rebalance") else "no")
 
     provider = report.get("provider", "?")
     model = report.get("model", "?")
@@ -608,7 +1170,7 @@ def _render_ai_options() -> None:
     account = paper.get("account_after", {})
     check = paper.get("account_check", {})
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Options equity", f"${float(account.get('equity', 0)):,.2f}")
+    c1.metric("Equity", f"${float(account.get('equity', 0)):,.2f}")
     c2.metric("Cash", f"${float(account.get('cash', 0)):,.2f}")
     c3.metric("Legs", f"{int(account.get('legs', 0))}")
     c4.metric("Regime", str(report.get("regime", "?")))
@@ -671,7 +1233,6 @@ def _render_options_swing() -> None:
             None,
         )
 
-    st.subheader("Swing options")
     st.caption(
         "Read-only BTC/ETH long-premium swing paper lane. Daily trend/momentum "
         "signal, 21-45 DTE contracts, explicit profit/stop/DTE exits."
@@ -704,8 +1265,13 @@ def _render_options_swing() -> None:
     c1, c2, c3, c4, c5 = st.columns(5)
     c1.metric("Equity", f"${float(account.get('equity', 0)):,.2f}")
     c2.metric("Cash", f"${float(account.get('cash', 0)):,.2f}")
-    c3.metric("Open legs", f"{int(account.get('legs', 0))}")
-    c4.metric("Signals", ", ".join(f"{k}={v.get('direction')}" for k, v in signals.items()))
+    c3.metric("Legs", f"{int(account.get('legs', 0))}")
+    c4.metric(
+        "Signals",
+        " · ".join(
+            f"{key}={value.get('direction')}" for key, value in signals.items()
+        ),
+    )
     c5.metric("As of", str(report.get("as_of", "?"))[:10])
 
     st.caption(
@@ -810,18 +1376,17 @@ def _render_options_swing() -> None:
 
 def _render_readiness() -> None:
     readiness = build_readiness(ROOT)
-    st.subheader("Readiness")
     st.caption(
         "Read-only operational summary. Paper readiness and live readiness are "
         "separate. No view or button can place an order."
     )
     c1, c2, c3, c4, c5, c6, c7 = st.columns(7)
-    c1.metric("Code checks", str(readiness["code_status"]))
-    c2.metric("Campaign health", str(readiness["health_status"]))
+    c1.metric("Code", str(readiness["code_status"]))
+    c2.metric("Health", str(readiness["health_status"]))
     c3.metric("Host", str(readiness["host_status"]))
-    c4.metric("Spot live gate", str(readiness["live_gate"]))
-    c5.metric("Options live gate", str(readiness["options_live_gate"]))
-    c6.metric("Options evidence", str(readiness["options_status"]))
+    c4.metric("Spot", str(readiness["live_gate"]))
+    c5.metric("Options", str(readiness["options_live_gate"]))
+    c6.metric("Evidence", str(readiness["options_status"]))
     c7.metric(
         "Paper days",
         f"{readiness['paper_days']} / {readiness['target_paper_days']}",
@@ -869,7 +1434,6 @@ def _render_options_evidence() -> None:
     paper = evidence.get("paper", {})
     squad = evidence.get("squad", {})
     replay = evidence.get("replay") or {}
-    st.subheader("Options evidence")
     st.caption(
         "Read-only summary of the forward paper lane and the free real-chain "
         "replay. This page never places an order or changes policy."
@@ -885,12 +1449,12 @@ def _render_options_evidence() -> None:
         st.caption(f"• {warning}")
 
     c1, c2, c3, c4, c5, c6 = st.columns(6)
-    c1.metric("Paper days", f"{paper.get('paper_days', 0)}")
+    c1.metric("Days", f"{paper.get('paper_days', 0)}")
     c2.metric("Cycles", f"{paper.get('cycles', 0)}")
-    c3.metric("Flat cycles", f"{paper.get('flat_cycles', 0)}")
+    c3.metric("Flat", f"{paper.get('flat_cycles', 0)}")
     c4.metric("Fills", f"{paper.get('fills', 0)}")
     c5.metric("Equity", f"${float(paper.get('final_equity', 0)):,.2f}")
-    c6.metric("Max drawdown", f"{float(paper.get('max_drawdown', 0)):.2%}")
+    c6.metric("Drawdown", f"{float(paper.get('max_drawdown', 0)):.2%}")
 
     st.write("**Forward paper**")
     st.caption(
@@ -956,7 +1520,6 @@ def _render_intraday() -> None:
     heartbeat = read_heartbeat(heartbeat_path)
     state = _load_json(state_path)
 
-    st.subheader("Deterministic intraday paper lane")
     st.caption(
         "Runs on completed 1h bars. The hourly task refreshes recent Binance "
         "bars, rebalances trend/breakout/reversal/XSMOM through the meta "
@@ -975,16 +1538,16 @@ def _render_intraday() -> None:
     positions = state.get("positions", {}) if state else {}
     equity = float(latest["equity"]) if latest is not None else cash
     c1, c2, c3, c4, c5 = st.columns(5)
-    c1.metric("Intraday equity", f"${equity:,.2f}")
+    c1.metric("Equity", f"${equity:,.2f}")
     c2.metric("Cash", f"${cash:,.2f}")
     c3.metric(
-        "Gross exposure",
+        "Gross",
         f"{float(latest['gross_exposure']):.1%}" if latest is not None else "0.0%",
     )
     c4.metric("Positions", f"{len(positions)}")
     c5.metric(
-        "Latest bar",
-        str(latest["timestamp"]) if latest is not None else "n/a",
+        "As of",
+        str(latest["timestamp"])[:16].replace("T", " ") if latest is not None else "n/a",
     )
     if latest is not None:
         st.caption(
@@ -996,7 +1559,7 @@ def _render_intraday() -> None:
     fig = go.Figure()
     _add_equity_trace(fig, perf_path, "Intraday meta paper", "#00897B")
     fig.update_layout(
-        title="Hourly intraday paper equity",
+        title="Intraday equity",
         height=420,
         margin=dict(l=20, r=20, t=40, b=20),
         hovermode="x unified",
@@ -1244,10 +1807,82 @@ def _render_options_flow() -> None:
     )
 
 
+def _readiness_snapshot() -> dict[str, Any]:
+    return _load_json(ROOT / "artifacts" / "READINESS.json") or {}
+
+
+def _render_shell_header(readiness: dict[str, Any]) -> None:
+    paper = "READY" if readiness.get("paper_ready") else "CHECK"
+    host = readiness.get("host_status", "UNKNOWN")
+    spot = readiness.get("live_gate", "NO_GO")
+    options = readiness.get("options_live_gate", "NO_GO")
+    paper_days = readiness.get("paper_days", "?")
+    target_days = readiness.get("target_paper_days", 56)
+    st.markdown(
+        '<div class="tb-hero">'
+        "<div>"
+        '<div class="tb-eyebrow">NOVA · PAPER OPERATIONS</div>'
+        '<div class="tb-title">Trading Operations</div>'
+        '<div class="tb-subtitle">'
+        "Deterministic sleeves, AI research lanes, crypto options, and hard risk "
+        "gates — one read-only command surface."
+        "</div></div>"
+        '<div class="tb-hero-side">'
+        + _chip("PAPER", paper)
+        + _chip("HOST", host)
+        + _chip("LIVE", spot)
+        + _chip("OPTIONS", options)
+        + _chip("EVIDENCE", f"{paper_days}/{target_days}")
+        + "</div></div>",
+        unsafe_allow_html=True,
+    )
+
+
+def _render_sidebar(readiness: dict[str, Any]) -> tuple[str, str]:
+    with st.sidebar:
+        st.markdown(
+            '<div class="tb-brand">'
+            '<div class="tb-mark">N</div>'
+            '<div><div class="tb-brand-name">NOVA</div>'
+            '<div class="tb-brand-sub">Trading operations</div></div></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="tb-side-label">Environment</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div class="tb-gate-list">'
+            + _chip("Paper", "READY" if readiness.get("paper_ready") else "CHECK")
+            + _chip("Live", readiness.get("live_gate", "NO_GO"))
+            + _chip("Host", readiness.get("host_status", "UNKNOWN"))
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+        st.markdown('<div class="tb-side-label">Workspace</div>', unsafe_allow_html=True)
+        view = st.radio(
+            "Workspace",
+            _NAV_ITEMS,
+            index=0,
+            label_visibility="collapsed",
+        )
+        st.markdown('<div class="tb-side-label">Session</div>', unsafe_allow_html=True)
+        refresh_label = st.selectbox(
+            "Auto-refresh",
+            ["Off", "30 seconds", "60 seconds", "5 minutes"],
+            index=0,
+        )
+        st.caption("Read-only reload. No order controls.")
+        st.markdown('<div class="tb-side-label">Boundary</div>', unsafe_allow_html=True)
+        st.caption(
+            "Paper only. Live capital remains gated by evidence, host readiness, "
+            "and separate credentials."
+        )
+    return view, refresh_label
+
+
 st.set_page_config(
-    page_title="Trading Bot - Multi-Sleeve + AI Squad + Intraday",
+    page_title="NOVA · Trading Operations",
     layout="wide",
 )
+st.markdown(_THEME_CSS, unsafe_allow_html=True)
 
 # Optional access gate for hosted deployments. Local use is unchanged when the
 # environment variable is absent. Set DASHBOARD_PASSWORD in the host's secret
@@ -1264,40 +1899,17 @@ if _expected_password and not st.session_state.get("dashboard_authenticated"):
         st.error("Invalid password.")
     st.stop()
 
-st.title("Trading Bot - Multi-Sleeve + AI Squad + Intraday")
-st.caption(
-    "Read-only. Separate daily paper sleeves, an hourly intraday paper lane, and "
-    "two isolated AI lanes. No order controls. The AI paths have no broker "
-    "credentials and cannot bypass the risk policy."
-)
-
-view = st.sidebar.radio(
-    "Pipeline",
-    [
-        "Both",
-        "Deterministic",
-        "Intraday",
-        "AI agent",
-        "AI squad",
-        "AI options 30m",
-        "Swing options",
-        "Readiness",
-        "Options evidence",
-        "Options flow",
-        "3D Office",
-    ],
-    index=0,
-)
-refresh_label = st.sidebar.selectbox(
-    "Auto-refresh",
-    ["Off", "30 seconds", "60 seconds", "5 minutes"],
-    index=0,
-)
-st.sidebar.caption("Auto-refresh only reloads read data; it never places orders.")
+readiness = _readiness_snapshot()
+_render_shell_header(readiness)
+view, refresh_label = _render_sidebar(readiness)
+if view != "Overview":
+    _page_intro(view)
 
 
 def _render_selected(selected: str) -> None:
-    if selected == "Deterministic":
+    if selected == "Overview":
+        _render_overview()
+    elif selected == "Deterministic":
         _render_deterministic()
     elif selected == "AI agent":
         _render_ai()
@@ -1322,7 +1934,7 @@ def _render_selected(selected: str) -> None:
             st.error(f"Could not build the 3D office: {type(exc).__name__}: {exc}")
             st.code("uv run python scripts/build_office3d.py")
     else:
-        _render_both()
+        _render_overview()
 
 
 if refresh_label == "Off":
