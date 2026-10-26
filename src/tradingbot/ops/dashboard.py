@@ -656,6 +656,158 @@ def _render_ai_options() -> None:
         st.json(heartbeat)
 
 
+def _render_options_swing() -> None:
+    config = _load_config("config/options_swing.yaml")
+    report = _load_json(ROOT / "artifacts" / "options_swing" / "reports" / "latest.json")
+    task = None
+    host = _load_json(ROOT / "artifacts" / "HOST_READINESS.json")
+    if host:
+        task = next(
+            (
+                item
+                for item in host.get("tasks", [])
+                if item.get("name") == "TradingBotOptionsSwing"
+            ),
+            None,
+        )
+
+    st.subheader("Swing options")
+    st.caption(
+        "Read-only BTC/ETH long-premium swing paper lane. Daily trend/momentum "
+        "signal, 21-45 DTE contracts, explicit profit/stop/DTE exits."
+    )
+    if task:
+        st.caption(
+            f"Scheduled task: `{task.get('state', '?')}` · "
+            f"last result `{task.get('last_result', '?')}` · "
+            f"next `{task.get('next_run', '?')}`"
+        )
+    if report is None:
+        st.warning("No swing-options report yet.")
+        st.code(
+            "uv run python -m tradingbot --config config/options_swing.yaml options-swing-run",
+            language="powershell",
+        )
+        return
+
+    account = report.get("account_after") or {}
+    signals = report.get("signals") or {}
+    exits = report.get("exits") or []
+    fills = report.get("fills") or []
+    alerts = report.get("alerts") or []
+    status = str(report.get("status", "?"))
+    if status == "ok":
+        st.success(f"Cycle status: {status}")
+    else:
+        st.warning(f"Cycle status: {status}")
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Equity", f"${float(account.get('equity', 0)):,.2f}")
+    c2.metric("Cash", f"${float(account.get('cash', 0)):,.2f}")
+    c3.metric("Open legs", f"{int(account.get('legs', 0))}")
+    c4.metric("Signals", ", ".join(f"{k}={v.get('direction')}" for k, v in signals.items()))
+    c5.metric("As of", str(report.get("as_of", "?"))[:10])
+
+    st.caption(
+        f"Report generated `{report.get('as_of', '?')}` · "
+        f"paper only · no live order path"
+    )
+    if alerts:
+        st.error("Alerts: " + " | ".join(str(item) for item in alerts))
+
+    st.write("**Signals**")
+    if signals:
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    {
+                        "underlying": key,
+                        "direction": value.get("direction"),
+                        "close": value.get("close"),
+                        "SMA50": value.get("sma50"),
+                        "SMA200": value.get("sma200"),
+                        "20d momentum": value.get("momentum20"),
+                        "reason": value.get("reason"),
+                    }
+                    for key, value in signals.items()
+                ]
+            ),
+            width="stretch",
+            hide_index=True,
+        )
+    else:
+        st.info("No signals in this cycle.")
+
+    left, right = st.columns(2)
+    with left:
+        st.write("**Exits**")
+        if exits:
+            st.dataframe(pd.DataFrame(exits), width="stretch", hide_index=True)
+        else:
+            st.info("No exits in this cycle.")
+    with right:
+        st.write("**Fills**")
+        if fills:
+            st.dataframe(pd.DataFrame(fills), width="stretch", hide_index=True)
+        else:
+            st.info("No fills in this cycle.")
+
+    if config:
+        perf_path = ROOT / config.broker.performance_path
+        if perf_path.exists():
+            try:
+                perf = pd.read_json(perf_path, lines=True)
+            except ValueError:
+                perf = pd.DataFrame()
+            if not perf.empty:
+                perf["as_of"] = pd.to_datetime(perf["as_of"], utc=True, errors="coerce")
+                perf = perf.sort_values("as_of")
+                fig = go.Figure(
+                    go.Scatter(
+                        x=perf["as_of"],
+                        y=perf["equity"],
+                        mode="lines+markers",
+                        name="swing paper",
+                        line=dict(color="#2dd4bf", width=2),
+                    )
+                )
+                fig.update_layout(
+                    title="Swing options equity",
+                    height=320,
+                    margin=dict(l=20, r=20, t=40, b=20),
+                    hovermode="x unified",
+                )
+                st.plotly_chart(fig, width="stretch")
+
+        state = _load_json(ROOT / config.broker.state_path)
+        st.write("**Current paper positions**")
+        positions = (state or {}).get("positions", {})
+        if positions:
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {
+                            "instrument": key,
+                            "qty": value.get("qty"),
+                            "entry premium": value.get("entry_premium"),
+                            "opened on": value.get("opened_on", "—"),
+                            "expiry": value.get("expiry"),
+                        }
+                        for key, value in positions.items()
+                    ]
+                ),
+                width="stretch",
+                hide_index=True,
+            )
+        else:
+            st.info("No open paper positions.")
+
+    st.caption(
+        "This view reads only. It cannot place an order, change policy, or "
+        "enable live trading."
+    )
+
+
 def _render_readiness() -> None:
     readiness = build_readiness(ROOT)
     st.subheader("Readiness")
@@ -1128,6 +1280,7 @@ view = st.sidebar.radio(
         "AI agent",
         "AI squad",
         "AI options 30m",
+        "Swing options",
         "Readiness",
         "Options evidence",
         "Options flow",
@@ -1154,6 +1307,8 @@ def _render_selected(selected: str) -> None:
         _render_ai_squad()
     elif selected == "AI options 30m":
         _render_ai_options()
+    elif selected == "Swing options":
+        _render_options_swing()
     elif selected == "Readiness":
         _render_readiness()
     elif selected == "Options evidence":

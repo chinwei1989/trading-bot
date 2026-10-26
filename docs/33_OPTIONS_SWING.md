@@ -81,6 +81,16 @@ uv run python -m tradingbot --config config/options_swing.yaml options-swing-run
 The scheduled task runs the same command daily at 07:40 local through
 `scripts/run_options_swing.ps1`.
 
+Dashboard:
+
+```text
+Pipeline -> Swing options
+```
+
+The view shows the scheduled task result, current equity/cash, BTC/ETH trend
+signals, exits, fills, equity history, and current paper positions. It is
+read-only and cannot place orders.
+
 ## 7. Current result
 
 The initial real-chain paper cycle was flat:

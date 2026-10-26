@@ -407,6 +407,9 @@ powershell -ExecutionPolicy Bypass -File scripts/register_deribit_testnet_canary
 # Run one deterministic BTC/ETH swing-options paper cycle
 uv run python -m tradingbot --config config/options_swing.yaml options-swing-run
 
+# Dashboard: run Streamlit, then choose Pipeline -> Swing options
+uv run streamlit run src/tradingbot/ops/dashboard.py
+
 # Register the daily swing-options paper task (07:40 local)
 powershell -ExecutionPolicy Bypass -File scripts/register_options_swing.ps1
 
