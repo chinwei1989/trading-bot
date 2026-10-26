@@ -3,9 +3,12 @@
 Safety defaults:
 
 - ``environment="testnet"`` is the default.
-- Live order placement is disabled unless both ``allow_live=True`` and
-  ``LIVE_TRADING=YES`` are present, and even then this module only exposes the
-  primitive calls; it does not wire them into a strategy.
+- Live order placement is disabled unless ``allow_live=True``,
+  ``LIVE_TRADING=YES``, and ``DERIBIT_LIVE_CONFIRM=YES`` are present; even then
+  this module only exposes the primitive calls and does not wire them into a
+  strategy.
+- Testnet uses ``DERIBIT_CLIENT_ID``/``DERIBIT_CLIENT_SECRET``. Live uses the
+  separate ``DERIBIT_LIVE_CLIENT_ID``/``DERIBIT_LIVE_CLIENT_SECRET`` pair.
 - Selling requires ``reduce_only=True`` so the adapter cannot open a naked short.
 - The client never stores or logs API secrets.
 
@@ -29,6 +32,12 @@ ENVIRONMENTS = {
     "testnet": "https://test.deribit.com/api/v2",
     "live": "https://www.deribit.com/api/v2",
 }
+
+TESTNET_CLIENT_ID_ENV = "DERIBIT_CLIENT_ID"
+TESTNET_CLIENT_SECRET_ENV = "DERIBIT_CLIENT_SECRET"
+LIVE_CLIENT_ID_ENV = "DERIBIT_LIVE_CLIENT_ID"
+LIVE_CLIENT_SECRET_ENV = "DERIBIT_LIVE_CLIENT_SECRET"
+LIVE_CONFIRM_ENV = "DERIBIT_LIVE_CONFIRM"
 
 Side = Literal["buy", "sell"]
 OrderType = Literal["limit", "market"]
@@ -207,15 +216,24 @@ class DeribitExecutionClient:
         if environment not in ENVIRONMENTS:
             raise ValueError(f"unknown Deribit environment: {environment}")
         if environment == "live" and not (
-            allow_live and os.getenv("LIVE_TRADING") == "YES"
+            allow_live
+            and os.getenv("LIVE_TRADING") == "YES"
+            and os.getenv(LIVE_CONFIRM_ENV) == "YES"
         ):
             raise PermissionError(
-                "live Deribit orders require allow_live=True and LIVE_TRADING=YES"
+                "live Deribit orders require allow_live=True, LIVE_TRADING=YES, "
+                "and DERIBIT_LIVE_CONFIRM=YES"
             )
         self.environment = environment
         self.base_url = ENVIRONMENTS[environment]
-        self.client_id = client_id or os.getenv("DERIBIT_CLIENT_ID")
-        self.client_secret = client_secret or os.getenv("DERIBIT_CLIENT_SECRET")
+        if environment == "live":
+            self.client_id_env = LIVE_CLIENT_ID_ENV
+            self.client_secret_env = LIVE_CLIENT_SECRET_ENV
+        else:
+            self.client_id_env = TESTNET_CLIENT_ID_ENV
+            self.client_secret_env = TESTNET_CLIENT_SECRET_ENV
+        self.client_id = client_id or os.getenv(self.client_id_env)
+        self.client_secret = client_secret or os.getenv(self.client_secret_env)
         self.timeout = timeout
         self._client = client
         self._owns_client = client is None
@@ -279,8 +297,8 @@ class DeribitExecutionClient:
     def authenticate(self) -> str:
         if not self.client_id or not self.client_secret:
             raise PermissionError(
-                "Deribit credentials missing; set DERIBIT_CLIENT_ID and "
-                "DERIBIT_CLIENT_SECRET"
+                f"Deribit credentials missing; set {self.client_id_env} and "
+                f"{self.client_secret_env}"
             )
         result = self._rpc(
             "public/auth",

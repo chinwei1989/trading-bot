@@ -132,6 +132,27 @@ def test_missing_credentials_fail_closed() -> None:
         http.close()
 
 
+def test_live_client_uses_live_only_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LIVE_TRADING", "YES")
+    monkeypatch.setenv("DERIBIT_LIVE_CONFIRM", "YES")
+    monkeypatch.setenv("DERIBIT_CLIENT_ID", "testnet-id")
+    monkeypatch.setenv("DERIBIT_CLIENT_SECRET", "testnet-secret")
+    monkeypatch.setenv("DERIBIT_LIVE_CLIENT_ID", "live-id")
+    monkeypatch.setenv("DERIBIT_LIVE_CLIENT_SECRET", "live-secret")
+    client = DeribitExecutionClient(environment="live", allow_live=True)
+    try:
+        assert client.client_id == "live-id"
+        assert client.client_secret == "live-secret"
+        assert client.client_id_env == "DERIBIT_LIVE_CLIENT_ID"
+        assert client.client_secret_env == "DERIBIT_LIVE_CLIENT_SECRET"
+    finally:
+        client.close()
+
+    monkeypatch.delenv("DERIBIT_LIVE_CONFIRM")
+    with pytest.raises(PermissionError, match="DERIBIT_LIVE_CONFIRM"):
+        DeribitExecutionClient(environment="live", allow_live=True)
+
+
 def test_contract_parser_and_position_reconciliation() -> None:
     contract = parse_contract("ETH-30OCT26-3000-P")
     assert contract is not None

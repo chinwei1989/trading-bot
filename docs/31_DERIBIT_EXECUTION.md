@@ -30,7 +30,7 @@ strategy or the paper broker.
 - live order routing from the AI pipeline
 - withdrawal or transfer functions
 - API-key creation
-- persistent order state machine
+- live order state machine
 - live reconciliation worker
 - automatic retries around uncertain order states
 - venue-specific margin/liquidation handling
@@ -47,8 +47,19 @@ DERIBIT_CLIENT_ID
 DERIBIT_CLIENT_SECRET
 ```
 
-Do not commit these values. For production, use a secret manager or environment
-variables on the host.
+These are testnet credentials and **must not** be reused for live.
+
+The live path uses a separate namespace:
+
+```text
+DERIBIT_LIVE_CLIENT_ID
+DERIBIT_LIVE_CLIENT_SECRET
+DERIBIT_LIVE_CONFIRM=YES
+```
+
+Testnet credentials do not satisfy the options live gate. Do not commit any
+credential values. For production, use a secret manager or protected
+environment variables on the host.
 
 The adapter defaults to:
 
@@ -63,13 +74,20 @@ Live endpoint:
 https://www.deribit.com/api/v2
 ```
 
-Live construction requires both `allow_live=True` and `LIVE_TRADING=YES`.
+Live construction requires all of:
+
+```text
+allow_live=True
+LIVE_TRADING=YES
+DERIBIT_LIVE_CONFIRM=YES
+```
+
 Even then, `place_order()` refuses live orders until a separately reviewed live
 execution layer is added.
 
 ## 4. Testnet smoke check
 
-Set the two environment variables, then:
+Set the two **testnet** environment variables, then:
 
 ```powershell
 uv run python scripts/deribit_testnet_check.py

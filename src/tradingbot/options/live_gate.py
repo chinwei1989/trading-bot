@@ -16,6 +16,11 @@ from typing import Any
 
 from tradingbot.config import AppConfig, load_config
 from tradingbot.ops.options_evidence import build_options_evidence
+from tradingbot.options.deribit_execution import (
+    LIVE_CLIENT_ID_ENV,
+    LIVE_CLIENT_SECRET_ENV,
+    LIVE_CONFIRM_ENV,
+)
 
 MIN_PAPER_DAYS = 56
 LIVE_EXCHANGES = {"deribit", "okx", "bybit"}
@@ -98,14 +103,26 @@ def build_options_live_gate(
             "testnet execution/reconciliation exists; live submission is disabled",
         )
     )
-    credentials = bool(
-        os.getenv("DERIBIT_CLIENT_ID") and os.getenv("DERIBIT_CLIENT_SECRET")
+    live_credentials = bool(
+        os.getenv(LIVE_CLIENT_ID_ENV) and os.getenv(LIVE_CLIENT_SECRET_ENV)
     )
     checks.append(
         OptionsGateCheck(
             "options credentials",
-            credentials,
-            "DERIBIT_CLIENT_ID/SECRET present" if credentials else "missing",
+            live_credentials,
+            (
+                f"{LIVE_CLIENT_ID_ENV}/{LIVE_CLIENT_SECRET_ENV} present"
+                if live_credentials
+                else "live credentials missing; testnet credentials do not count"
+            ),
+        )
+    )
+    live_confirmed = os.getenv(LIVE_CONFIRM_ENV) == "YES"
+    checks.append(
+        OptionsGateCheck(
+            "options live confirmation",
+            live_confirmed,
+            f"{LIVE_CONFIRM_ENV}=YES" if live_confirmed else f"{LIVE_CONFIRM_ENV} not set",
         )
     )
     checks.append(

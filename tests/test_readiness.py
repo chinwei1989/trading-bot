@@ -4,6 +4,8 @@ import json
 import shutil
 from pathlib import Path
 
+import pytest
+
 from tradingbot.ops.readiness import build_readiness
 from tradingbot.options.live_gate import build_options_live_gate
 
@@ -60,3 +62,32 @@ def test_options_live_gate_blocks_without_adapter(tmp_path: Path) -> None:
     assert gate["status"] == "NO_GO"
     assert "options live adapter" in gate["failed"]
     assert "options paper days" in gate["failed"]
+
+
+def test_options_live_gate_does_not_accept_testnet_credentials(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / "config").mkdir()
+    shutil.copy(
+        Path("config/ai_options_30m.yaml"),
+        tmp_path / "config" / "ai_options_30m.yaml",
+    )
+    monkeypatch.setenv("DERIBIT_CLIENT_ID", "testnet-id")
+    monkeypatch.setenv("DERIBIT_CLIENT_SECRET", "testnet-secret")
+    monkeypatch.delenv("DERIBIT_LIVE_CLIENT_ID", raising=False)
+    monkeypatch.delenv("DERIBIT_LIVE_CLIENT_SECRET", raising=False)
+    monkeypatch.delenv("DERIBIT_LIVE_CONFIRM", raising=False)
+
+    gate = build_options_live_gate(tmp_path)
+    checks = {check["name"]: check for check in gate["checks"]}
+    assert not checks["options credentials"]["passed"]
+    assert "testnet" in checks["options credentials"]["detail"]
+    assert not checks["options live confirmation"]["passed"]
+
+    monkeypatch.setenv("DERIBIT_LIVE_CLIENT_ID", "live-id")
+    monkeypatch.setenv("DERIBIT_LIVE_CLIENT_SECRET", "live-secret")
+    monkeypatch.setenv("DERIBIT_LIVE_CONFIRM", "YES")
+    gate = build_options_live_gate(tmp_path)
+    checks = {check["name"]: check for check in gate["checks"]}
+    assert checks["options credentials"]["passed"]
+    assert checks["options live confirmation"]["passed"]
