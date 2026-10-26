@@ -505,6 +505,33 @@ def cmd_ai_options_run(args: argparse.Namespace) -> int:
     return 0 if result.status in {"ok", "dry_run"} else 1
 
 
+def cmd_options_swing_run(args: argparse.Namespace) -> int:
+    from tradingbot.options.swing import run_options_swing_cycle
+
+    config = load_config(args.config)
+    try:
+        result = run_options_swing_cycle(config, root=ROOT)
+    except Exception as exc:
+        print(f"Swing options cycle failed: {type(exc).__name__}: {exc}")
+        return 1
+    account = result.account_after
+    if account is None:
+        print("Swing options cycle returned no account state")
+        return 1
+    directions = {key: signal.direction for key, signal in result.signals.items()}
+    print(
+        f"[options-swing] status={result.status} "
+        f"equity={account.equity():,.2f} cash={account.cash:,.2f} "
+        f"signals={directions} fills={len(result.fills)} "
+        f"exits={len(result.exits)} positions={len(account.positions)}"
+    )
+    for alert in result.alerts:
+        print(f"  alert: {alert}")
+    if result.report_path:
+        print(f"  report: {result.report_path}")
+    return 0 if result.status in {"ok", "ok_with_alerts"} else 1
+
+
 def cmd_ai_evaluate(args: argparse.Namespace) -> int:
     config = load_config(args.config)
     scorecard = build_scorecard(config, ROOT)
@@ -912,6 +939,12 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
     )
     p.set_defaults(func=cmd_ai_options_run)
+
+    p = sub.add_parser(
+        "options-swing-run",
+        help="run one paper-only deterministic swing-options cycle",
+    )
+    p.set_defaults(func=cmd_options_swing_run)
 
     p = sub.add_parser("ai-status", help="show the latest AI-agent report")
     p.set_defaults(func=cmd_ai_status)

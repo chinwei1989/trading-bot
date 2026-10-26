@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **172 tests passing**, `ruff` pass, `mypy src` pass
+- **175 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -234,7 +234,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Eight-agent AI squad:** separate paper account; macro → trend → breakout → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
-- **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, persistent testnet order/fill state, restart reconciliation, idempotency and canary guards, a scheduled daily testnet canary with health validation, separate testnet/live credential namespaces and live confirmation, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, `docs/31_DERIBIT_EXECUTION.md`, and `docs/32_DERIBIT_TESTNET_EXECUTION.md`
+- **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, persistent testnet order/fill state, restart reconciliation, idempotency and canary guards, a scheduled daily testnet canary with health validation, separate testnet/live credential namespaces and live confirmation, a deterministic BTC/ETH swing-options paper lane with explicit profit/stop/DTE exits, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, `docs/31_DERIBIT_EXECUTION.md`, and `docs/32_DERIBIT_TESTNET_EXECUTION.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
@@ -404,6 +404,12 @@ uv run python scripts/check_testnet_canary.py
 # Register the daily testnet canary task (06:45 local; testnet only)
 powershell -ExecutionPolicy Bypass -File scripts/register_deribit_testnet_canary.ps1
 
+# Run one deterministic BTC/ETH swing-options paper cycle
+uv run python -m tradingbot --config config/options_swing.yaml options-swing-run
+
+# Register the daily swing-options paper task (07:40 local)
+powershell -ExecutionPolicy Bypass -File scripts/register_options_swing.ps1
+
 # Ten point-in-time dry decisions (no orders)
 uv run python scripts/jev_smoke.py
 
@@ -487,6 +493,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/29_OPTIONS_TESTING_AND_BACKTEST.md` | Options test pyramid, historical data requirements, backtest design, and acceptance gates |
 | `docs/31_DERIBIT_EXECUTION.md` | Deribit testnet execution primitives, inverse settlement math, reconciliation, and live blockers |
 | `docs/32_DERIBIT_TESTNET_EXECUTION.md` | Persistent testnet order/fill state, idempotency, canary guard, and restart reconciliation |
+| `docs/33_OPTIONS_SWING.md` | Deterministic BTC/ETH swing-options paper lane, trend/momentum signal, and exit rules |
 
 ---
 

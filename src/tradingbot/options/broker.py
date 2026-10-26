@@ -37,6 +37,7 @@ class OptionHolding:
     vega: float
     theta: float
     multiplier: float = 1.0
+    opened_on: str | None = None
 
     def as_position(self) -> OptionPosition:
         return OptionPosition(
@@ -170,6 +171,7 @@ class PaperOptionsBroker:
                 vega=candidate.vega,
                 theta=candidate.theta,
                 multiplier=candidate.multiplier,
+                opened_on=(now or datetime.now()).date().isoformat(),
             )
         return OptionFill(
             candidate.instrument,
@@ -282,6 +284,7 @@ class PaperOptionsBroker:
                     "vega": holding.vega,
                     "theta": holding.theta,
                     "multiplier": holding.multiplier,
+                    "opened_on": holding.opened_on,
                 }
                 for instrument, holding in self.holdings.items()
             },
@@ -311,6 +314,9 @@ class PaperOptionsBroker:
                 vega=float(row["vega"]),
                 theta=float(row["theta"]),
                 multiplier=float(row.get("multiplier", 1.0)),
+                opened_on=(
+                    str(row["opened_on"]) if row.get("opened_on") is not None else None
+                ),
             )
             for instrument, row in payload.get("holdings", {}).items()
         }

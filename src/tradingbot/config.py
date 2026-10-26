@@ -8,6 +8,8 @@ from typing import Literal
 import yaml  # type: ignore[import-untyped]
 from pydantic import BaseModel, Field, field_validator
 
+from tradingbot.options.account import OptionLimits
+
 
 class DataConfig(BaseModel):
     source: Literal["binance", "alpaca", "yahoo"] = "binance"
@@ -198,6 +200,44 @@ class AgentConfig(BaseModel):
     policy: AgentPolicyConfig = Field(default_factory=AgentPolicyConfig)
 
 
+class SwingOptionsConfig(BaseModel):
+    min_dte: int = 21
+    max_dte: int = 45
+    exit_dte: int = 7
+    target_delta_min: float = 0.40
+    target_delta_max: float = 0.60
+    max_spread_pct: float = 0.05
+    min_open_interest: int = 100
+    profit_target_pct: float = 0.50
+    stop_loss_pct: float = 0.50
+    max_holding_days: int = 20
+    max_contracts: int = 1
+    max_premium_per_trade_pct: float = 0.02
+    max_total_premium_pct: float = 0.05
+    min_cash_pct: float = 0.20
+    max_open_legs: int = 2
+    max_legs_per_underlying: int = 1
+    fee_bps: float = 3.0
+
+    def to_option_limits(self) -> OptionLimits:
+        return OptionLimits(
+            max_premium_per_trade_pct=self.max_premium_per_trade_pct,
+            max_total_premium_pct=self.max_total_premium_pct,
+            min_cash_pct=self.min_cash_pct,
+            max_open_legs=self.max_open_legs,
+            max_legs_per_underlying=self.max_legs_per_underlying,
+            min_dte=self.min_dte,
+            max_dte=self.max_dte,
+            exit_dte=self.exit_dte,
+            target_delta_min=self.target_delta_min,
+            target_delta_max=self.target_delta_max,
+            max_spread_pct=self.max_spread_pct,
+            min_open_interest=self.min_open_interest,
+            fee_bps=self.fee_bps,
+            min_contracts=1,
+        )
+
+
 class BrokerConfig(BaseModel):
     name: Literal["paper", "alpaca", "ccxt"] = "paper"
     paper: bool = True
@@ -223,6 +263,7 @@ class AppConfig(BaseModel):
     risk: RiskConfig = Field(default_factory=RiskConfig)
     broker: BrokerConfig = Field(default_factory=BrokerConfig)
     agent: AgentConfig = Field(default_factory=AgentConfig)
+    swing: SwingOptionsConfig = Field(default_factory=SwingOptionsConfig)
     seed: int = 7
 
 
