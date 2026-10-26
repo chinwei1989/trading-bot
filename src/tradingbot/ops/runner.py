@@ -255,8 +255,8 @@ def run_cycle(
         broker.save_state(state_path)
 
     positions = broker.get_positions()
-    rec = reconcile(latest, account.equity, prices, positions)
     post = broker.get_account()
+    rec = reconcile(latest, post.equity, prices, positions)
     gross_exposure = (
         sum(abs(pos.qty) * prices.get(asset, pos.avg_entry_price) for asset, pos in positions.items())
         / max(post.equity, 1e-9)
@@ -285,8 +285,8 @@ def run_cycle(
         {
             "mode": mode,
             "status": "ok",
-            "equity": account.equity,
-            "cash": account.cash,
+            "equity": post.equity,
+            "cash": post.cash,
             "drawdown": drawdown,
             "n_orders": len(orders),
             "n_fills": len([f for f in fills if f.status in {"filled", "accepted", "new"}]),
@@ -299,14 +299,14 @@ def run_cycle(
         notify(
             f"tradingbot {mode} {datetime.now(UTC):%Y-%m-%d %H:%M UTC}",
             [
-                f"equity {account.equity:,.2f} cash {account.cash:,.2f}",
+                f"equity {post.equity:,.2f} cash {post.cash:,.2f}",
                 f"orders {len(orders)} fills {len(fills)} drawdown {drawdown:.2%}",
             ],
         )
     return RunResult(
         mode=mode,
-        equity=account.equity,
-        cash=account.cash,
+        equity=post.equity,
+        cash=post.cash,
         orders=orders,
         fills=fills,
         reconciliation=rec,

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -100,6 +101,28 @@ def test_paper_cycle_and_idempotence(tmp_path) -> None:
 
     second = run_cycle(config, mode="paper", root=tmp_path)
     assert second.orders == []
+
+
+def test_paper_cycle_reports_post_fill_equity(tmp_path) -> None:
+    config = _prepare(tmp_path, _config())
+    config.backtest.cost_bps = 25
+    config.backtest.slippage_bps = 10
+
+    result = run_cycle(config, mode="paper", root=tmp_path)
+
+    assert result.orders
+    assert result.equity < 10_000
+    heartbeat = json.loads(
+        (tmp_path / "artifacts" / "heartbeat.json").read_text(encoding="utf-8")
+    )
+    assert heartbeat["equity"] == pytest.approx(result.equity)
+    performance = [
+        json.loads(line)
+        for line in (tmp_path / "artifacts" / "performance.jsonl")
+        .read_text(encoding="utf-8")
+        .splitlines()
+    ]
+    assert performance[-1]["equity"] == pytest.approx(result.equity)
 
 
 def test_reset_archives_order_state(tmp_path) -> None:
