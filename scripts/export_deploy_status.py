@@ -20,6 +20,8 @@ CAMPAIGNS = {
     "intraday": Path("artifacts/intraday/performance.jsonl"),
     "ai_options_30m": Path("artifacts/ai_options_30m/performance.jsonl"),
     "swing": Path("artifacts/options_swing/performance.jsonl"),
+    "ai_options_eth": Path("artifacts/ai_options_eth/performance.jsonl"),
+    "ai_options_btc_lab": Path("artifacts/ai_options_btc_lab/performance.jsonl"),
 }
 
 

@@ -88,11 +88,28 @@ def _options_context(broker: PaperOptionsBroker, chain_count: int) -> dict[str, 
     }
 
 
+OPTION_SYMBOL_MAP = {"BTCUSDT": "BTC", "ETHUSDT": "ETH"}
+
+
+def _underlyings(config: AppConfig) -> tuple[str, ...]:
+    selected = tuple(
+        OPTION_SYMBOL_MAP[symbol]
+        for symbol in config.data.symbols
+        if symbol in OPTION_SYMBOL_MAP
+    )
+    if not selected:
+        raise ValueError(
+            "AI options lane requires at least one of BTCUSDT or ETHUSDT"
+        )
+    return selected
+
+
 def _trade_diagnostics(
     broker: PaperOptionsBroker,
     chain: list[Any],
     directions: dict[str, Direction],
     prices: dict[str, float],
+    underlyings: tuple[str, ...],
 ) -> dict[str, Any]:
     """Explain flat/no-fill cycles without placing orders.
 
@@ -102,7 +119,7 @@ def _trade_diagnostics(
     limits = OptionLimits()
     account = broker.account()
     checks: list[dict[str, Any]] = []
-    for underlying in ("BTC", "ETH"):
+    for underlying in underlyings:
         spot = prices.get(f"{underlying}USDT", 0.0)
         for direction in ("long", "short"):
             result = select_candidate(
@@ -129,11 +146,17 @@ def _trade_diagnostics(
         why.append("AI directions are flat; no contract selection was requested.")
     if account.cash <= 0:
         why.append("Paper account has no cash.")
-    btc_checks = [item for item in checks if item["underlying"] == "BTC"]
-    if btc_checks and all(item["candidate"] is None for item in btc_checks):
-        why.append(
-            "BTC has no contract under the current premium/DTE/spread/OI gates."
-        )
+    for underlying in underlyings:
+        checks_for_asset = [
+            item for item in checks if item["underlying"] == underlying
+        ]
+        if checks_for_asset and all(
+            item["candidate"] is None for item in checks_for_asset
+        ):
+            why.append(
+                f"{underlying} has no contract under the current "
+                "premium/DTE/spread/OI gates."
+            )
     return {
         "why": why,
         "directions": directions,
@@ -162,6 +185,10 @@ def run_ai_options_cycle(
         config.broker.name != "paper" or not config.broker.paper
     ):
         raise PermissionError("AI options lane must use a paper broker")
+    underlyings = _underlyings(config)
+    symbols = {
+        symbol for symbol in config.data.symbols if symbol in OPTION_SYMBOL_MAP
+    }
     kill_path = _resolve(root, config.risk.kill_switch_file)
     if kill_path.exists():
         raise PermissionError(f"kill switch active: {kill_path}")
@@ -172,6 +199,7 @@ def run_ai_options_cycle(
     if not bars_path.exists():
         raise FileNotFoundError(f"missing bars: {bars_path}")
     bars = completed_bars(load_bars(bars_path), config.data.interval)
+    bars = bars.filter(pl.col("asset").is_in(sorted(symbols)))
     if now is not None:
         cutoff = now.astimezone(UTC) if now.tzinfo else now.replace(tzinfo=UTC)
         bars = bars.filter(pl.col("timestamp") <= cutoff)
@@ -220,7 +248,7 @@ def run_ai_options_cycle(
         )
 
     chain_client = chain_provider or DeribitPublicClient()
-    chain = chain_client.fetch_chain(("BTC", "ETH"), now=as_of)
+    chain = chain_client.fetch_chain(underlyings, now=as_of)
     if not chain:
         raise RuntimeError("Deribit returned no option chain")
 
@@ -247,13 +275,19 @@ def run_ai_options_cycle(
     decision = provider.decide(context)
     directions = directions_from_decision(
         decision,
-        {"BTCUSDT": "BTC", "ETHUSDT": "ETH"},
+        {symbol: OPTION_SYMBOL_MAP[symbol] for symbol in symbols},
     )
+    directions = {
+        underlying: direction
+        for underlying, direction in directions.items()
+        if underlying in underlyings
+    }
     diagnostics = _trade_diagnostics(
         broker,
         chain,
         directions,
         prices,
+        underlyings,
     )
     paper: dict[str, Any]
     cycle_fills: list[OptionFill] = []
@@ -312,6 +346,7 @@ def run_ai_options_cycle(
         "model": decision.model,
         "regime": decision.regime,
         "confidence": decision.confidence,
+        "underlyings": list(underlyings),
         "directions": directions,
         "paper": paper,
         "diagnostics": diagnostics,

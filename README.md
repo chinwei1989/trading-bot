@@ -289,7 +289,7 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad / AI options 30m / Readiness / Options evidence / Options flow)
+# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad / AI options 30m / Swing options / Readiness / Options evidence / Options flow)
 uv run python -m tradingbot evaluate --strategy trend
 powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
@@ -299,7 +299,7 @@ streamlit run streamlit_app.py
 # Vercel lite status app (small FastAPI bundle; snapshot-backed)
 uv run python scripts/export_deploy_status.py
 # Vercel entrypoint: app.py; install requirements-vercel.txt
-# Includes deterministic lanes, AI, options, swing options, host, and canary.
+# Includes deterministic lanes, AI, options, swing options, options labs, host, and canary.
 # Set DASHBOARD_PASSWORD in the host secrets for a public deployment.
 
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
@@ -372,6 +372,16 @@ uv run python -m tradingbot --config config/ai_options_30m.yaml ai-options-run -
 uv run python -m tradingbot --config config/ai_options_30m.yaml ai-options-run
 powershell -ExecutionPolicy Bypass -File scripts/run_ai_options_30m.ps1 -DryRun
 powershell -ExecutionPolicy Bypass -File scripts/register_ai_options_30m.ps1
+
+# Isolated options scope labs (paper only; not part of the 56-day evidence count)
+# ETH-only $10k account; AI must approve every direction.
+uv run python -m tradingbot --config config/ai_options_eth_paper.yaml ai-options-run
+# BTC-only $100k paper lab for contract affordability and execution plumbing.
+uv run python -m tradingbot --config config/ai_options_btc_lab.yaml ai-options-run
+powershell -ExecutionPolicy Bypass -File scripts/run_ai_options_lab.ps1 -Lane eth
+powershell -ExecutionPolicy Bypass -File scripts/run_ai_options_lab.ps1 -Lane btc-lab
+# ETH lab every 30m; BTC lab daily at 07:45 local.
+powershell -ExecutionPolicy Bypass -File scripts/register_ai_options_labs.ps1
 
 # Synthetic options replay (mechanics only; not evidence of edge)
 uv run python scripts/run_options_synthetic.py
@@ -498,6 +508,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/31_DERIBIT_EXECUTION.md` | Deribit testnet execution primitives, inverse settlement math, reconciliation, and live blockers |
 | `docs/32_DERIBIT_TESTNET_EXECUTION.md` | Persistent testnet order/fill state, idempotency, canary guard, and restart reconciliation |
 | `docs/33_OPTIONS_SWING.md` | Deterministic BTC/ETH swing-options paper lane, trend/momentum signal, and exit rules |
+| `docs/34_OPTIONS_SCOPE_LABS.md` | Isolated ETH-only $10k and BTC-only $100k paper labs; boundaries, schedules, and commands |
 
 ---
 

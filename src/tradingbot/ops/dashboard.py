@@ -544,6 +544,12 @@ def _render_overview() -> None:
     ai_options = _load_json(
         ROOT / "artifacts" / "ai_options_30m" / "reports" / "latest.json"
     )
+    eth_lab = _load_json(
+        ROOT / "artifacts" / "ai_options_eth" / "reports" / "latest.json"
+    )
+    btc_lab = _load_json(
+        ROOT / "artifacts" / "ai_options_btc_lab" / "reports" / "latest.json"
+    )
     swing = _load_json(ROOT / "artifacts" / "options_swing" / "reports" / "latest.json")
 
     def account_equity(
@@ -573,8 +579,10 @@ def _render_overview() -> None:
         ("XSMOM", account_equity(xsmom), "Daily cross-sectional sleeve", "good" if xsmom else "warn"),
         ("AI agent", account_equity(ai_agent), "Single-provider paper lane", "info" if ai_agent else "warn"),
         ("AI squad", account_equity(ai_squad), "Eight-agent paper lane", "info" if ai_squad else "warn"),
-        ("Options 30m", account_equity(ai_options, ("paper", "account_after")), "AI long-premium paper lane", "warn"),
+        ("Options 30m", account_equity(ai_options, ("paper", "account_after")), "AI long-premium evidence lane", "warn"),
         ("Swing options", account_equity(swing, ("account_after",)), "Deterministic 21-45 DTE lane", "warn"),
+        ("ETH lab", account_equity(eth_lab, ("paper", "account_after")), "Isolated $10k ETH-only paper", "info"),
+        ("BTC lab", account_equity(btc_lab, ("paper", "account_after")), "Isolated $100k BTC plumbing", "info"),
     ]
     reporting = sum(1 for lane in lanes if lane[1] is not None)
     last_swing = last_as_of(swing)
@@ -615,6 +623,8 @@ def _render_overview() -> None:
         "AI squad": "config/ai_squad.yaml",
         "Options 30m": "config/ai_options_30m.yaml",
         "Swing options": "config/options_swing.yaml",
+        "ETH lab": "config/ai_options_eth_paper.yaml",
+        "BTC lab": "config/ai_options_btc_lab.yaml",
     }
     colors = {
         "Trend": "#38bdf8",
@@ -623,6 +633,8 @@ def _render_overview() -> None:
         "AI squad": "#f472b6",
         "Options 30m": "#fbbf24",
         "Swing options": "#4ade80",
+        "ETH lab": "#f59e0b",
+        "BTC lab": "#94a3b8",
     }
     for name, path in configs.items():
         config = _load_config(path)
@@ -679,6 +691,8 @@ def _render_overview() -> None:
         ("AI squad", ai_squad),
         ("Options 30m", ai_options),
         ("Swing options", swing),
+        ("ETH lab", eth_lab),
+        ("BTC lab", btc_lab),
     ):
         if not report:
             continue
@@ -1154,15 +1168,37 @@ def _render_ai_squad() -> None:
     )
 
 
-def _render_ai_options() -> None:
-    report = _load_json(
-        ROOT / "artifacts" / "ai_options_30m" / "reports" / "latest.json"
+def _options_task_status(name: str) -> dict[str, Any] | None:
+    host = _load_json(ROOT / "artifacts" / "HOST_READINESS.json")
+    if not host:
+        return None
+    return next(
+        (item for item in host.get("tasks", []) if item.get("name") == name),
+        None,
     )
+
+
+def _render_ai_options_report(
+    report_path: Path,
+    config_path: str,
+    artifacts_dir: Path,
+    *,
+    task_name: str,
+    description: str,
+) -> None:
+    st.caption(description)
+    task = _options_task_status(task_name)
+    if task:
+        st.caption(
+            f"Scheduled task: `{task.get('state', '?')}` · "
+            f"last result `{task.get('last_result', '?')}` · "
+            f"next `{task.get('next_run', '?')}`"
+        )
+    report = _load_json(report_path)
     if report is None:
-        st.warning("No 30m AI options report yet.")
+        st.warning("No report for this options account yet.")
         st.code(
-            "uv run python -m tradingbot --config config/ai_options_30m.yaml "
-            "ai-options-run",
+            f"uv run python -m tradingbot --config {config_path} ai-options-run",
             language="powershell",
         )
         return
@@ -1222,9 +1258,57 @@ def _render_ai_options() -> None:
         "Paper-only long-premium crypto options. Deribit data is converted to a "
         "USD-marked approximation. No live broker is reachable."
     )
-    heartbeat = read_heartbeat(ROOT / "artifacts/ai_options_30m/heartbeat.json")
+    heartbeat = read_heartbeat(artifacts_dir / "heartbeat.json")
     if heartbeat:
         st.json(heartbeat)
+
+
+def _render_ai_options() -> None:
+    st.write(
+        "The canonical evidence account trades BTC and ETH together. The two "
+        "labs are isolated paper accounts used for scope testing; they never "
+        "change the 56-day evidence account."
+    )
+    active_tab, eth_tab, btc_tab = st.tabs(
+        [
+            "Evidence account · BTC + ETH",
+            "ETH-only lab · $10k",
+            "BTC contract lab · $100k",
+        ]
+    )
+    with active_tab:
+        _render_ai_options_report(
+            ROOT / "artifacts" / "ai_options_30m" / "reports" / "latest.json",
+            "config/ai_options_30m.yaml",
+            ROOT / "artifacts" / "ai_options_30m",
+            task_name="TradingBotAIOptions30m",
+            description=(
+                "Canonical 56-day paper evidence account. Both underlyings, "
+                "unchanged risk limits."
+            ),
+        )
+    with eth_tab:
+        _render_ai_options_report(
+            ROOT / "artifacts" / "ai_options_eth" / "reports" / "latest.json",
+            "config/ai_options_eth_paper.yaml",
+            ROOT / "artifacts" / "ai_options_eth",
+            task_name="TradingBotAIOptionsEth",
+            description=(
+                "Isolated $10k ETH-only paper lane. The AI must still approve "
+                "the direction; no forced trades. Not part of the evidence count."
+            ),
+        )
+    with btc_tab:
+        _render_ai_options_report(
+            ROOT / "artifacts" / "ai_options_btc_lab" / "reports" / "latest.json",
+            "config/ai_options_btc_lab.yaml",
+            ROOT / "artifacts" / "ai_options_btc_lab",
+            task_name="TradingBotAIOptionsBtcLab",
+            description=(
+                "Isolated $100k BTC-only paper lab for contract affordability "
+                "and execution plumbing. Not real capital and not evidence."
+            ),
+        )
 
 
 def _render_options_swing() -> None:

@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-27T14:30:53.380181+00:00",
+  "generated_at": "2026-10-27T14:41:26.399702+00:00",
   "source": "local snapshot",
   "gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-27T14:30:41.980208+00:00",
+    "generated_at": "2026-10-27T14:40:50.069420+00:00",
     "config_strategy": "trend",
     "checks": [
       {
@@ -86,7 +86,7 @@
   },
   "health": {
     "status": "OK",
-    "generated_at": "2026-10-27T14:30:39.610001+00:00",
+    "generated_at": "2026-10-27T14:40:47.667684+00:00",
     "required_days": 56,
     "max_age_hours": 26.0,
     "campaigns": [
@@ -94,7 +94,7 @@
         "name": "trend",
         "status": "ok",
         "latest": "2026-10-26T23:00:30.093394+00:00",
-        "age_hours": 15.5,
+        "age_hours": 15.67,
         "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -103,7 +103,7 @@
         "name": "xsmom",
         "status": "ok",
         "latest": "2026-10-26T23:00:35.645789+00:00",
-        "age_hours": 15.5,
+        "age_hours": 15.67,
         "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -112,7 +112,7 @@
         "name": "breakout",
         "status": "ok",
         "latest": "2026-10-26T23:20:05.836977+00:00",
-        "age_hours": 15.18,
+        "age_hours": 15.34,
         "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -121,7 +121,7 @@
         "name": "reversal",
         "status": "ok",
         "latest": "2026-10-26T23:20:18.055854+00:00",
-        "age_hours": 15.17,
+        "age_hours": 15.34,
         "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -130,7 +130,7 @@
         "name": "meta",
         "status": "ok",
         "latest": "2026-10-26T23:20:43.804476+00:00",
-        "age_hours": 15.17,
+        "age_hours": 15.33,
         "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -139,7 +139,7 @@
         "name": "ai",
         "status": "ok",
         "latest": "2026-10-26T23:15:05.196723+00:00",
-        "age_hours": 15.26,
+        "age_hours": 15.43,
         "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -148,7 +148,7 @@
         "name": "ai_squad",
         "status": "ok",
         "latest": "2026-10-26T23:25:07.109805+00:00",
-        "age_hours": 15.09,
+        "age_hours": 15.26,
         "days": 4,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -157,7 +157,7 @@
         "name": "intraday_meta",
         "status": "ok",
         "latest": "2026-10-27T14:01:36.154503+00:00",
-        "age_hours": 0.48,
+        "age_hours": 0.65,
         "days": 4,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -165,8 +165,8 @@
       {
         "name": "ai_options_30m",
         "status": "ok",
-        "latest": "2026-10-27T14:28:29.888483+00:00",
-        "age_hours": 0.04,
+        "latest": "2026-10-27T14:31:09.681114+00:00",
+        "age_hours": 0.16,
         "days": 1,
         "heartbeat": "ok",
         "detail": "fresh paper row"
@@ -218,13 +218,25 @@
     },
     "ai_options_30m": {
       "equity": 10000.0,
-      "timestamp": "2026-10-27T14:28:29.888483+00:00",
+      "timestamp": "2026-10-27T14:31:09.681114+00:00",
       "days": 1,
       "mode": null
     },
     "swing": {
       "equity": 10000.0,
       "timestamp": "2026-10-26T23:40:05.358724+00:00",
+      "days": 1,
+      "mode": null
+    },
+    "ai_options_eth": {
+      "equity": 10000.0,
+      "timestamp": "2026-10-27T14:41:06.509751+00:00",
+      "days": 1,
+      "mode": null
+    },
+    "ai_options_btc_lab": {
+      "equity": 100000.0,
+      "timestamp": "2026-10-27T14:36:20.030487+00:00",
       "days": 1,
       "mode": null
     }
@@ -567,7 +579,7 @@
   },
   "options_live_gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-27T14:30:43.611321+00:00",
+    "generated_at": "2026-10-27T14:40:51.718691+00:00",
     "checks": [
       {
         "name": "options paper days",
@@ -692,9 +704,29 @@
       {
         "name": "TradingBotAIOptions30m",
         "state": "Ready",
-        "last_run": "2026-10-27T07:01:01.0000000+08:00",
+        "last_run": "2026-10-27T22:31:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T07:31:00.0000000+08:00",
+        "next_run": "2026-10-27T23:01:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotAIOptionsBtcLab",
+        "state": "Ready",
+        "last_run": "1999-11-30T00:00:00.0000000+08:00",
+        "last_result": 267011,
+        "next_run": "2026-10-28T07:45:00.0000000+08:00",
+        "wake_to_run": true,
+        "start_when_available": true,
+        "logon_type": "Interactive"
+      },
+      {
+        "name": "TradingBotAIOptionsEth",
+        "state": "Ready",
+        "last_run": "2026-10-27T22:40:58.0000000+08:00",
+        "last_result": 0,
+        "next_run": "2026-10-27T22:46:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -731,9 +763,9 @@
       },
       {
         "name": "TradingBotHealth",
-        "state": "Running",
+        "state": "Ready",
         "last_run": "2026-10-27T07:30:01.0000000+08:00",
-        "last_result": 267009,
+        "last_result": 0,
         "next_run": "2026-10-28T07:30:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
@@ -742,9 +774,9 @@
       {
         "name": "TradingBotIntraday",
         "state": "Ready",
-        "last_run": "2026-10-27T07:01:01.0000000+08:00",
+        "last_run": "2026-10-27T22:01:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T08:01:00.0000000+08:00",
+        "next_run": "2026-10-27T23:01:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -752,9 +784,9 @@
       {
         "name": "TradingBotOptionsSwing",
         "state": "Ready",
-        "last_run": "2026-10-26T22:29:18.0000000+08:00",
+        "last_run": "2026-10-27T07:40:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T07:40:00.0000000+08:00",
+        "next_run": "2026-10-28T07:40:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"

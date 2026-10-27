@@ -1,0 +1,83 @@
+agent:
+  api_key_env: TYPESAFE_API_KEY
+  artifacts_dir: artifacts/ai_options_btc_lab
+  enabled: true
+  endpoint: https://api.typesafe.ai/v1/systemone
+  fallback: none
+  include_macro: true
+  include_sentiment: true
+  max_retries: 2
+  max_tokens: 1200
+  model: jev-latest
+  paper_only: true
+  policy:
+    allow_short: true
+    max_asset_weight: 0.2
+    max_gross: 0.8
+    max_turnover: 0.02
+    min_cash_weight: 0.2
+    min_confidence: 0.6
+    risk_off_gross: 0.25
+    target_vol: 0.15
+  provider: squad
+  temperature: 0.0
+  timeout_seconds: 30
+backtest:
+  cost_bps: 10
+  execution_lag: 1
+  initial_capital: 100000
+  output_dir: artifacts/ai_options_btc_lab
+  periods_per_year: 17520
+  risk_free_rate: 0.0
+  slippage_bps: 5
+broker:
+  allow_short: false
+  exchange: deribit
+  heartbeat_path: artifacts/ai_options_btc_lab/heartbeat.json
+  initial_cash: 100000
+  journal_path: artifacts/ai_options_btc_lab/orders.sqlite
+  min_notional: 10
+  name: paper
+  order_state_path: artifacts/ai_options_btc_lab/order_state.sqlite
+  paper: true
+  performance_path: artifacts/ai_options_btc_lab/performance.jsonl
+  quote_currency: USDT
+  sandbox: true
+  state_path: artifacts/ai_options_btc_lab/paper_state.json
+data:
+  bars_path: data/normalized/bars_ai_options_btc_lab_30m.parquet
+  daily_bars_path: data/normalized/bars.parquet
+  end: null
+  include_recent: true
+  interval: 30m
+  market: spot
+  raw_dir: data/raw_intraday_btc_lab
+  recent_limit: 1000
+  source: binance
+  start: 2026-09
+  symbols:
+  - BTCUSDT
+  universe_path: config/pit_universe_crypto.csv
+  use_cache: true
+  verify_checksums: true
+risk:
+  auto_kill_on_drawdown: true
+  kill_switch_file: artifacts/ai_options_btc_lab/KILL
+  max_asset_weight: 0.2
+  max_drawdown: 0.25
+  max_gross: 0.8
+  max_net: 0.8
+  min_cash_weight: 0.2
+  state_path: artifacts/ai_options_btc_lab/risk_state.json
+seed: 7
+strategy:
+  name: trend
+  trend:
+    long_short: false
+    lookback: 200
+    max_gross: 0.8
+    max_weight: 0.2
+    rebalance: H
+    target_vol: 0.15
+    vol_target: true
+    vol_window: 60

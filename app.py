@@ -37,6 +37,8 @@ LANES = {
     "intraday": "Intraday",
     "ai_options_30m": "Options 30m",
     "swing": "Swing options",
+    "ai_options_eth": "ETH options lab",
+    "ai_options_btc_lab": "BTC options lab",
 }
 
 CSS = """

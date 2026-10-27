@@ -98,10 +98,12 @@ class FakeChain:
         ]
 
 
-def _config(tmp_path: Path) -> AppConfig:
+def _config(
+    tmp_path: Path, *, symbols: list[str] | None = None
+) -> AppConfig:
     return AppConfig(
         data=DataConfig(
-            symbols=["BTCUSDT", "ETHUSDT"],
+            symbols=symbols or ["BTCUSDT", "ETHUSDT"],
             interval="30m",
             bars_path=Path("data/bars_30m.parquet"),
             include_recent=False,
@@ -172,6 +174,34 @@ def test_ai_options_cycle_uses_decision_and_paper_broker(tmp_path: Path) -> None
         .splitlines()
     ]
     assert performance[-1]["fees"] > 0
+
+
+def test_ai_options_lane_filters_to_configured_underlying(tmp_path: Path) -> None:
+    config = _config(tmp_path, symbols=["ETHUSDT"])
+
+    class RecordingChain(FakeChain):
+        def fetch_chain(self, currencies, *, now=None):
+            assert currencies == ("ETH",)
+            return super().fetch_chain(currencies, now=now)
+
+    save_bars(_bars(), tmp_path / config.data.bars_path)
+    result = run_ai_options_cycle(
+        config,
+        root=tmp_path,
+        decision_provider=FakeProvider(),
+        chain_provider=RecordingChain(),
+        refresh=False,
+    )
+    assert result.directions == {"ETH": "long"}
+    assert result.paper is not None
+    assert result.paper["fills"]
+    report = json.loads(
+        (tmp_path / config.agent.artifacts_dir / "reports/latest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    assert report["underlyings"] == ["ETH"]
+    assert set(report["directions"]) == {"ETH"}
 
 
 def test_ai_options_reports_why_flat_cycle_did_not_trade(tmp_path: Path) -> None:
