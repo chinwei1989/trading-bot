@@ -13,6 +13,7 @@ OUT = ROOT / "deploy" / "status.json"
 CAMPAIGNS = {
     "trend": Path("artifacts/performance_trend.jsonl"),
     "xsmom": Path("artifacts/performance_xsmom.jsonl"),
+    "sui": Path("artifacts/sui/performance.jsonl"),
     "breakout": Path("artifacts/performance_breakout.jsonl"),
     "reversal": Path("artifacts/performance_reversal.jsonl"),
     "meta": Path("artifacts/performance_meta.jsonl"),

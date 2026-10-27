@@ -18,6 +18,16 @@ def test_load_base_config() -> None:
     assert config.risk.max_gross == 1.0
 
 
+def test_load_sui_config() -> None:
+    config = load_config(ROOT / "config" / "sui.yaml")
+    assert config.data.symbols == ["SUIUSDT"]
+    assert config.data.interval == "1d"
+    assert config.data.bars_path == Path("data/normalized/bars_sui.parquet")
+    assert config.broker.name == "paper"
+    assert config.broker.initial_cash == 10_000
+    assert config.risk.max_asset_weight == 0.25
+
+
 def test_empty_symbols_rejected() -> None:
     with pytest.raises(ValidationError):
         DataConfig(symbols=[])

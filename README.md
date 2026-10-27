@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **179 tests passing**, `ruff` pass, `mypy src` pass
+- **181 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -234,13 +234,14 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Eight-agent AI squad:** separate paper account; macro → trend → breakout → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
+- **Isolated SUI trend lane:** separate $10,000 SUIUSDT paper account, 200-day long-only trend with volatility targeting, own data/state/heartbeat, daily 07:10 task; deliberately not mixed into the 8-asset campaign or AI/options evidence; see `docs/35_SUI_TREND.md`
 - **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, persistent testnet order/fill state, restart reconciliation, idempotency and canary guards, a scheduled daily testnet canary with health validation, separate testnet/live credential namespaces and live confirmation, a deterministic BTC/ETH swing-options paper lane with explicit profit/stop/DTE exits, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, `docs/31_DERIBIT_EXECUTION.md`, and `docs/32_DERIBIT_TESTNET_EXECUTION.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
-- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the eight-agent AI squad, hourly intraday meta, and the 30m AI options paper lane; writes `artifacts/CAMPAIGN_HEALTH.md`
+- **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the eight-agent AI squad, hourly intraday meta, the 30m AI options paper lane, and the isolated SUI trend lane; writes `artifacts/CAMPAIGN_HEALTH.md`
 - **Host readiness:** `scripts/check_host.ps1` checks sleep, wake timers, network, time service, disk, task logon, and last task results; writes `artifacts/HOST_READINESS.md`
 - **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
 - **Carry research lane:** two-leg spot/perp funding/basis backtest + walk-forward; full-sample looks strong, OOS DSR 0.00 / PBO 0.57, so not added to meta
@@ -289,7 +290,7 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + dashboard (Both / Deterministic / Intraday / AI agent / AI squad / AI options 30m / Swing options / Readiness / Options evidence / Options flow)
+# Evaluation + dashboard (Both / Deterministic / SUI trend / Intraday / AI agent / AI squad / AI options 30m / Swing options / Readiness / Options evidence / Options flow)
 uv run python -m tradingbot evaluate --strategy trend
 powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
@@ -299,11 +300,18 @@ streamlit run streamlit_app.py
 # Vercel lite status app (small FastAPI bundle; snapshot-backed)
 uv run python scripts/export_deploy_status.py
 # Vercel entrypoint: app.py; install requirements-vercel.txt
-# Includes deterministic lanes, AI, options, swing options, options labs, host, and canary.
+# Includes deterministic lanes, SUI trend, AI, options, swing options, options labs, host, and canary.
 # Set DASHBOARD_PASSWORD in the host secrets for a public deployment.
 
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
 powershell -ExecutionPolicy Bypass -File scripts/run_campaign.ps1
+
+# Isolated SUIUSDT trend paper lane ($10k; separate data/state; not the 8-asset book)
+uv run python -m tradingbot --config config/sui.yaml download
+uv run python -m tradingbot --config config/sui.yaml backtest --strategy trend
+uv run python -m tradingbot --config config/sui.yaml run --mode paper --once --strategy trend --no-evaluate
+powershell -ExecutionPolicy Bypass -File scripts/run_sui.ps1
+powershell -ExecutionPolicy Bypass -File scripts/register_sui.ps1
 
 # Hourly deterministic intraday paper lane (1h completed bars; separate account)
 uv run python -m tradingbot --config config/intraday_meta.yaml refresh-bars
@@ -311,7 +319,7 @@ powershell -ExecutionPolicy Bypass -File scripts/run_intraday_cycle.ps1 -DryRun
 uv run python -m tradingbot --config config/intraday_meta.yaml run --mode paper --once --no-evaluate
 powershell -ExecutionPolicy Bypass -File scripts/register_intraday_campaign.ps1
 
-# Campaign health check (includes ai_squad, intraday_meta, and ai_options_30m); scheduled at 07:30 local
+# Campaign health check (includes ai_squad, intraday_meta, ai_options_30m, and sui); scheduled at 07:30 local
 uv run python -m tradingbot health
 powershell -ExecutionPolicy Bypass -File scripts/register_health.ps1
 
@@ -509,6 +517,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/32_DERIBIT_TESTNET_EXECUTION.md` | Persistent testnet order/fill state, idempotency, canary guard, and restart reconciliation |
 | `docs/33_OPTIONS_SWING.md` | Deterministic BTC/ETH swing-options paper lane, trend/momentum signal, and exit rules |
 | `docs/34_OPTIONS_SCOPE_LABS.md` | Isolated ETH-only $10k and BTC-only $100k paper labs; boundaries, schedules, and commands |
+| `docs/35_SUI_TREND.md` | Isolated SUIUSDT trend paper lane, backtest, first fill, schedule, and limits |
 
 ---
 

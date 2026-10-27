@@ -14,6 +14,7 @@ import hmac
 import html
 import json
 import os
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 
 from tradingbot.config import AppConfig, load_config
+from tradingbot.data.store import load_bars
 from tradingbot.ops.evaluation import build_report, write_report
 from tradingbot.ops.heartbeat import read_heartbeat
 from tradingbot.ops.office3d import build_office_html
@@ -50,6 +52,7 @@ OPTIONS_FLOW_PATH = ROOT / "web" / "ai_options_flow.html"
 _NAV_ITEMS = [
     "Overview",
     "Deterministic",
+    "SUI trend",
     "Intraday",
     "AI agent",
     "AI squad",
@@ -69,6 +72,10 @@ _PAGE_META = {
     "Deterministic": (
         "Deterministic sleeves",
         "Trend, XSMOM, breakout, reversal, and meta-allocation paper books.",
+    ),
+    "SUI trend": (
+        "SUI trend paper",
+        "An isolated $10k SUI-only trend sleeve with its own data and paper state.",
     ),
     "Intraday": (
         "Intraday paper",
@@ -551,6 +558,12 @@ def _render_overview() -> None:
         ROOT / "artifacts" / "ai_options_btc_lab" / "reports" / "latest.json"
     )
     swing = _load_json(ROOT / "artifacts" / "options_swing" / "reports" / "latest.json")
+    sui_heartbeat = read_heartbeat(ROOT / "artifacts" / "sui" / "heartbeat.json")
+    sui_equity: float | None = None
+    if sui_heartbeat:
+        equity_value = sui_heartbeat.get("equity")
+        if isinstance(equity_value, (int, float)):
+            sui_equity = float(equity_value)
 
     def account_equity(
         report: dict[str, Any] | None, path: tuple[str, ...] = ("account",)
@@ -577,6 +590,7 @@ def _render_overview() -> None:
     lanes = [
         ("Trend", account_equity(trend), "Daily deterministic sleeve", "good" if trend else "warn"),
         ("XSMOM", account_equity(xsmom), "Daily cross-sectional sleeve", "good" if xsmom else "warn"),
+        ("SUI trend", sui_equity, "Isolated $10k SUI-only paper", "info" if sui_heartbeat else "warn"),
         ("AI agent", account_equity(ai_agent), "Single-provider paper lane", "info" if ai_agent else "warn"),
         ("AI squad", account_equity(ai_squad), "Eight-agent paper lane", "info" if ai_squad else "warn"),
         ("Options 30m", account_equity(ai_options, ("paper", "account_after")), "AI long-premium evidence lane", "warn"),
@@ -619,6 +633,7 @@ def _render_overview() -> None:
     configs = {
         "Trend": "config/base.yaml",
         "XSMOM": "config/xsmom.yaml",
+        "SUI trend": "config/sui.yaml",
         "AI agent": "config/ai_agent.yaml",
         "AI squad": "config/ai_squad.yaml",
         "Options 30m": "config/ai_options_30m.yaml",
@@ -629,6 +644,7 @@ def _render_overview() -> None:
     colors = {
         "Trend": "#38bdf8",
         "XSMOM": "#2dd4bf",
+        "SUI trend": "#22d3ee",
         "AI agent": "#c084fc",
         "AI squad": "#f472b6",
         "Options 30m": "#fbbf24",
@@ -803,6 +819,163 @@ def _render_deterministic() -> None:
         )
     else:
         st.info("No positions.")
+
+
+def _render_sui() -> None:
+    config = _load_config("config/sui.yaml")
+    if config is None:
+        st.error("Could not load config/sui.yaml")
+        return
+
+    heartbeat = read_heartbeat(ROOT / "artifacts" / "sui" / "heartbeat.json")
+    state = _load_json(ROOT / "artifacts" / "sui" / "paper_state.json") or {}
+    metrics = _load_json(
+        ROOT / "artifacts" / "sui" / "backtest_trend_metrics.json"
+    ) or {}
+    positions = state.get("positions") or {}
+    task = _scheduled_task_status("TradingBotSui")
+
+    st.caption(
+        "Isolated $10k SUIUSDT trend sleeve. Separate data, paper state, risk "
+        "state, and task; it does not change the 8-asset campaign or any "
+        "AI/options account. Paper only."
+    )
+    if task:
+        st.caption(
+            f"Scheduled task: `{task.get('state', '?')}` · "
+            f"last result `{_task_result_label(task.get('last_result'))}` · "
+            f"next `{task.get('next_run', '?')}`"
+        )
+
+    bars_path = ROOT / config.data.bars_path
+    last_price: float | None = None
+    last_timestamp: datetime | None = None
+    data_age: str = "?"
+    if bars_path.exists():
+        bars = load_bars(bars_path).sort("timestamp")
+        if not bars.is_empty():
+            row = bars.tail(1).row(0, named=True)
+            last_price = float(row.get("close", 0.0))
+            value = row.get("timestamp")
+            if isinstance(value, datetime):
+                last_timestamp = value
+                data_age = f"{(datetime.now(UTC) - value).days}d"
+
+    target_weight: float | None = None
+    weights_path = ROOT / "artifacts" / "sui" / "backtest_trend_weights.parquet"
+    if weights_path.exists():
+        try:
+            weights = pd.read_parquet(weights_path).sort_values("timestamp")
+            if not weights.empty:
+                target_weight = float(weights.iloc[-1]["weight"])
+        except Exception:
+            target_weight = None
+
+    account = heartbeat or {}
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Equity", f"${float(account.get('equity', 0)):,.2f}")
+    c2.metric("Cash", f"${float(account.get('cash', 0)):,.2f}")
+    c3.metric(
+        "SUI position",
+        f"{sum(float(pos.get('qty', 0)) for pos in positions.values()):,.2f}",
+    )
+    c4.metric(
+        "Last SUI price",
+        f"${last_price:,.4f}" if last_price is not None else "?",
+    )
+    c5.metric(
+        "Target weight",
+        f"{target_weight:.1%}" if target_weight is not None else "?",
+    )
+    st.caption(
+        f"Paper heartbeat: `{account.get('timestamp', 'no report')}` · "
+        f"last daily bar: `{last_timestamp.isoformat() if last_timestamp else '?'}` · "
+        f"data age: `{data_age}` · strategy: `{config.strategy.name}`"
+    )
+    if not heartbeat:
+        st.warning("No SUI paper cycle yet. Run the command below.")
+        st.code(
+            "powershell -ExecutionPolicy Bypass -File scripts/run_sui.ps1",
+            language="powershell",
+        )
+    elif account.get("status") != "ok":
+        st.warning(f"Last SUI paper status: {account.get('status', '?')}")
+    else:
+        st.success("SUI paper cycle healthy.")
+
+    fig = go.Figure()
+    _add_equity_trace(
+        fig,
+        ROOT / config.broker.performance_path,
+        "SUI paper",
+        "#22d3ee",
+    )
+    bt_path = ROOT / config.backtest.output_dir / "backtest_trend_daily.csv"
+    if bt_path.exists():
+        try:
+            bt = pd.read_csv(bt_path)
+            bt["timestamp"] = pd.to_datetime(bt["timestamp"], utc=True)
+            fig.add_trace(
+                go.Scatter(
+                    x=bt["timestamp"],
+                    y=bt["equity"],
+                    mode="lines",
+                    name="SUI backtest",
+                    line=dict(color="#94a3b8", width=1.2),
+                )
+            )
+        except Exception:
+            pass
+    fig.update_layout(
+        title="SUI paper vs backtest equity",
+        height=390,
+        margin=dict(l=12, r=12, t=40, b=12),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch")
+
+    left, right = st.columns(2)
+    with left:
+        st.subheader("Backtest research")
+        st.caption("Full-sample trend backtest; research only, not forward evidence.")
+        st.json(
+            {
+                "total_return": metrics.get("total_return"),
+                "cagr": metrics.get("cagr"),
+                "sharpe": metrics.get("sharpe"),
+                "max_dd": metrics.get("max_dd"),
+                "n_days": metrics.get("n_days"),
+            }
+        )
+    with right:
+        st.subheader("Paper position")
+        if positions:
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {
+                            "asset": asset,
+                            "qty": pos.get("qty"),
+                            "avg entry": pos.get("avg_entry_price"),
+                            "last price": last_price,
+                            "value": (
+                                float(pos.get("qty", 0)) * last_price
+                                if last_price is not None
+                                else None
+                            ),
+                        }
+                        for asset, pos in positions.items()
+                    ]
+                ),
+                width="stretch",
+                hide_index=True,
+            )
+        else:
+            st.info("No open SUI position.")
+    st.caption(
+        "Paper-only. SUI is not in the active 8-asset campaign, AI accounts, or "
+        "options evidence; live trading remains disabled."
+    )
 
 
 def _render_ai() -> None:
@@ -1168,7 +1341,7 @@ def _render_ai_squad() -> None:
     )
 
 
-def _options_task_status(name: str) -> dict[str, Any] | None:
+def _scheduled_task_status(name: str) -> dict[str, Any] | None:
     host = _load_json(ROOT / "artifacts" / "HOST_READINESS.json")
     if not host:
         return None
@@ -1194,7 +1367,7 @@ def _render_ai_options_report(
     description: str,
 ) -> None:
     st.caption(description)
-    task = _options_task_status(task_name)
+    task = _scheduled_task_status(task_name)
     if task:
         st.caption(
             f"Scheduled task: `{task.get('state', '?')}` · "
@@ -2011,6 +2184,8 @@ def _render_selected(selected: str) -> None:
         _render_overview()
     elif selected == "Deterministic":
         _render_deterministic()
+    elif selected == "SUI trend":
+        _render_sui()
     elif selected == "AI agent":
         _render_ai()
     elif selected == "Intraday":

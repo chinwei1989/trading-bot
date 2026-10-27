@@ -30,6 +30,7 @@ app = FastAPI(title="NOVA Trading Operations", docs_url=None, redoc_url=None)
 LANES = {
     "trend": "Trend",
     "xsmom": "XSMOM",
+    "sui": "SUI trend",
     "breakout": "Breakout",
     "reversal": "Reversal",
     "meta": "Meta allocator",

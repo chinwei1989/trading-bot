@@ -1,0 +1,67 @@
+# Isolated SUI trend paper lane.
+# This account is deliberately separate from the 8-asset crypto campaign, the
+# AI spot lanes, and every options account. No live broker is configured.
+
+data:
+  source: binance
+  market: spot
+  interval: 1d
+  symbols:
+    - SUIUSDT
+  start: "2023-05"
+  end: null
+  universe_path: config/sui_universe.csv
+  bars_path: data/normalized/bars_sui.parquet
+  raw_dir: data/raw_sui
+  use_cache: true
+  verify_checksums: true
+  include_recent: true
+  recent_limit: 30
+
+strategy:
+  name: trend
+  trend:
+    lookback: 200
+    vol_window: 60
+    target_vol: 0.15
+    max_weight: 0.25
+    long_short: false
+    rebalance: W
+    max_gross: 1.0
+    vol_target: true
+
+backtest:
+  initial_capital: 10000
+  cost_bps: 10
+  slippage_bps: 5
+  periods_per_year: 365
+  execution_lag: 1
+  risk_free_rate: 0.0
+  output_dir: artifacts/sui
+
+risk:
+  max_gross: 1.0
+  max_net: 1.0
+  max_asset_weight: 0.25
+  max_drawdown: 0.35
+  min_cash_weight: 0.0
+  kill_switch_file: artifacts/sui/KILL
+  state_path: artifacts/sui/risk_state.json
+  auto_kill_on_drawdown: true
+
+broker:
+  name: paper
+  paper: true
+  exchange: binance
+  sandbox: true
+  quote_currency: USDT
+  allow_short: false
+  initial_cash: 10000
+  min_notional: 10
+  journal_path: artifacts/sui/orders.sqlite
+  order_state_path: artifacts/sui/order_state.sqlite
+  state_path: artifacts/sui/paper_state.json
+  performance_path: artifacts/sui/performance.jsonl
+  heartbeat_path: artifacts/sui/heartbeat.json
+
+seed: 7
