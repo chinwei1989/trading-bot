@@ -32,6 +32,7 @@ models/
 !config/pit_universe_full.csv
 !config/pit_universe_v2.csv
 !config/pit_universe_lite.csv
+!config/sui_universe.csv
 
 # Logs and secrets
 logs/

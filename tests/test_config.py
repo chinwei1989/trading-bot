@@ -26,6 +26,8 @@ def test_load_sui_config() -> None:
     assert config.broker.name == "paper"
     assert config.broker.initial_cash == 10_000
     assert config.risk.max_asset_weight == 0.25
+    assert config.data.universe_path is not None
+    assert (ROOT / config.data.universe_path).exists()
 
 
 def test_empty_symbols_rejected() -> None:
