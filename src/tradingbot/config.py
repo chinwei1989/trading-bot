@@ -30,6 +30,7 @@ class DataConfig(BaseModel):
     start: str = "2020-01"
     end: str | None = None
     bars_path: Path = Path("data/normalized/bars.parquet")
+    daily_bars_path: Path | None = None
     universe_path: Path | None = None
     raw_dir: Path = Path("data/raw")
     use_cache: bool = True

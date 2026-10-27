@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **177 tests passing**, `ruff` pass, `mypy src` pass
+- **179 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`

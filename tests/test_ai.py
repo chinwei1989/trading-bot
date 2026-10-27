@@ -97,6 +97,47 @@ def test_context_uses_completed_features() -> None:
     assert context["portfolio"]["current_weights"]["A"] == 0.0
 
 
+def test_context_separates_daily_and_intraday_features() -> None:
+    daily = _bars()
+    start = datetime(2023, 1, 1, tzinfo=UTC)
+    rows = []
+    for i in range(260):
+        ts = start + timedelta(minutes=30 * i)
+        for asset, base in (("A", 100.0), ("B", 80.0)):
+            close = base * (1.0 + 0.0001 * i)
+            rows.append(
+                {
+                    "timestamp": ts,
+                    "asset": asset,
+                    "open": close,
+                    "high": close,
+                    "low": close,
+                    "close": close,
+                    "volume": 1.0,
+                }
+            )
+    intraday = pl.DataFrame(rows)
+
+    context = build_context(
+        intraday,
+        cash=10_000,
+        equity=10_000,
+        positions={},
+        policy=_policy(),
+        root=Path("."),
+        include_macro=False,
+        include_sentiment=False,
+        daily_bars=daily,
+        intraday=True,
+    )
+    assert context["market"]["timeframe"] == "intraday+daily"
+    assert context["assets"]["A"]["sma_200"] > 0
+    assert "return_60d" in context["assets"]["A"]
+    assert context["assets"]["A"]["intraday"]["sma_200bar"] > 0
+    assert context["assets"]["A"]["intraday"]["return_60bar"] is not None
+    assert "return_60d" not in context["assets"]["A"]["intraday"]
+
+
 def test_policy_sizes_and_caps_actions() -> None:
     decision = AgentDecision(
         as_of=datetime(2026, 10, 22, tzinfo=UTC),

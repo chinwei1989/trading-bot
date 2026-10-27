@@ -120,8 +120,10 @@ def test_sell_must_be_reduce_only_and_live_is_blocked() -> None:
         DeribitExecutionClient(environment="live", client_id="id", client_secret="secret")
 
 
-def test_missing_credentials_fail_closed() -> None:
+def test_missing_credentials_fail_closed(monkeypatch: pytest.MonkeyPatch) -> None:
     calls: list[tuple[dict[str, Any], str | None]] = []
+    monkeypatch.delenv("DERIBIT_CLIENT_ID", raising=False)
+    monkeypatch.delenv("DERIBIT_CLIENT_SECRET", raising=False)
     http = httpx.Client(transport=httpx.MockTransport(_handler(calls)))
     client = DeribitExecutionClient(client=http)
     try:

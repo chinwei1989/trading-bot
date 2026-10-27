@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-10-26T15:24:12.442338+00:00",
+  "generated_at": "2026-10-27T14:30:53.380181+00:00",
   "source": "local snapshot",
   "gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-26T15:23:52.403705+00:00",
+    "generated_at": "2026-10-27T14:30:41.980208+00:00",
     "config_strategy": "trend",
     "checks": [
       {
@@ -19,12 +19,12 @@
       {
         "name": "paper campaign",
         "passed": false,
-        "detail": "3 unique days vs required 56"
+        "detail": "4 unique days vs required 56"
       },
       {
         "name": "TCA",
         "passed": true,
-        "detail": "5.0 bps, 15 fills (max 10.0 bps)"
+        "detail": "5.0 bps, 19 fills (max 10.0 bps)"
       },
       {
         "name": "data freshness",
@@ -33,8 +33,8 @@
       },
       {
         "name": "paper alerts",
-        "passed": true,
-        "detail": "none"
+        "passed": false,
+        "detail": "rolling 60d Sharpe -18.92 < 0"
       },
       {
         "name": "live broker config",
@@ -54,7 +54,7 @@
       {
         "name": "AI paper days",
         "passed": false,
-        "detail": "3 vs required 56"
+        "detail": "4 vs required 56"
       },
       {
         "name": "AI is not fallback",
@@ -76,6 +76,7 @@
       "deflated Sharpe",
       "PBO",
       "paper campaign",
+      "paper alerts",
       "live broker config",
       "LIVE_TRADING",
       "AI paper days",
@@ -85,88 +86,88 @@
   },
   "health": {
     "status": "OK",
-    "generated_at": "2026-10-26T15:23:50.073304+00:00",
+    "generated_at": "2026-10-27T14:30:39.610001+00:00",
     "required_days": 56,
     "max_age_hours": 26.0,
     "campaigns": [
       {
         "name": "trend",
         "status": "ok",
-        "latest": "2026-10-25T23:00:30.592675+00:00",
-        "age_hours": 16.39,
-        "days": 4,
+        "latest": "2026-10-26T23:00:30.093394+00:00",
+        "age_hours": 15.5,
+        "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "xsmom",
         "status": "ok",
-        "latest": "2026-10-25T23:00:36.210599+00:00",
-        "age_hours": 16.39,
-        "days": 4,
+        "latest": "2026-10-26T23:00:35.645789+00:00",
+        "age_hours": 15.5,
+        "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "breakout",
         "status": "ok",
-        "latest": "2026-10-25T23:20:06.559431+00:00",
-        "age_hours": 16.06,
-        "days": 4,
+        "latest": "2026-10-26T23:20:05.836977+00:00",
+        "age_hours": 15.18,
+        "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "reversal",
         "status": "ok",
-        "latest": "2026-10-25T23:20:20.525787+00:00",
-        "age_hours": 16.06,
-        "days": 4,
+        "latest": "2026-10-26T23:20:18.055854+00:00",
+        "age_hours": 15.17,
+        "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "meta",
         "status": "ok",
-        "latest": "2026-10-25T23:20:50.095698+00:00",
-        "age_hours": 16.05,
-        "days": 4,
+        "latest": "2026-10-26T23:20:43.804476+00:00",
+        "age_hours": 15.17,
+        "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "ai",
         "status": "ok",
-        "latest": "2026-10-25T23:15:05.735596+00:00",
-        "age_hours": 16.15,
-        "days": 4,
+        "latest": "2026-10-26T23:15:05.196723+00:00",
+        "age_hours": 15.26,
+        "days": 5,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "ai_squad",
         "status": "ok",
-        "latest": "2026-10-25T23:25:07.499509+00:00",
-        "age_hours": 15.98,
-        "days": 3,
+        "latest": "2026-10-26T23:25:07.109805+00:00",
+        "age_hours": 15.09,
+        "days": 4,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "intraday_meta",
         "status": "ok",
-        "latest": "2026-10-26T15:01:34.271513+00:00",
-        "age_hours": 0.37,
-        "days": 3,
+        "latest": "2026-10-27T14:01:36.154503+00:00",
+        "age_hours": 0.48,
+        "days": 4,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       },
       {
         "name": "ai_options_30m",
         "status": "ok",
-        "latest": "2026-10-26T15:01:09.627333+00:00",
-        "age_hours": 0.38,
-        "days": 3,
+        "latest": "2026-10-27T14:28:29.888483+00:00",
+        "age_hours": 0.04,
+        "days": 1,
         "heartbeat": "ok",
         "detail": "fresh paper row"
       }
@@ -174,63 +175,168 @@
   },
   "campaigns": {
     "trend": {
-      "equity": 9964.14980646749,
-      "timestamp": "2026-10-25T23:00:30.592675+00:00",
-      "days": 3,
+      "equity": 9936.884945979886,
+      "timestamp": "2026-10-26T23:00:30.093394+00:00",
+      "days": 4,
       "mode": "paper"
     },
     "xsmom": {
-      "equity": 9965.514988827577,
-      "timestamp": "2026-10-25T23:00:36.210599+00:00",
-      "days": 3,
+      "equity": 9955.017189045153,
+      "timestamp": "2026-10-26T23:00:35.645789+00:00",
+      "days": 4,
       "mode": "paper"
     },
     "breakout": {
-      "equity": 9960.821423963314,
-      "timestamp": "2026-10-25T23:20:06.559431+00:00",
-      "days": 3,
+      "equity": 9926.224602658996,
+      "timestamp": "2026-10-26T23:20:05.836977+00:00",
+      "days": 4,
       "mode": "paper"
     },
     "reversal": {
-      "equity": 9978.698136478499,
-      "timestamp": "2026-10-25T23:20:20.525787+00:00",
-      "days": 3,
+      "equity": 9953.409128138846,
+      "timestamp": "2026-10-26T23:20:18.055854+00:00",
+      "days": 4,
       "mode": "paper"
     },
     "meta": {
-      "equity": 9969.246381888275,
-      "timestamp": "2026-10-25T23:20:50.095698+00:00",
-      "days": 3,
+      "equity": 9946.084565660563,
+      "timestamp": "2026-10-26T23:20:43.804476+00:00",
+      "days": 4,
       "mode": "paper"
     },
     "ai": {
       "equity": 10000.0,
-      "timestamp": "2026-10-25T23:15:05.735596+00:00",
-      "days": 3,
+      "timestamp": "2026-10-26T23:15:05.196723+00:00",
+      "days": 4,
       "mode": null
     },
     "intraday": {
-      "equity": 9954.133364857867,
-      "timestamp": "2026-10-26T15:01:34.271513+00:00",
-      "days": 3,
+      "equity": 9947.9062430476,
+      "timestamp": "2026-10-27T14:01:36.154503+00:00",
+      "days": 4,
       "mode": "paper"
     },
     "ai_options_30m": {
       "equity": 10000.0,
-      "timestamp": "2026-10-26T15:01:09.627333+00:00",
-      "days": 3,
+      "timestamp": "2026-10-27T14:28:29.888483+00:00",
+      "days": 1,
       "mode": null
     },
     "swing": {
       "equity": 10000.0,
-      "timestamp": "2026-10-26T14:30:25.410044+00:00",
+      "timestamp": "2026-10-26T23:40:05.358724+00:00",
       "days": 1,
       "mode": null
     }
   },
   "ai_scorecard": {
     "pipeline": "ai_agent",
-    "generated_at": "2026-10-25T23:15:08.834932+00:00",
+    "generated_at": "2026-10-26T23:15:08.021529+00:00",
+    "status": "insufficient_data",
+    "n_days": 4,
+    "metrics": {
+      "total_return": 0.0,
+      "cagr": 0.0,
+      "vol": 0.0,
+      "sharpe": 0.0,
+      "sortino": 0.0,
+      "max_dd": 0.0,
+      "calmar": 0.0,
+      "hit_rate": 0.0,
+      "profit_factor": 0.0,
+      "var_95": 0.0,
+      "cvar_95": 0.0,
+      "n_days": 4,
+      "turnover_annual": 0.0,
+      "gross_exposure_avg": 0.0,
+      "net_exposure_avg": 0.0,
+      "status": "ok",
+      "final_equity": 10000.0,
+      "avg_gross": 0.0,
+      "avg_cash_pct": 1.0,
+      "start": "2026-10-23 23:15:05.009278+00:00",
+      "end": "2026-10-26 23:15:05.196723+00:00"
+    },
+    "benchmarks": {
+      "trend": {
+        "total_return": -0.005840374608082177,
+        "cagr": -0.5096628430062842,
+        "vol": 0.013645444766978036,
+        "sharpe": -52.17159133928152,
+        "sortino": -52.17159133928152,
+        "max_dd": -0.005840374608082177,
+        "calmar": -113.11827655566434,
+        "hit_rate": 0.0,
+        "profit_factor": 0.0,
+        "var_95": -0.0026400795011740563,
+        "cvar_95": -0.0027362957218796456,
+        "n_days": 4,
+        "turnover_annual": 0.0,
+        "gross_exposure_avg": 0.33138005662812764,
+        "net_exposure_avg": 0.0,
+        "status": "ok",
+        "final_equity": 9936.884945979886,
+        "avg_gross": 0.33138005662812764,
+        "avg_cash_pct": 0.6686349849249145,
+        "start": "2026-10-23 23:00:34.381924+00:00",
+        "end": "2026-10-26 23:00:30.093394+00:00"
+      },
+      "xsmom": {
+        "total_return": -0.0036015224657016676,
+        "cagr": -0.3553038767862894,
+        "vol": 0.055548759094094666,
+        "sharpe": -7.879246947831554,
+        "sortino": -10.372926730480586,
+        "max_dd": -0.004176803490488101,
+        "calmar": -337.2884016734954,
+        "hit_rate": 0.3333333333333333,
+        "profit_factor": 0.3121910454770289,
+        "var_95": -0.0038644644087415295,
+        "cvar_95": -0.004176803490488113,
+        "n_days": 4,
+        "turnover_annual": 0.0,
+        "gross_exposure_avg": 0.5998610735567044,
+        "net_exposure_avg": 0.0,
+        "status": "ok",
+        "final_equity": 9955.017189045153,
+        "avg_gross": 0.5998610735567044,
+        "avg_cash_pct": 1.0005392217013924,
+        "start": "2026-10-23 23:00:39.203342+00:00",
+        "end": "2026-10-26 23:00:35.645789+00:00"
+      }
+    },
+    "provider": {
+      "decisions": 5,
+      "fallback": 0,
+      "fallback_rate": 0.0,
+      "dry_runs": 0,
+      "errors": 0,
+      "mean_latency_ms": 400.0608799964539,
+      "providers": {
+        "jev": 5
+      }
+    },
+    "confidence_calibration": [],
+    "tca": {
+      "fills": 0.0,
+      "weighted_slip_bps": 0.0,
+      "median_slip_bps": 0.0,
+      "p95_abs_slip_bps": 0.0,
+      "notional": 0.0
+    },
+    "notes": [
+      "Need at least 20 paper days for meaningful metrics."
+    ]
+  },
+  "ai_squad": {
+    "equity": 10000.0,
+    "timestamp": "2026-10-26T23:25:07.109805+00:00",
+    "days": 3,
+    "mode": null
+  },
+  "ai_squad_scorecard": {
+    "pipeline": "ai_agent",
+    "generated_at": "2026-10-26T23:25:10.039098+00:00",
     "status": "insufficient_data",
     "n_days": 3,
     "metrics": {
@@ -253,171 +359,66 @@
       "final_equity": 10000.0,
       "avg_gross": 0.0,
       "avg_cash_pct": 1.0,
-      "start": "2026-10-23 23:15:05.009278+00:00",
-      "end": "2026-10-25 23:15:05.735596+00:00"
-    },
-    "benchmarks": {
-      "trend": {
-        "total_return": -0.003112595868962731,
-        "cagr": -0.4338717509030592,
-        "vol": 0.005853457038005091,
-        "sharpe": -97.11916891235647,
-        "sortino": -97.11916891235647,
-        "max_dd": -0.003112595868962731,
-        "calmar": -244.55417096731202,
-        "hit_rate": 0.0,
-        "profit_factor": 0.0,
-        "var_95": -0.0017524688983537727,
-        "cvar_95": -0.0017741335148237542,
-        "n_days": 3,
-        "turnover_annual": 0.0,
-        "gross_exposure_avg": 0.329004420306867,
-        "net_exposure_avg": 0.0,
-        "status": "ok",
-        "final_equity": 9964.14980646749,
-        "avg_gross": 0.329004420306867,
-        "avg_cash_pct": 0.6710052498168717,
-        "start": "2026-10-23 23:00:34.381924+00:00",
-        "end": "2026-10-25 23:00:30.592675+00:00"
-      },
-      "xsmom": {
-        "total_return": -0.002550796834391078,
-        "cagr": -0.372564974192895,
-        "vol": 0.07848378136255729,
-        "sharpe": -5.9155632531346525,
-        "sortino": 0.0,
-        "max_dd": -0.004176803490488101,
-        "calmar": 0.0,
-        "hit_rate": 0.5,
-        "profit_factor": 0.3909273337554951,
-        "var_95": -0.0038863219833558497,
-        "cvar_95": -0.004176803490488113,
-        "n_days": 3,
-        "turnover_annual": 0.0,
-        "gross_exposure_avg": 0.5996341757711365,
-        "net_exposure_avg": 0.0,
-        "status": "ok",
-        "final_equity": 9965.514988827577,
-        "avg_gross": 0.5996341757711365,
-        "avg_cash_pct": 1.0007187174030823,
-        "start": "2026-10-23 23:00:39.203342+00:00",
-        "end": "2026-10-25 23:00:36.210599+00:00"
-      }
-    },
-    "provider": {
-      "decisions": 4,
-      "fallback": 0,
-      "fallback_rate": 0.0,
-      "dry_runs": 0,
-      "errors": 0,
-      "mean_latency_ms": 392.67829999516835,
-      "providers": {
-        "jev": 4
-      }
-    },
-    "confidence_calibration": [],
-    "tca": {
-      "fills": 0.0,
-      "weighted_slip_bps": 0.0,
-      "median_slip_bps": 0.0,
-      "p95_abs_slip_bps": 0.0,
-      "notional": 0.0
-    },
-    "notes": [
-      "Need at least 20 paper days for meaningful metrics."
-    ]
-  },
-  "ai_squad": {
-    "equity": 10000.0,
-    "timestamp": "2026-10-25T23:25:07.499509+00:00",
-    "days": 2,
-    "mode": null
-  },
-  "ai_squad_scorecard": {
-    "pipeline": "ai_agent",
-    "generated_at": "2026-10-25T23:25:11.897658+00:00",
-    "status": "insufficient_data",
-    "n_days": 2,
-    "metrics": {
-      "total_return": 0.0,
-      "cagr": 0.0,
-      "vol": 0.0,
-      "sharpe": 0.0,
-      "sortino": 0.0,
-      "max_dd": 0.0,
-      "calmar": 0.0,
-      "hit_rate": 0.0,
-      "profit_factor": 0.0,
-      "var_95": 0.0,
-      "cvar_95": 0.0,
-      "n_days": 2,
-      "turnover_annual": 0.0,
-      "gross_exposure_avg": 0.0,
-      "net_exposure_avg": 0.0,
-      "status": "ok",
-      "final_equity": 10000.0,
-      "avg_gross": 0.0,
-      "avg_cash_pct": 1.0,
       "start": "2026-10-24 23:25:07.461055+00:00",
-      "end": "2026-10-25 23:25:07.499509+00:00"
+      "end": "2026-10-26 23:25:07.109805+00:00"
     },
     "benchmarks": {
       "trend": {
-        "total_return": -0.003112595868962731,
-        "cagr": -0.4338717509030592,
-        "vol": 0.005853457038005091,
-        "sharpe": -97.11916891235647,
-        "sortino": -97.11916891235647,
-        "max_dd": -0.003112595868962731,
-        "calmar": -244.55417096731202,
+        "total_return": -0.005840374608082177,
+        "cagr": -0.5096628430062842,
+        "vol": 0.013645444766978036,
+        "sharpe": -52.17159133928152,
+        "sortino": -52.17159133928152,
+        "max_dd": -0.005840374608082177,
+        "calmar": -113.11827655566434,
         "hit_rate": 0.0,
         "profit_factor": 0.0,
-        "var_95": -0.0017524688983537727,
-        "cvar_95": -0.0017741335148237542,
-        "n_days": 3,
+        "var_95": -0.0026400795011740563,
+        "cvar_95": -0.0027362957218796456,
+        "n_days": 4,
         "turnover_annual": 0.0,
-        "gross_exposure_avg": 0.329004420306867,
+        "gross_exposure_avg": 0.33138005662812764,
         "net_exposure_avg": 0.0,
         "status": "ok",
-        "final_equity": 9964.14980646749,
-        "avg_gross": 0.329004420306867,
-        "avg_cash_pct": 0.6710052498168717,
+        "final_equity": 9936.884945979886,
+        "avg_gross": 0.33138005662812764,
+        "avg_cash_pct": 0.6686349849249145,
         "start": "2026-10-23 23:00:34.381924+00:00",
-        "end": "2026-10-25 23:00:30.592675+00:00"
+        "end": "2026-10-26 23:00:30.093394+00:00"
       },
       "xsmom": {
-        "total_return": -0.002550796834391078,
-        "cagr": -0.372564974192895,
-        "vol": 0.07848378136255729,
-        "sharpe": -5.9155632531346525,
-        "sortino": 0.0,
+        "total_return": -0.0036015224657016676,
+        "cagr": -0.3553038767862894,
+        "vol": 0.055548759094094666,
+        "sharpe": -7.879246947831554,
+        "sortino": -10.372926730480586,
         "max_dd": -0.004176803490488101,
-        "calmar": 0.0,
-        "hit_rate": 0.5,
-        "profit_factor": 0.3909273337554951,
-        "var_95": -0.0038863219833558497,
+        "calmar": -337.2884016734954,
+        "hit_rate": 0.3333333333333333,
+        "profit_factor": 0.3121910454770289,
+        "var_95": -0.0038644644087415295,
         "cvar_95": -0.004176803490488113,
-        "n_days": 3,
+        "n_days": 4,
         "turnover_annual": 0.0,
-        "gross_exposure_avg": 0.5996341757711365,
+        "gross_exposure_avg": 0.5998610735567044,
         "net_exposure_avg": 0.0,
         "status": "ok",
-        "final_equity": 9965.514988827577,
-        "avg_gross": 0.5996341757711365,
-        "avg_cash_pct": 1.0007187174030823,
+        "final_equity": 9955.017189045153,
+        "avg_gross": 0.5998610735567044,
+        "avg_cash_pct": 1.0005392217013924,
         "start": "2026-10-23 23:00:39.203342+00:00",
-        "end": "2026-10-25 23:00:36.210599+00:00"
+        "end": "2026-10-26 23:00:35.645789+00:00"
       }
     },
     "provider": {
-      "decisions": 6,
+      "decisions": 7,
       "fallback": 0,
       "fallback_rate": 0.0,
       "dry_runs": 2,
       "errors": 0,
-      "mean_latency_ms": 1933.4480499916633,
+      "mean_latency_ms": 1988.3870428493537,
       "providers": {
-        "squad": 6
+        "squad": 7
       }
     },
     "confidence_calibration": [],
@@ -433,16 +434,16 @@
     ]
   },
   "options_evidence": {
-    "generated_at": "2026-10-26T13:49:53.703022+00:00",
+    "generated_at": "2026-10-27T14:28:58.637701+00:00",
     "status": "insufficient",
     "target_paper_days": 56,
     "paper": {
-      "paper_days": 3,
-      "cycles": 105,
-      "expected_cycles": 105,
+      "paper_days": 1,
+      "cycles": 1,
+      "expected_cycles": 1,
       "cycle_coverage": 1.0,
-      "flat_cycles": 105,
-      "risk_off_cycles": 105,
+      "flat_cycles": 1,
+      "risk_off_cycles": 1,
       "orders": 0,
       "fills": 0,
       "fees": 0,
@@ -452,333 +453,11 @@
       "final_equity": 10000.0,
       "return_pct": 0.0,
       "max_drawdown": 0.0,
-      "first_timestamp": "2026-10-24T09:00:00+00:00",
-      "last_timestamp": "2026-10-26T13:00:00+00:00",
+      "first_timestamp": "2026-10-27T13:30:00+00:00",
+      "last_timestamp": "2026-10-27T13:30:00+00:00",
       "cycle_rows": [
         {
-          "timestamp": "2026-10-26T01:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T02:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T02:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T03:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T03:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T04:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T04:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T05:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T05:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T06:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T06:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T07:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T07:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T08:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T08:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T09:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T09:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T10:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T10:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T11:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T11:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T12:00:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T12:30:00+00:00",
-          "equity": 10000.0,
-          "cash": 10000.0,
-          "regime": "risk_off",
-          "confidence": 0.0,
-          "directions": {
-            "BTC": "flat",
-            "ETH": "flat"
-          },
-          "n_orders": 0,
-          "n_fills": 0,
-          "positions": 0
-        },
-        {
-          "timestamp": "2026-10-26T13:00:00+00:00",
+          "timestamp": "2026-10-27T13:30:00+00:00",
           "equity": 10000.0,
           "cash": 10000.0,
           "regime": "risk_off",
@@ -795,19 +474,19 @@
       "recent_fills": []
     },
     "squad": {
-      "runs": 108,
-      "runs_with_risk_veto": 106,
-      "runs_with_execution_block": 80,
-      "risk_veto_assets": 187,
-      "execution_block_assets": 116,
-      "macro_risk_off_runs": 108,
-      "chair_flat_runs": 108,
+      "runs": 1,
+      "runs_with_risk_veto": 1,
+      "runs_with_execution_block": 1,
+      "risk_veto_assets": 2,
+      "execution_block_assets": 1,
+      "macro_risk_off_runs": 0,
+      "chair_flat_runs": 1,
       "latest": {
-        "run_id": "20261026T133107044494Z_768ead4a",
-        "as_of": "2026-10-26T13:00:00+00:00",
-        "macro_regime": "risk_off",
+        "run_id": "20261027T142827638905Z_fedaf7be",
+        "as_of": "2026-10-27T13:30:00+00:00",
+        "macro_regime": "neutral",
         "risk_regime": "risk_off",
-        "execution_regime": "stressed",
+        "execution_regime": "normal",
         "chair_regime": "risk_off",
         "chair_confidence": 0.0,
         "risk_choices": {
@@ -816,7 +495,7 @@
         },
         "execution_choices": {
           "BTCUSDT": "block",
-          "ETHUSDT": "block"
+          "ETHUSDT": "allow"
         },
         "chair_choices": {
           "BTCUSDT": "flat",
@@ -881,19 +560,19 @@
       "limitations": "One free chain day only. Real bid/ask/Greeks/OI, but inverse premiums are converted to a USD approximation. The underlying signal is a simple SMA on Binance bars, not the AI squad. Long premium only; no expiry settlement occurs within a single day. This is a data and plumbing test, not evidence of edge."
     },
     "warnings": [
-      "Forward paper has 3 day(s); the target is 56.",
+      "Forward paper has 1 day(s); the target is 56.",
       "Forward paper has no option fills yet.",
       "The free replay is one day only and is not evidence of edge. Tardis is a paid vendor; only its first-day export was used."
     ]
   },
   "options_live_gate": {
     "status": "NO_GO",
-    "generated_at": "2026-10-26T15:23:53.982232+00:00",
+    "generated_at": "2026-10-27T14:30:43.611321+00:00",
     "checks": [
       {
         "name": "options paper days",
         "passed": false,
-        "detail": "3 vs required 56"
+        "detail": "1 vs required 56"
       },
       {
         "name": "options paper fills",
@@ -952,7 +631,7 @@
     ]
   },
   "readiness": {
-    "generated_at": "2026-10-26T13:49:56.832673+00:00",
+    "generated_at": "2026-10-27T14:29:02.267487+00:00",
     "generated_from": {
       "self_eval": true,
       "campaign_health": true,
@@ -969,7 +648,7 @@
       "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
     ],
     "options_status": "insufficient",
-    "paper_days": 3,
+    "paper_days": 1,
     "target_paper_days": 56,
     "paper_ready": true,
     "paper_evidence_ready": false,
@@ -977,7 +656,7 @@
     "blockers": [
       "live gate is NO_GO",
       "host readiness is DEGRADED",
-      "forward options evidence has 3 of 56 paper days",
+      "forward options evidence has 1 of 56 paper days",
       "options live gate is NO_GO",
       "no live options execution adapter or venue is configured"
     ],
@@ -997,6 +676,7 @@
       "options live broker config",
       "options live adapter",
       "options credentials",
+      "options live confirmation",
       "options evidence"
     ],
     "host_blockers": [
@@ -1012,9 +692,9 @@
       {
         "name": "TradingBotAIOptions30m",
         "state": "Ready",
-        "last_run": "2026-10-26T23:01:01.0000000+08:00",
+        "last_run": "2026-10-27T07:01:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-26T23:31:00.0000000+08:00",
+        "next_run": "2026-10-27T07:31:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -1022,9 +702,9 @@
       {
         "name": "TradingBotAIPaper",
         "state": "Ready",
-        "last_run": "2026-10-26T07:15:01.0000000+08:00",
+        "last_run": "2026-10-27T07:15:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T07:15:00.0000000+08:00",
+        "next_run": "2026-10-28T07:15:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -1032,9 +712,9 @@
       {
         "name": "TradingBotAISquad",
         "state": "Ready",
-        "last_run": "2026-10-26T07:25:01.0000000+08:00",
+        "last_run": "2026-10-27T07:25:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T07:25:00.0000000+08:00",
+        "next_run": "2026-10-28T07:25:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -1042,19 +722,19 @@
       {
         "name": "TradingBotDeribitCanary",
         "state": "Ready",
-        "last_run": "2026-10-26T21:48:43.0000000+08:00",
+        "last_run": "2026-10-27T06:45:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T06:45:00.0000000+08:00",
+        "next_run": "2026-10-28T06:45:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
       },
       {
         "name": "TradingBotHealth",
-        "state": "Ready",
-        "last_run": "2026-10-26T07:30:01.0000000+08:00",
-        "last_result": 0,
-        "next_run": "2026-10-27T07:30:00.0000000+08:00",
+        "state": "Running",
+        "last_run": "2026-10-27T07:30:01.0000000+08:00",
+        "last_result": 267009,
+        "next_run": "2026-10-28T07:30:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -1062,9 +742,9 @@
       {
         "name": "TradingBotIntraday",
         "state": "Ready",
-        "last_run": "2026-10-26T23:01:01.0000000+08:00",
+        "last_run": "2026-10-27T07:01:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T00:01:00.0000000+08:00",
+        "next_run": "2026-10-27T08:01:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -1082,9 +762,9 @@
       {
         "name": "TradingBotPaperCampaign",
         "state": "Ready",
-        "last_run": "2026-10-26T07:00:01.0000000+08:00",
+        "last_run": "2026-10-27T07:00:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T07:00:00.0000000+08:00",
+        "next_run": "2026-10-28T07:00:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -1092,9 +772,9 @@
       {
         "name": "TradingBotSleeves",
         "state": "Ready",
-        "last_run": "2026-10-26T07:20:01.0000000+08:00",
+        "last_run": "2026-10-27T07:20:01.0000000+08:00",
         "last_result": 0,
-        "next_run": "2026-10-27T07:20:00.0000000+08:00",
+        "next_run": "2026-10-28T07:20:00.0000000+08:00",
         "wake_to_run": true,
         "start_when_available": true,
         "logon_type": "Interactive"
@@ -1107,24 +787,24 @@
   "options_swing_report": {
     "pipeline": "options_swing",
     "status": "ok",
-    "as_of": "2026-10-24T00:00:00+00:00",
+    "as_of": "2026-10-25T00:00:00+00:00",
     "signals": {
       "BTC": {
         "underlying": "BTC",
         "direction": "flat",
-        "close": 80888.16,
-        "sma50": 81847.1058,
-        "sma200": 72942.35495000001,
-        "momentum20": -0.06520097076158549,
+        "close": 80154.09,
+        "sma50": 81853.5526,
+        "sma200": 72987.77575,
+        "momentum20": -0.06544228558183363,
         "reason": "trend and momentum not aligned"
       },
       "ETH": {
         "underlying": "ETH",
         "direction": "flat",
-        "close": 2358.82,
-        "sma50": 2547.7222,
-        "sma200": 2157.79505,
-        "momentum20": -0.1349938025772477,
+        "close": 2329.87,
+        "sma50": 2544.7128,
+        "sma200": 2158.4944,
+        "momentum20": -0.14026302777142274,
         "reason": "trend and momentum not aligned"
       }
     },
@@ -1154,12 +834,12 @@
     "limitation": "Paper-only long-premium swing options; no live order path."
   },
   "testnet_canary": {
-    "generated_at": "2026-10-26T13:48:44.718634+00:00",
+    "generated_at": "2026-10-26T22:45:02.565608+00:00",
     "mode": "cycle",
     "ok": true,
     "issues": [],
     "cancelled": [
-      "tb-596b235266bf6721da7501c5"
+      "tb-c0922c346bdcb9ee3257b7d6"
     ],
     "final_reconcile": {
       "ok": true,

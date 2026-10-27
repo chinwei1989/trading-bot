@@ -1191,6 +1191,15 @@ def _render_ai_options() -> None:
             width="stretch",
             hide_index=True,
         )
+    diagnostics = report.get("diagnostics") or {}
+    reasons = diagnostics.get("why") or []
+    if reasons:
+        st.warning("No-fill diagnostics: " + " | ".join(str(item) for item in reasons))
+    checks = diagnostics.get("hypothetical_checks") or []
+    if checks:
+        with st.expander("Hypothetical contract checks"):
+            st.dataframe(pd.DataFrame(checks), width="stretch", hide_index=True)
+
     st.write("**Paper fills**")
     fills = paper.get("fills", [])
     if fills:

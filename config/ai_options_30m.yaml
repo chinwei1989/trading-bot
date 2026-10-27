@@ -16,6 +16,7 @@ data:
   end: null
   universe_path: config/pit_universe_crypto.csv
   bars_path: data/normalized/bars_ai_options_30m.parquet
+  daily_bars_path: data/normalized/bars.parquet
   raw_dir: data/raw_intraday
   use_cache: true
   verify_checksums: true

@@ -61,6 +61,21 @@ class FakeProvider:
         )
 
 
+class FakeFlatProvider:
+    def decide(self, context: dict) -> AgentDecision:
+        return AgentDecision(
+            as_of=context["as_of"],
+            provider="fake-flat",
+            model="fake-1",
+            regime="risk_off",
+            confidence=0.0,
+            actions=[
+                AssetDecision(asset="BTCUSDT", action="flat", confidence=0.0),
+                AssetDecision(asset="ETHUSDT", action="flat", confidence=0.0),
+            ],
+        )
+
+
 class FakeChain:
     def fetch_chain(self, currencies, *, now=None):
         expiry = now.date() + timedelta(days=9)
@@ -157,6 +172,27 @@ def test_ai_options_cycle_uses_decision_and_paper_broker(tmp_path: Path) -> None
         .splitlines()
     ]
     assert performance[-1]["fees"] > 0
+
+
+def test_ai_options_reports_why_flat_cycle_did_not_trade(tmp_path: Path) -> None:
+    config = _config(tmp_path)
+    save_bars(_bars(), tmp_path / config.data.bars_path)
+    result = run_ai_options_cycle(
+        config,
+        root=tmp_path,
+        decision_provider=FakeFlatProvider(),
+        chain_provider=FakeChain(),
+        refresh=False,
+    )
+    assert result.directions == {"BTC": "flat", "ETH": "flat"}
+    report = json.loads(
+        (tmp_path / config.agent.artifacts_dir / "reports/latest.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    diagnostics = report["diagnostics"]
+    assert any("AI directions are flat" in item for item in diagnostics["why"])
+    assert diagnostics["hypothetical_checks"]
 
 
 def test_ai_options_kill_switch_blocks_cycle(tmp_path: Path) -> None:

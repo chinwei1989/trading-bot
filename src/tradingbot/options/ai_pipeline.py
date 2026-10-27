@@ -35,7 +35,7 @@ from tradingbot.options.broker import (
 )
 from tradingbot.options.deribit import DeribitPublicClient
 from tradingbot.options.pipeline import result_payload, run_options_cycle
-from tradingbot.options.selector import Direction
+from tradingbot.options.selector import Direction, select_candidate
 from tradingbot.options.signals import directions_from_decision
 
 
@@ -88,6 +88,60 @@ def _options_context(broker: PaperOptionsBroker, chain_count: int) -> dict[str, 
     }
 
 
+def _trade_diagnostics(
+    broker: PaperOptionsBroker,
+    chain: list[Any],
+    directions: dict[str, Direction],
+    prices: dict[str, float],
+) -> dict[str, Any]:
+    """Explain flat/no-fill cycles without placing orders.
+
+    This deliberately evaluates hypothetical long and short selections so a
+    flat AI decision can be separated from an unaffordable or illiquid contract.
+    """
+    limits = OptionLimits()
+    account = broker.account()
+    checks: list[dict[str, Any]] = []
+    for underlying in ("BTC", "ETH"):
+        spot = prices.get(f"{underlying}USDT", 0.0)
+        for direction in ("long", "short"):
+            result = select_candidate(
+                account,
+                chain,
+                underlying=underlying,
+                direction=direction,
+                limits=limits,
+                underlying_price=spot,
+            )
+            checks.append(
+                {
+                    "underlying": underlying,
+                    "direction": direction,
+                    "candidate": (
+                        result.candidate.instrument if result.candidate else None
+                    ),
+                    "reason": result.reason,
+                    "blockers": result.blockers[:3],
+                }
+            )
+    why: list[str] = []
+    if all(direction == "flat" for direction in directions.values()):
+        why.append("AI directions are flat; no contract selection was requested.")
+    if account.cash <= 0:
+        why.append("Paper account has no cash.")
+    btc_checks = [item for item in checks if item["underlying"] == "BTC"]
+    if btc_checks and all(item["candidate"] is None for item in btc_checks):
+        why.append(
+            "BTC has no contract under the current premium/DTE/spread/OI gates."
+        )
+    return {
+        "why": why,
+        "directions": directions,
+        "account_cash": account.cash,
+        "hypothetical_checks": checks,
+    }
+
+
 def run_ai_options_cycle(
     config: AppConfig,
     *,
@@ -97,6 +151,7 @@ def run_ai_options_cycle(
     provider_override: str | None = None,
     decision_provider: Any | None = None,
     chain_provider: Any | None = None,
+    daily_bars: pl.DataFrame | None = None,
     refresh: bool = True,
     now: datetime | None = None,
 ) -> AIOptionsResult:
@@ -128,6 +183,11 @@ def run_ai_options_cycle(
     as_of = as_of.astimezone(UTC) if as_of.tzinfo else as_of.replace(tzinfo=UTC)
     as_of_iso = as_of.isoformat()
     prices = _last_prices(bars)
+
+    if daily_bars is None and config.data.daily_bars_path is not None:
+        daily_path = _resolve(root, config.data.daily_bars_path)
+        if daily_path.exists():
+            daily_bars = load_bars(daily_path)
 
     state_path = _resolve(root, config.broker.state_path)
     broker = PaperOptionsBroker(
@@ -174,6 +234,8 @@ def run_ai_options_cycle(
         include_macro=config.agent.include_macro,
         include_sentiment=config.agent.include_sentiment,
         periods_per_year=config.backtest.periods_per_year,
+        daily_bars=daily_bars,
+        intraday=True,
     )
     context["options"] = _options_context(broker, len(chain))
 
@@ -186,6 +248,12 @@ def run_ai_options_cycle(
     directions = directions_from_decision(
         decision,
         {"BTCUSDT": "BTC", "ETHUSDT": "ETH"},
+    )
+    diagnostics = _trade_diagnostics(
+        broker,
+        chain,
+        directions,
+        prices,
     )
     paper: dict[str, Any]
     cycle_fills: list[OptionFill] = []
@@ -218,6 +286,11 @@ def run_ai_options_cycle(
         cycle_settlements = cycle.settlements
         total_fees = sum(fill.fee for fill in cycle_fills)
 
+    if not dry_run and not cycle_fills:
+        diagnostics["why"].append(
+            "No fill was produced; inspect hypothetical checks and gate blockers."
+        )
+
     ai_dir = _resolve(root, config.agent.artifacts_dir)
     ai_dir.mkdir(parents=True, exist_ok=True)
     if not dry_run:
@@ -241,6 +314,7 @@ def run_ai_options_cycle(
         "confidence": decision.confidence,
         "directions": directions,
         "paper": paper,
+        "diagnostics": diagnostics,
         "alerts": [],
         "limitation": (
             "Paper-only long-premium options; Deribit data is converted to a "
@@ -255,6 +329,7 @@ def run_ai_options_cycle(
         f"- Confidence: **{decision.confidence:.1%}**\n"
         f"- Directions: `{json.dumps(directions)}`\n"
         f"- Paper status: **{paper.get('status', 'unknown')}**\n"
+        + "".join(f"- Why no fill: {item}\n" for item in diagnostics["why"])
     )
     report_path, _ = write_report(root, report=report, markdown=markdown, ai_dir=ai_dir)
     append_decision(

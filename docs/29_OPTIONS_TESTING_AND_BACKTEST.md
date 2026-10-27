@@ -522,6 +522,40 @@ real historical option-chain data with bid/ask and Greeks.
 
 ---
 
+## 7a. 30-minute context audit — 27 Oct 2026
+
+The original 30-minute options context used the same key names as the daily
+lanes (`return_20d`, `sma_200`, etc.) while computing them over 30-minute bars.
+That was semantically wrong and made a roughly four-day bar window look like a
+200-day trend window.
+
+The lane now separates:
+
+- **daily reference features** for BTC and ETH: daily SMA/return/breadth;
+- **intraday features** with explicit `bar` names (`return_20bar`,
+  `sma_200bar`, `vol_60bar`);
+- an `intraday` sub-object on each asset, so the model can see both horizons.
+
+The old four days of options evidence were archived under:
+
+```text
+artifacts/archive/ai_options_30m_pre_semantics_fix_20261027/
+```
+
+They are not counted toward the 56-day window. A clean evidence window started
+after the fix.
+
+The lane also writes explicit no-trade diagnostics:
+
+- AI directions flat;
+- BTC contract cannot be funded by the premium budget;
+- exact DTE/spread/open-interest blockers;
+- hypothetical long and short selection checks.
+
+The current $10,000 account with a 2% premium cap cannot buy one BTC contract
+inside the 3–21 DTE / 0.30–0.60 delta window. ETH contracts can fit, but the
+current squad remains flat. Do not increase risk merely to force a fill.
+
 ## 8. Acceptance gates for a 30m options strategy
 
 Do not proceed to live unless all are true:

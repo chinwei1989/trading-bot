@@ -42,7 +42,12 @@ def _safe_float(value: Any) -> float | None:
     return number if math.isfinite(number) else None
 
 
-def _asset_features(group: pl.DataFrame, periods_per_year: int) -> dict[str, Any] | None:
+def _asset_features(
+    group: pl.DataFrame,
+    periods_per_year: int,
+    *,
+    intraday: bool = False,
+) -> dict[str, Any] | None:
     group = group.sort("timestamp")
     close = group["close"].to_numpy().astype(float)
     if len(close) < 3 or close[-1] <= 0:
@@ -63,27 +68,41 @@ def _asset_features(group: pl.DataFrame, periods_per_year: int) -> dict[str, Any
         if std > 1e-12:
             volume_z = float((volume[-1] - float(np.mean(recent))) / std)
 
-    return {
+    def ret_key(period: int) -> str:
+        return f"return_{period}bar" if intraday else f"return_{period}d"
+
+    def period_key(name: str) -> str:
+        return f"{name}bar" if intraday else name
+
+    features: dict[str, Any] = {
         "close": last,
-        "return_1d": _pct_change(close, 1),
-        "return_5d": _pct_change(close, 5),
-        "return_20d": _pct_change(close, 20),
-        "return_60d": _pct_change(close, 60),
-        "return_120d": _pct_change(close, 120),
-        "sma_20": sma[20],
-        "sma_50": sma[50],
-        "sma_200": sma[200],
-        "px_vs_sma_20": last / sma[20] - 1.0 if sma[20] else None,
-        "px_vs_sma_50": last / sma[50] - 1.0 if sma[50] else None,
-        "px_vs_sma_200": last / sma[200] - 1.0 if sma[200] else None,
-        "vol_20d": vol_20,
-        "vol_60d": vol_60,
-        "drawdown_60d": last / high_60 - 1.0 if high_60 else None,
-        "volume_z_20d": volume_z,
-        "trend_up": bool(last > sma[200]),
-        "trend_up_50": bool(last > sma[50]),
-        "history_days": len(close),
+        ret_key(1): _pct_change(close, 1),
+        ret_key(5): _pct_change(close, 5),
+        ret_key(20): _pct_change(close, 20),
+        ret_key(60): _pct_change(close, 60),
+        ret_key(120): _pct_change(close, 120),
+        period_key("sma_20"): sma[20],
+        period_key("sma_50"): sma[50],
+        period_key("sma_200"): sma[200],
+        period_key("px_vs_sma_20"): last / sma[20] - 1.0 if sma[20] else None,
+        period_key("px_vs_sma_50"): last / sma[50] - 1.0 if sma[50] else None,
+        period_key("px_vs_sma_200"): last / sma[200] - 1.0 if sma[200] else None,
+        period_key("vol_20"): vol_20,
+        period_key("vol_60"): vol_60,
+        ("drawdown_60bar" if intraday else "drawdown_60d"): (
+            last / high_60 - 1.0 if high_60 else None
+        ),
+        ("volume_z_20bar" if intraday else "volume_z_20d"): volume_z,
     }
+    if intraday:
+        features["trend_up_200bar"] = bool(last > sma[200])
+        features["trend_up_50bar"] = bool(last > sma[50])
+        features["history_bars"] = len(close)
+    else:
+        features["trend_up"] = bool(last > sma[200])
+        features["trend_up_50"] = bool(last > sma[50])
+        features["history_days"] = len(close)
+    return features
 
 
 def _macro_snapshot(root: Path, as_of: datetime) -> dict[str, Any]:
@@ -181,8 +200,15 @@ def build_context(
     include_macro: bool = True,
     include_sentiment: bool = True,
     periods_per_year: int = 365,
+    daily_bars: pl.DataFrame | None = None,
+    intraday: bool = False,
 ) -> dict[str, Any]:
-    """Build a JSON-serializable, point-in-time market snapshot."""
+    """Build a JSON-serializable, point-in-time market snapshot.
+
+    When ``intraday`` is true, ``bars`` are interpreted as bar data. Daily
+    reference features can be supplied separately; their keys retain the
+    ``_d``/day names, while the current-bar features use explicit ``bar`` names.
+    """
     if bars.is_empty():
         raise ValueError("cannot build context from empty bars")
     bars = bars.sort("timestamp")
@@ -193,14 +219,37 @@ def build_context(
         as_of = as_of.replace(tzinfo=UTC)
     as_of = as_of.astimezone(UTC)
 
-    assets: dict[str, Any] = {}
-    prices: dict[str, float] = {}
+    daily_features: dict[str, Any] = {}
+    if intraday and daily_bars is not None and not daily_bars.is_empty():
+        daily = daily_bars.sort("timestamp").filter(pl.col("timestamp") <= as_of)
+        for (asset,), group in daily.group_by(["asset"], maintain_order=True):
+            features = _asset_features(group, periods_per_year, intraday=False)
+            if features is not None:
+                daily_features[str(asset)] = features
+
+    intraday_features: dict[str, Any] = {}
     for (asset,), group in bars.group_by(["asset"], maintain_order=True):
-        features = _asset_features(group, periods_per_year)
+        features = _asset_features(
+            group, periods_per_year, intraday=intraday
+        )
         if features is None:
             continue
-        assets[str(asset)] = features
-        prices[str(asset)] = float(features["close"])
+        intraday_features[str(asset)] = features
+
+    assets: dict[str, Any] = {}
+    prices: dict[str, float] = {}
+    for asset, current in intraday_features.items():
+        prices[asset] = float(current["close"])
+        base = daily_features.get(asset)
+        if base is None:
+            assets[asset] = current
+            continue
+        merged = dict(base)
+        merged["daily_close"] = base.get("close")
+        merged["current_price"] = current["close"]
+        merged["close"] = current["close"]
+        merged["intraday"] = current
+        assets[asset] = merged
     if not assets:
         raise ValueError("no assets with sufficient price history")
 
@@ -211,7 +260,11 @@ def build_context(
             qty = float(positions.get(asset, 0.0))
             current_weights[asset] = qty * prices[asset] / equity
 
-    breadth = sum(1 for a in universe if assets[a].get("trend_up")) / len(universe)
+    breadth_source = daily_features if daily_features else assets
+    breadth_assets = [
+        asset for asset in universe if breadth_source.get(asset, {}).get("trend_up")
+    ]
+    breadth = len(breadth_assets) / len(universe)
     data_age_days = max(0, (datetime.now(UTC) - as_of).days)
     context: dict[str, Any] = {
         "as_of": as_of.isoformat(),
@@ -225,9 +278,13 @@ def build_context(
         },
         "market": {
             "breadth_above_sma200": breadth,
-            "assets_above_sma200": sum(1 for a in universe if assets[a].get("trend_up")),
+            "assets_above_sma200": len(breadth_assets),
             "assets_total": len(universe),
             "data_age_days": data_age_days,
+            "timeframe": "intraday+daily" if daily_features else (
+                "intraday" if intraday else "daily"
+            ),
+            "daily_reference_available": bool(daily_features),
         },
         "constraints": policy.model_dump(),
         "instructions": {
