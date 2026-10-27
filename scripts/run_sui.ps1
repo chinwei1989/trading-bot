@@ -25,6 +25,18 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
+# Seed the research curve on a fresh checkout; the daily cycle does not need to
+# rebuild the full-sample backtest after that.
+if (-not (Test-Path "artifacts\sui\backtest_trend_metrics.json")) {
+    & $uv run python -m tradingbot --config config/sui.yaml backtest --strategy trend 2>&1 |
+        Out-File -Append -Encoding utf8 $log
+    if ($LASTEXITCODE -ne 0) {
+        "[$(Get-Date -Format o)] SUI backtest failed: $LASTEXITCODE" |
+            Out-File -Append -Encoding utf8 $log
+        exit $LASTEXITCODE
+    }
+}
+
 # --no-evaluate keeps the isolated SUI run from overwriting the shared
 # artifacts/reports/evaluation_trend.json used by the 8-asset campaign.
 & $uv run python -m tradingbot --config config/sui.yaml `
