@@ -1178,6 +1178,13 @@ def _options_task_status(name: str) -> dict[str, Any] | None:
     )
 
 
+def _task_result_label(value: Any) -> str:
+    # Windows Task Scheduler uses 0x41303 / 267011 for "has not run yet".
+    if value in (None, 267011, "267011"):
+        return "not run yet"
+    return str(value)
+
+
 def _render_ai_options_report(
     report_path: Path,
     config_path: str,
@@ -1191,7 +1198,7 @@ def _render_ai_options_report(
     if task:
         st.caption(
             f"Scheduled task: `{task.get('state', '?')}` · "
-            f"last result `{task.get('last_result', '?')}` · "
+            f"last result `{_task_result_label(task.get('last_result'))}` · "
             f"next `{task.get('next_run', '?')}`"
         )
     report = _load_json(report_path)
