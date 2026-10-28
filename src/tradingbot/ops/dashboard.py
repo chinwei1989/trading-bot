@@ -17,6 +17,7 @@ import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import pandas as pd  # type: ignore[import-untyped]
 import plotly.graph_objects as go  # type: ignore[import-untyped]
@@ -109,8 +110,9 @@ OPTION_HOLDING_STATES: dict[str, str] = {
 }
 
 _NAV_ITEMS = [
-    "Overview",
+    "Home",
     "Holdings",
+    "Performance",
     "Deterministic",
     "SUI trend",
     "Intraday",
@@ -124,14 +126,20 @@ _NAV_ITEMS = [
     "3D Office",
 ]
 
+_TOP_TABS = ["Home", "Holdings", "Performance", "AI options 30m", "Readiness"]
+
 _PAGE_META = {
-    "Overview": (
-        "Operations overview",
-        "A single read-only view of paper capital, live gates, and every execution lane.",
+    "Home": (
+        "Trading operations",
+        "Landing page for paper capital, AI gist, holdings, performance, and live gates.",
     ),
     "Holdings": (
         "Paper holdings",
         "Aggregate spot exposure and per-lane positions across the independent paper accounts.",
+    ),
+    "Performance": (
+        "Paper performance",
+        "Daily P&L and cumulative return with Today / 7D / 30D / 3M / 1Y / All ranges.",
     ),
     "Deterministic": (
         "Deterministic sleeves",
@@ -371,6 +379,20 @@ _THEME_CSS = """
     .tb-page-title { font-size: 1.45rem; font-weight: 850; margin-top: 0.18rem; }
     .tb-page-sub { color: var(--tb-muted); font-size: 0.85rem; margin-top: 0.18rem; }
     .tb-lane-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+    .tb-nav-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; margin-bottom: 0.5rem; }
+    .tb-nav-card {
+        display: block;
+        padding: 0.9rem 1rem;
+        border: 1px solid var(--tb-line);
+        border-radius: 0.85rem;
+        background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.6));
+        color: var(--tb-text);
+        text-decoration: none;
+    }
+    .tb-nav-card:hover { border-color: rgba(56, 189, 248, 0.45); }
+    .tb-nav-card-title { font-size: 0.9rem; font-weight: 800; }
+    .tb-nav-card-sub { color: var(--tb-muted); font-size: 0.74rem; margin-top: 0.2rem; }
+    .tb-nav-card-arrow { color: var(--tb-cyan); float: right; font-weight: 800; }
     .tb-lane {
         border: 1px solid var(--tb-line);
         border-radius: 0.9rem;
@@ -407,6 +429,51 @@ _THEME_CSS = """
     .tb-ai-bullets { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 0.55rem 0 0; padding: 0; list-style: none; }
     .tb-ai-bullets li { color: var(--tb-muted); font-size: 0.73rem; }
     .tb-ai-meta { color: #64748b; font-size: 0.68rem; margin-top: 0.55rem; }
+    .tb-mobile-nav { display: none; }
+    .tb-mobile-nav summary {
+        cursor: pointer;
+        list-style: none;
+        border: 1px solid rgba(56, 189, 248, 0.28);
+        border-radius: 0.7rem;
+        padding: 0.65rem 0.8rem;
+        color: var(--tb-text);
+        background: rgba(15, 23, 42, 0.92);
+        font-size: 0.82rem;
+        font-weight: 750;
+    }
+    .tb-mobile-nav summary::-webkit-details-marker { display: none; }
+    .tb-mobile-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.35rem; margin-top: 0.45rem; }
+    .tb-mobile-links a {
+        display: block;
+        padding: 0.55rem 0.6rem;
+        border: 1px solid var(--tb-line);
+        border-radius: 0.55rem;
+        color: var(--tb-muted);
+        text-decoration: none;
+        font-size: 0.75rem;
+        background: rgba(15, 23, 42, 0.7);
+    }
+    .tb-mobile-links a.active { color: var(--tb-cyan); border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.1); }
+    .tb-top-tabs {
+        display: flex;
+        gap: 0.35rem;
+        overflow-x: auto;
+        padding: 0.15rem 0 0.65rem;
+        margin-bottom: 0.4rem;
+        border-bottom: 1px solid var(--tb-line);
+    }
+    .tb-top-tabs a {
+        flex: 0 0 auto;
+        padding: 0.45rem 0.7rem;
+        border: 1px solid var(--tb-line);
+        border-radius: 0.55rem;
+        color: var(--tb-muted);
+        text-decoration: none;
+        font-size: 0.76rem;
+        font-weight: 700;
+        background: rgba(15, 23, 42, 0.72);
+    }
+    .tb-top-tabs a.active { color: var(--tb-cyan); border-color: rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.1); }
     [data-testid="stMetric"] {
         background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.68));
         border: 1px solid var(--tb-line);
@@ -454,7 +521,7 @@ _THEME_CSS = """
     div[data-testid="stAlert"] { border-radius: 0.8rem; border: 1px solid var(--tb-line); }
     @media (max-width: 1000px) {
         .tb-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-        .tb-lane-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .tb-lane-grid, .tb-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         [data-testid="stHorizontalBlock"] { flex-direction: column; gap: 0.75rem; }
     }
     @media (max-width: 650px) {
@@ -464,20 +531,30 @@ _THEME_CSS = """
         .tb-subtitle { font-size: 0.9rem; }
         .tb-page-title { font-size: 1.3rem; }
         .tb-section { align-items: flex-start; flex-direction: column; gap: 0.2rem; }
-        .tb-stat-grid, .tb-lane-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .tb-stat-grid, .tb-lane-grid, .tb-nav-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
         .tb-stat { min-height: 3.8rem; padding: 0.7rem; }
         .tb-ai-gist { padding: 0.8rem; }
         .tb-ai-headline { font-size: 1.05rem; }
         .tb-ai-bullets { display: block; }
         .tb-ai-bullets li { margin-top: 0.3rem; }
-        [data-testid="stButton"] button { width: 100%; }
+        [data-testid="stHorizontalBlock"] > div {
+            flex: 1 1 100% !important;
+            width: 100% !important;
+            min-width: 100% !important;
+        }
+        .st-key-regenerate_ai_gist,
+        [data-testid="stElementContainer"]:has([data-testid="stButton"]),
+        [data-testid="stButton"],
+        [data-testid="stButton"] button { width: 100% !important; }
         [data-testid="stRadio"] > div { flex-wrap: wrap; gap: 0.35rem 0.8rem; }
         .tb-ai-meta { line-height: 1.45; }
+        .tb-mobile-nav { display: block; margin-bottom: 0.75rem; }
+        .tb-top-tabs { display: none; }
         [data-testid="stSidebar"] { width: min(88vw, 320px); }
         .block-container { padding-left: 0.7rem !important; padding-right: 0.7rem !important; }
     }
     @media (max-width: 360px) {
-        .tb-stat-grid, .tb-hero-side { grid-template-columns: 1fr; }
+        .tb-stat-grid, .tb-hero-side, .tb-nav-grid { grid-template-columns: 1fr; }
         .tb-title { font-size: 1.72rem; }
     }
 </style>
@@ -745,6 +822,28 @@ def _render_overview() -> None:
         + _stat("Host", str(host), "scheduler and network")
         + _stat("Spot live", str(live_gate), "capital gate")
         + _stat("Options live", str(options_gate), "options gate")
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+    _section("Open a workspace", "Jump into the detailed views")
+    nav_cards = [
+        ("Holdings", "Positions, P&L, SUI exposure", "Holdings"),
+        ("Performance", "Daily P&L and range graph", "Performance"),
+        ("AI options 30m", "Options lanes and evidence", "AI options 30m"),
+        ("SUI trend", "Isolated SUI paper lane", "SUI trend"),
+        ("Readiness", "Live gates and host status", "Readiness"),
+        ("3D Office", "Agent office visualization", "3D Office"),
+    ]
+    st.markdown(
+        '<div class="tb-nav-grid">'
+        + "".join(
+            f'<a class="tb-nav-card" href="?view={quote(target)}" target="_self">'
+            f'<span class="tb-nav-card-arrow">→</span>'
+            f'<div class="tb-nav-card-title">{html.escape(label)}</div>'
+            f'<div class="tb-nav-card-sub">{html.escape(description)}</div></a>'
+            for label, description, target in nav_cards
+        )
         + "</div>",
         unsafe_allow_html=True,
     )
@@ -1114,6 +1213,7 @@ def _render_daily_performance() -> None:
             f"Only {len(data)} daily sessions are available; this range shows "
             "all available history."
         )
+    chart_slot = st.empty()
     st.markdown(
         '<div class="tb-stat-grid">'
         + _stat(
@@ -1201,12 +1301,16 @@ def _render_daily_performance() -> None:
         legend=dict(orientation="h", y=-0.2),
         hovermode="x unified",
     )
-    st.plotly_chart(fig, width="stretch")
+    chart_slot.plotly_chart(fig, width="stretch")
     st.caption(
         "Aggregate sums independent paper accounts; it is illustrative, not a "
         "single brokerage balance. Main campaign lanes were reset when SUI was "
         "added to the 9-asset universe, so the forward history is short."
     )
+
+
+def _render_performance() -> None:
+    _render_daily_performance()
 
 
 def _render_holdings() -> None:
@@ -1324,8 +1428,6 @@ def _render_holdings() -> None:
             + "</div>",
             unsafe_allow_html=True,
         )
-
-        _render_daily_performance()
 
         _section("Exposure by asset", "Gross size and signed net exposure in USD")
         asset_view = (
@@ -1594,15 +1696,16 @@ def _render_holdings() -> None:
             st.plotly_chart(sui_fig, width="stretch")
 
         _section("Position detail", "Every open spot position by lane")
+        st.caption("On mobile, swipe wide tables sideways for quantity and price.")
         table = holdings[
             [
                 "lane",
                 "asset",
                 "side",
-                "qty",
-                "last_price",
                 "pnl",
                 "pnl_pct",
+                "qty",
+                "last_price",
                 "value",
                 "weight",
                 "avg_entry",
@@ -1631,10 +1734,10 @@ def _render_holdings() -> None:
             "lane",
             "asset",
             "side",
-            "qty",
-            "last price",
             "open P&L",
             "open P&L %",
+            "qty",
+            "last price",
             "value",
             "lane weight",
             "avg entry",
@@ -3022,6 +3125,34 @@ def _summary_time(value: Any) -> str:
         return str(value or "unknown")
 
 
+def _render_mobile_nav(current: str) -> None:
+    links = "".join(
+        (
+            f'<a class="{"active" if item == current else ""}" '
+            f'href="?view={quote(item)}" target="_self">{html.escape(item)}</a>'
+        )
+        for item in _NAV_ITEMS
+    )
+    st.markdown(
+        '<details class="tb-mobile-nav">'
+        f"<summary>☰ Workspace · {html.escape(current)}</summary>"
+        f'<div class="tb-mobile-links">{links}</div>'
+        "</details>",
+        unsafe_allow_html=True,
+    )
+
+
+def _render_top_tabs(current: str) -> None:
+    links = "".join(
+        (
+            f'<a class="{"active" if item == current else ""}" '
+            f'href="?view={quote(item)}" target="_self">{html.escape(item)}</a>'
+        )
+        for item in _TOP_TABS
+    )
+    st.markdown(f'<nav class="tb-top-tabs">{links}</nav>', unsafe_allow_html=True)
+
+
 def _render_ai_gist() -> None:
     summary = load_ai_summary(ROOT)
     left, right = st.columns([5, 1])
@@ -3167,18 +3298,23 @@ if _expected_password and not st.session_state.get("dashboard_authenticated"):
     st.stop()
 
 readiness = _readiness_snapshot()
-_render_shell_header(readiness)
 view, refresh_label = _render_sidebar(readiness)
-_render_ai_gist()
-if view != "Overview":
+_render_mobile_nav(view)
+_render_top_tabs(view)
+if view == "Home":
+    _render_shell_header(readiness)
+    _render_ai_gist()
+else:
     _page_intro(view)
 
 
 def _render_selected(selected: str) -> None:
-    if selected == "Overview":
+    if selected == "Home":
         _render_overview()
     elif selected == "Holdings":
         _render_holdings()
+    elif selected == "Performance":
+        _render_performance()
     elif selected == "Deterministic":
         _render_deterministic()
     elif selected == "SUI trend":

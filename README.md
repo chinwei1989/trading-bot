@@ -242,7 +242,9 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
-- **Holdings dashboard:** read-only aggregate spot exposure by asset, long/short treemap by lane, SUI focus, profit/loss in dollars and percent (open-position and lane-level), daily performance with Today / 7D / 30D / 3M / 1Y / All ranges, per-position detail, and option holdings; values are marked from the latest daily close and aggregate independent paper accounts. Open **Holdings** in the local Streamlit dashboard.
+- **Landing + navigation:** **Home** is the landing page with workspace cards, the AI gist, lane overview, equity curves, and gates. Desktop has a top tab bar (Home / Holdings / Performance / AI options / Readiness); mobile has a Workspace menu. The full page list remains in the sidebar.
+- **Holdings dashboard:** read-only aggregate spot exposure by asset, long/short treemap by lane, SUI focus, profit/loss in dollars and percent (open-position and lane-level), per-position detail, and option holdings; values are marked from the latest daily close and aggregate independent paper accounts.
+- **Performance page:** dedicated daily-performance graph with Today / 7D / 30D / 3M / 1Y / All ranges, daily P&L bars, cumulative return, period return, best/worst interval, latest equity, and observations.
 - **AI paper gist:** compact banner at the top of every dashboard page with the creation timestamp, data date, Jev classification, confidence, and a **Regenerate with latest data** button. Jev is typed, not a prose model, so the banner combines its posture/action/risk classifications with deterministic paper facts. It never places or changes an order; `TYPESAFE_API_KEY` is required only for regeneration.
 - **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the eight-agent AI squad, hourly intraday meta, the 30m AI options paper lane, and the isolated SUI trend lane; writes `artifacts/CAMPAIGN_HEALTH.md`
 - **Host readiness:** `scripts/check_host.ps1` checks sleep, wake timers, network, time service, disk, task logon, and last task results; writes `artifacts/HOST_READINESS.md`
@@ -293,7 +295,7 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + dashboard (Overview / Holdings / Deterministic / SUI trend / Intraday / AI agent / AI squad / AI options 30m / Swing options / Readiness / Options evidence / Options flow)
+# Evaluation + dashboard (Home / Holdings / Performance / Deterministic / SUI trend / Intraday / AI agent / AI squad / AI options 30m / Swing options / Readiness / Options evidence / Options flow)
 uv run python -m tradingbot evaluate --strategy trend
 # Regenerate the top AI paper gist (requires TYPESAFE_API_KEY; no order access)
 uv run python scripts/build_ai_summary.py
@@ -305,7 +307,7 @@ streamlit run streamlit_app.py
 # Vercel lite status app (small FastAPI bundle; snapshot-backed)
 uv run python scripts/export_deploy_status.py
 # Vercel entrypoint: app.py; install requirements-vercel.txt
-# Includes deterministic lanes, SUI trend, AI, options, swing options, options labs, host, and canary.
+# Includes landings, holdings/performance, SUI trend, AI, options, swing options, options labs, host, and canary.
 # Set DASHBOARD_PASSWORD in the host secrets for a public deployment.
 
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
