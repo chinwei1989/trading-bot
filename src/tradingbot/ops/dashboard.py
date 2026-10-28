@@ -49,8 +49,66 @@ AI_SQUAD_CONFIG = "config/ai_squad.yaml"
 INTRADAY_CONFIG = "config/intraday_meta.yaml"
 OPTIONS_FLOW_PATH = ROOT / "web" / "ai_options_flow.html"
 
+# Spot accounts shown in the read-only Holdings view. These are deliberately
+# separate paper books; aggregating them is illustrative, not one portfolio.
+HOLDING_LANES: dict[str, dict[str, str]] = {
+    "Trend": {
+        "state": "artifacts/paper_state.json",
+        "performance": "artifacts/performance_trend.jsonl",
+        "color": "#38bdf8",
+    },
+    "XSMOM": {
+        "state": "artifacts/paper_state_xsmom.json",
+        "performance": "artifacts/performance_xsmom.jsonl",
+        "color": "#2dd4bf",
+    },
+    "Breakout": {
+        "state": "artifacts/paper_state_breakout.json",
+        "performance": "artifacts/performance_breakout.jsonl",
+        "color": "#fbbf24",
+    },
+    "Reversal": {
+        "state": "artifacts/paper_state_reversal.json",
+        "performance": "artifacts/performance_reversal.jsonl",
+        "color": "#f472b6",
+    },
+    "Meta": {
+        "state": "artifacts/paper_state_meta.json",
+        "performance": "artifacts/performance_meta.jsonl",
+        "color": "#a78bfa",
+    },
+    "Intraday": {
+        "state": "artifacts/intraday/paper_state.json",
+        "performance": "artifacts/intraday/performance.jsonl",
+        "color": "#60a5fa",
+    },
+    "AI agent": {
+        "state": "artifacts/ai/paper_state.json",
+        "performance": "artifacts/ai/performance.jsonl",
+        "color": "#c084fc",
+    },
+    "AI squad": {
+        "state": "artifacts/ai_squad/paper_state.json",
+        "performance": "artifacts/ai_squad/performance.jsonl",
+        "color": "#fb7185",
+    },
+    "SUI lab": {
+        "state": "artifacts/sui/paper_state.json",
+        "performance": "artifacts/sui/performance.jsonl",
+        "color": "#22d3ee",
+    },
+}
+
+OPTION_HOLDING_STATES: dict[str, str] = {
+    "Swing options": "artifacts/options_swing/paper_state.json",
+    "AI options 30m": "artifacts/ai_options_30m/paper_state.json",
+    "ETH options lab": "artifacts/ai_options_eth/paper_state.json",
+    "BTC options lab": "artifacts/ai_options_btc_lab/paper_state.json",
+}
+
 _NAV_ITEMS = [
     "Overview",
+    "Holdings",
     "Deterministic",
     "SUI trend",
     "Intraday",
@@ -68,6 +126,10 @@ _PAGE_META = {
     "Overview": (
         "Operations overview",
         "A single read-only view of paper capital, live gates, and every execution lane.",
+    ),
+    "Holdings": (
+        "Paper holdings",
+        "Aggregate spot exposure and per-lane positions across the independent paper accounts.",
     ),
     "Deterministic": (
         "Deterministic sleeves",
@@ -724,6 +786,344 @@ def _render_overview() -> None:
             unsafe_allow_html=True,
         )
     st.caption(f"Swing options last report: {last_swing} · all values are paper-only.")
+
+
+def _latest_spot_prices() -> tuple[dict[str, float], str]:
+    path = ROOT / "data" / "normalized" / "bars.parquet"
+    if not path.exists():
+        return {}, "?"
+    bars = load_bars(path).sort("timestamp")
+    if bars.is_empty():
+        return {}, "?"
+    last = bars.group_by("asset").tail(1)
+    prices = {
+        str(row["asset"]): float(row["close"])
+        for row in last.iter_rows(named=True)
+    }
+    latest = bars["timestamp"].max()
+    return prices, str(latest)[:10] if latest is not None else "?"
+
+
+def _lane_equity(spec: dict[str, str]) -> float | None:
+    perf = _perf_frame(ROOT / spec["performance"])
+    if not perf.empty and "equity" in perf.columns:
+        values = perf["equity"].dropna()
+        if not values.empty:
+            return float(values.iloc[-1])
+    return None
+
+
+def _collect_spot_holdings() -> tuple[pd.DataFrame, dict[str, float], str]:
+    prices, as_of = _latest_spot_prices()
+    rows: list[dict[str, Any]] = []
+    for lane, spec in HOLDING_LANES.items():
+        state = _load_json(ROOT / spec["state"]) or {}
+        equity = _lane_equity(spec)
+        positions = state.get("positions") or {}
+        if equity is None:
+            cash = float(state.get("cash", 0.0) or 0.0)
+            equity = cash + sum(
+                float(pos.get("qty", 0.0) or 0.0)
+                * prices.get(asset, 0.0)
+                for asset, pos in positions.items()
+            )
+        for asset, pos in positions.items():
+            qty = float(pos.get("qty", 0.0) or 0.0)
+            if abs(qty) < 1e-12:
+                continue
+            price = prices.get(asset)
+            value = qty * price if price is not None else 0.0
+            rows.append(
+                {
+                    "lane": lane,
+                    "asset": asset,
+                    "side": "Long" if qty > 0 else "Short",
+                    "qty": qty,
+                    "avg_entry": pos.get("avg_entry_price"),
+                    "last_price": price,
+                    "value": value,
+                    "gross": abs(value),
+                    "weight": value / equity if equity else 0.0,
+                    "lane_equity": equity,
+                    "color": spec["color"],
+                }
+            )
+    return pd.DataFrame(rows), prices, as_of
+
+
+def _option_holdings_table() -> pd.DataFrame:
+    rows: list[dict[str, Any]] = []
+    for lane, path in OPTION_HOLDING_STATES.items():
+        state = _load_json(ROOT / path) or {}
+        for instrument, holding in (state.get("holdings") or {}).items():
+            qty = float(holding.get("qty", 0.0) or 0.0)
+            if abs(qty) < 1e-12:
+                continue
+            mark = float(holding.get("mark_premium", 0.0) or 0.0)
+            multiplier = float(holding.get("multiplier", 1.0) or 1.0)
+            rows.append(
+                {
+                    "lane": lane,
+                    "instrument": instrument,
+                    "underlying": holding.get("underlying"),
+                    "type": holding.get("option_type"),
+                    "qty": qty,
+                    "strike": holding.get("strike"),
+                    "expiry": holding.get("expiry"),
+                    "mark premium": mark,
+                    "value": qty * mark * multiplier,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def _render_holdings() -> None:
+    holdings, _, as_of = _collect_spot_holdings()
+
+    st.caption(
+        "Illustrative aggregate of independent paper accounts, not one "
+        f"portfolio. Spot values are marked at the latest daily close ({as_of}). "
+        "Short positions are negative."
+    )
+
+    if holdings.empty:
+        st.warning("No open spot holdings found in the configured paper accounts.")
+    else:
+        holdings = holdings.sort_values(["lane", "gross"], ascending=[True, False])
+        total_gross = float(holdings["gross"].sum())
+        net = float(holdings["value"].sum())
+        total_equity = float(
+            holdings.drop_duplicates("lane")["lane_equity"].sum()
+        )
+        sui = holdings[holdings["asset"] == "SUIUSDT"]
+        sui_qty = float(sui["qty"].sum()) if not sui.empty else 0.0
+        sui_value = float(sui["value"].sum()) if not sui.empty else 0.0
+
+        c1, c2, c3, c4, c5 = st.columns(5)
+        c1.metric("Gross exposure", f"${total_gross:,.0f}")
+        c2.metric("Net exposure", f"${net:,.0f}")
+        c3.metric("SUI holdings", f"{sui_qty:,.1f} SUI", f"${sui_value:,.0f}")
+        c4.metric("Open positions", f"{len(holdings)}", f"{holdings['lane'].nunique()} lanes")
+        c5.metric("Lane equity", f"${total_equity:,.0f}", "separate accounts")
+
+        _section("Exposure by asset", "Gross size and signed net exposure in USD")
+        asset_view = (
+            holdings.groupby("asset", as_index=False)
+            .agg(net=("value", "sum"), gross=("gross", "sum"))
+            .sort_values("gross")
+        )
+        colors = [
+            "#4ade80" if value >= 0 else "#fb7185" for value in asset_view["net"]
+        ]
+        fig = go.Figure()
+        fig.add_trace(
+            go.Bar(
+                x=asset_view["asset"],
+                y=asset_view["gross"],
+                name="Gross",
+                marker_color="rgba(148,163,184,0.38)",
+                hovertemplate="%{x}<br>Gross $%{y:,.0f}<extra></extra>",
+            )
+        )
+        fig.add_trace(
+            go.Bar(
+                x=asset_view["asset"],
+                y=asset_view["net"],
+                name="Net",
+                marker_color=colors,
+                hovertemplate="%{x}<br>Net $%{y:,.0f}<extra></extra>",
+            )
+        )
+        fig.add_hline(y=0, line_color="rgba(148,163,184,0.45)", line_width=1)
+        fig.update_layout(
+            height=390,
+            barmode="group",
+            yaxis_title="USD",
+            margin=dict(l=20, r=20, t=20, b=20),
+            legend=dict(orientation="h", y=-0.2),
+        )
+        st.plotly_chart(fig, width="stretch")
+
+        left, right = st.columns(2)
+        with left:
+            _section("Holdings map", "Gross size, colored by signed net value")
+            leaf = holdings[holdings["gross"] > 0].copy()
+            max_abs = max(float(leaf["gross"].max()), 1.0)
+            nodes: list[dict[str, Any]] = []
+            for lane, group in leaf.groupby("lane", sort=False):
+                nodes.append(
+                    {
+                        "id": f"lane:{lane}",
+                        "label": lane,
+                        "parent": "",
+                        "value": float(group["gross"].sum()),
+                        "net": float(group["value"].sum()),
+                        "qty": float(group["qty"].sum()),
+                        "weight": 1.0,
+                        "color": "rgba(148,163,184,0.28)",
+                    }
+                )
+                for _, row in group.iterrows():
+                    intensity = 0.35 + 0.55 * min(
+                        float(row["gross"]) / max_abs, 1.0
+                    )
+                    if float(row["value"]) >= 0:
+                        color = f"rgba(74,222,128,{intensity:.2f})"
+                    else:
+                        color = f"rgba(251,113,133,{intensity:.2f})"
+                    nodes.append(
+                        {
+                            "id": f"pos:{lane}:{row['asset']}",
+                            "label": str(row["asset"]),
+                            "parent": f"lane:{lane}",
+                            "value": float(row["gross"]),
+                            "net": float(row["value"]),
+                            "qty": float(row["qty"]),
+                            "weight": float(row["weight"]),
+                            "color": color,
+                        }
+                    )
+            tree = pd.DataFrame(nodes)
+            treemap = go.Figure(
+                go.Treemap(
+                    ids=tree["id"],
+                    labels=tree["label"],
+                    parents=tree["parent"],
+                    values=tree["value"],
+                    branchvalues="total",
+                    customdata=tree[["net", "qty", "weight"]].to_numpy(),
+                    textinfo="label+value",
+                    marker=dict(colors=tree["color"].tolist()),
+                    hovertemplate=(
+                        "<b>%{label}</b><br>"
+                        "Net $%{customdata[0]:,.0f}<br>"
+                        "Qty %{customdata[1]:,.2f}<br>"
+                        "Lane weight %{customdata[2]:.1%}<extra></extra>"
+                    ),
+                )
+            )
+            treemap.update_layout(
+                height=420,
+                margin=dict(l=10, r=10, t=10, b=10),
+            )
+            st.plotly_chart(treemap, width="stretch")
+
+        with right:
+            _section("Long / short by lane", "Signed paper exposure")
+            lane_view = (
+                holdings.groupby("lane", as_index=False)
+                .agg(
+                    long=("value", lambda s: s[s > 0].sum()),
+                    short=("value", lambda s: s[s < 0].sum()),
+                    gross=("gross", "sum"),
+                )
+                .sort_values("gross")
+            )
+            lane_fig = go.Figure()
+            lane_fig.add_trace(
+                go.Bar(
+                    y=lane_view["lane"],
+                    x=lane_view["long"],
+                    orientation="h",
+                    name="Long",
+                    marker_color="#4ade80",
+                    hovertemplate="%{y}<br>Long $%{x:,.0f}<extra></extra>",
+                )
+            )
+            lane_fig.add_trace(
+                go.Bar(
+                    y=lane_view["lane"],
+                    x=lane_view["short"],
+                    orientation="h",
+                    name="Short",
+                    marker_color="#fb7185",
+                    hovertemplate="%{y}<br>Short $%{x:,.0f}<extra></extra>",
+                )
+            )
+            lane_fig.add_vline(x=0, line_color="rgba(148,163,184,0.45)", line_width=1)
+            lane_fig.update_layout(
+                height=420,
+                barmode="relative",
+                xaxis_title="USD",
+                margin=dict(l=10, r=10, t=10, b=10),
+                legend=dict(orientation="h", y=-0.16),
+            )
+            st.plotly_chart(lane_fig, width="stretch")
+
+        _section("SUI focus", "Across the main campaign, AI lanes, and isolated lab")
+        if sui.empty:
+            st.info("No open SUI position.")
+        else:
+            sui_view = sui.sort_values("value")
+            sui_fig = go.Figure(
+                go.Bar(
+                    y=sui_view["lane"],
+                    x=sui_view["value"],
+                    orientation="h",
+                    marker_color="#22d3ee",
+                    text=sui_view["qty"].map(lambda value: f"{value:,.0f} SUI"),
+                    textposition="auto",
+                    hovertemplate=(
+                        "%{y}<br>Value $%{x:,.0f}<br>%{text}<extra></extra>"
+                    ),
+                )
+            )
+            sui_fig.add_vline(
+                x=0, line_color="rgba(148,163,184,0.45)", line_width=1
+            )
+            sui_fig.update_layout(
+                height=300,
+                xaxis_title="USD",
+                margin=dict(l=10, r=10, t=10, b=10),
+            )
+            st.plotly_chart(sui_fig, width="stretch")
+
+        _section("Position detail", "Every open spot position by lane")
+        table = holdings[
+            [
+                "lane",
+                "asset",
+                "side",
+                "qty",
+                "last_price",
+                "value",
+                "weight",
+                "avg_entry",
+            ]
+        ].copy()
+        table["qty"] = table["qty"].map(lambda value: f"{value:,.4f}")
+        table["last_price"] = table["last_price"].map(
+            lambda value: f"${value:,.4f}" if value is not None else "?"
+        )
+        table["value"] = table["value"].map(lambda value: f"${value:,.0f}")
+        table["weight"] = table["weight"].map(lambda value: f"{value:.1%}")
+        table["avg_entry"] = table["avg_entry"].map(
+            lambda value: f"${float(value):,.4f}" if value is not None else "?"
+        )
+        table.columns = [
+            "lane",
+            "asset",
+            "side",
+            "qty",
+            "last price",
+            "value",
+            "lane weight",
+            "avg entry",
+        ]
+        st.dataframe(table, width="stretch", hide_index=True)
+
+    _section("Option holdings", "Long-premium contracts held by the options accounts")
+    options = _option_holdings_table()
+    if options.empty:
+        st.info("No open option holdings in any options account.")
+    else:
+        options["value"] = options["value"].map(lambda value: f"${value:,.2f}")
+        st.dataframe(options, width="stretch", hide_index=True)
+
+    st.caption(
+        "Read-only view. Values are paper marks, not live fills or a consolidated "
+        "broker balance. Live trading remains disabled."
+    )
 
 
 def _render_deterministic() -> None:
@@ -2183,6 +2583,8 @@ if view != "Overview":
 def _render_selected(selected: str) -> None:
     if selected == "Overview":
         _render_overview()
+    elif selected == "Holdings":
+        _render_holdings()
     elif selected == "Deterministic":
         _render_deterministic()
     elif selected == "SUI trend":
