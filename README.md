@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **181 tests passing**, `ruff` pass, `mypy src` pass
+- **183 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -242,7 +242,8 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
-- **Holdings dashboard:** read-only aggregate spot exposure by asset, long/short treemap by lane, SUI focus, profit/loss in dollars and percent (open-position and lane-level), per-position detail, and option holdings; values are marked from the latest daily close and aggregate independent paper accounts. Open **Holdings** in the local Streamlit dashboard.
+- **Holdings dashboard:** read-only aggregate spot exposure by asset, long/short treemap by lane, SUI focus, profit/loss in dollars and percent (open-position and lane-level), daily performance with Today / 7D / 30D / 3M / 1Y / All ranges, per-position detail, and option holdings; values are marked from the latest daily close and aggregate independent paper accounts. Open **Holdings** in the local Streamlit dashboard.
+- **AI paper gist:** compact banner at the top of every dashboard page with the creation timestamp, data date, Jev classification, confidence, and a **Regenerate with latest data** button. Jev is typed, not a prose model, so the banner combines its posture/action/risk classifications with deterministic paper facts. It never places or changes an order; `TYPESAFE_API_KEY` is required only for regeneration.
 - **Campaign health:** `TradingBotHealth` runs at 07:30 local and verifies fresh rows for trend, XSMOM, breakout, reversal, meta, single-Jev AI, the eight-agent AI squad, hourly intraday meta, the 30m AI options paper lane, and the isolated SUI trend lane; writes `artifacts/CAMPAIGN_HEALTH.md`
 - **Host readiness:** `scripts/check_host.ps1` checks sleep, wake timers, network, time service, disk, task logon, and last task results; writes `artifacts/HOST_READINESS.md`
 - **PIT/listing universe:** `config/pit_universe_crypto.csv` prevents trading assets before their listing date; all crypto configs apply it
@@ -294,6 +295,8 @@ uv run python -m tradingbot run --mode paper --interval 3600
 
 # Evaluation + dashboard (Overview / Holdings / Deterministic / SUI trend / Intraday / AI agent / AI squad / AI options 30m / Swing options / Readiness / Options evidence / Options flow)
 uv run python -m tradingbot evaluate --strategy trend
+# Regenerate the top AI paper gist (requires TYPESAFE_API_KEY; no order access)
+uv run python scripts/build_ai_summary.py
 powershell -ExecutionPolicy Bypass -File scripts/run_dashboard.ps1
 
 # Full hosted dashboard entrypoint (Streamlit Cloud / Render / Docker)

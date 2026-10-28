@@ -14,7 +14,7 @@ import hmac
 import html
 import json
 import os
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -23,9 +23,11 @@ import plotly.graph_objects as go  # type: ignore[import-untyped]
 import plotly.io as pio  # type: ignore[import-untyped]
 import streamlit as st
 import streamlit.components.v1 as components
+from plotly.subplots import make_subplots  # type: ignore[import-untyped]
 
 from tradingbot.config import AppConfig, load_config
 from tradingbot.data.store import load_bars
+from tradingbot.ops.ai_summary import build_ai_state_summary, load_ai_summary
 from tradingbot.ops.evaluation import build_report, write_report
 from tradingbot.ops.heartbeat import read_heartbeat
 from tradingbot.ops.office3d import build_office_html
@@ -309,7 +311,11 @@ _THEME_CSS = """
         min-width: 230px;
     }
     @media (max-width: 650px) {
-        .tb-hero-side { grid-template-columns: 1fr; justify-content: start; min-width: 0; }
+        .tb-hero-side {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            justify-content: start;
+            min-width: 0;
+        }
     }
     .tb-chip {
         display: inline-flex;
@@ -388,6 +394,19 @@ _THEME_CSS = """
         font-size: 0.8rem;
         margin-top: 0.6rem;
     }
+    .tb-ai-gist {
+        border: 1px solid rgba(56, 189, 248, 0.28);
+        border-radius: 1rem;
+        background: linear-gradient(115deg, rgba(8, 47, 73, 0.78), rgba(15, 23, 42, 0.86));
+        padding: 1rem 1.1rem;
+        margin-bottom: 0.8rem;
+    }
+    .tb-ai-kicker { color: var(--tb-cyan); font-size: 0.64rem; letter-spacing: 0.14em; text-transform: uppercase; font-weight: 850; }
+    .tb-ai-headline { color: var(--tb-text); font-size: 1.16rem; font-weight: 850; margin-top: 0.18rem; }
+    .tb-ai-text { color: var(--tb-text); font-size: 0.86rem; line-height: 1.55; margin-top: 0.35rem; }
+    .tb-ai-bullets { display: flex; flex-wrap: wrap; gap: 0.35rem 1rem; margin: 0.55rem 0 0; padding: 0; list-style: none; }
+    .tb-ai-bullets li { color: var(--tb-muted); font-size: 0.73rem; }
+    .tb-ai-meta { color: #64748b; font-size: 0.68rem; margin-top: 0.55rem; }
     [data-testid="stMetric"] {
         background: linear-gradient(180deg, rgba(15, 23, 42, 0.92), rgba(15, 23, 42, 0.68));
         border: 1px solid var(--tb-line);
@@ -439,8 +458,27 @@ _THEME_CSS = """
         [data-testid="stHorizontalBlock"] { flex-direction: column; gap: 0.75rem; }
     }
     @media (max-width: 650px) {
-        .tb-hero { align-items: flex-start; flex-direction: column; padding: 1.2rem; }
-        .tb-stat-grid, .tb-lane-grid { grid-template-columns: 1fr; }
+        .tb-hero { align-items: flex-start; flex-direction: column; padding: 1.15rem; }
+        .tb-hero-side { justify-content: flex-start; }
+        .tb-title { font-size: 2.05rem; }
+        .tb-subtitle { font-size: 0.9rem; }
+        .tb-page-title { font-size: 1.3rem; }
+        .tb-section { align-items: flex-start; flex-direction: column; gap: 0.2rem; }
+        .tb-stat-grid, .tb-lane-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .tb-stat { min-height: 3.8rem; padding: 0.7rem; }
+        .tb-ai-gist { padding: 0.8rem; }
+        .tb-ai-headline { font-size: 1.05rem; }
+        .tb-ai-bullets { display: block; }
+        .tb-ai-bullets li { margin-top: 0.3rem; }
+        [data-testid="stButton"] button { width: 100%; }
+        [data-testid="stRadio"] > div { flex-wrap: wrap; gap: 0.35rem 0.8rem; }
+        .tb-ai-meta { line-height: 1.45; }
+        [data-testid="stSidebar"] { width: min(88vw, 320px); }
+        .block-container { padding-left: 0.7rem !important; padding-right: 0.7rem !important; }
+    }
+    @media (max-width: 360px) {
+        .tb-stat-grid, .tb-hero-side { grid-template-columns: 1fr; }
+        .tb-title { font-size: 1.72rem; }
     }
 </style>
 """
@@ -923,6 +961,254 @@ def _option_holdings_table() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+PERFORMANCE_RANGES = ["Today", "7D", "30D", "3M", "1Y", "All"]
+PERFORMANCE_RANGE_DAYS = {"7D": 7, "30D": 30, "3M": 90, "1Y": 365}
+
+
+def _lane_initial_cash(spec: dict[str, str]) -> float:
+    state = _load_json(ROOT / spec["state"]) or {}
+    try:
+        return float(state.get("initial_cash", 10_000.0) or 10_000.0)
+    except (TypeError, ValueError):
+        return 10_000.0
+
+
+def _performance_frames() -> list[tuple[pd.DataFrame, float]]:
+    frames: list[tuple[pd.DataFrame, float]] = []
+    for spec in HOLDING_LANES.values():
+        frame = _perf_frame(ROOT / spec["performance"])
+        if frame.empty or "equity" not in frame.columns:
+            continue
+        frame = frame[["timestamp", "equity"]].dropna().copy()
+        if frame.empty:
+            continue
+        frame["timestamp"] = pd.to_datetime(
+            frame["timestamp"], utc=True, errors="coerce"
+        )
+        frame = frame.dropna(subset=["timestamp"]).sort_values("timestamp")
+        frames.append((frame, _lane_initial_cash(spec)))
+    return frames
+
+
+def _aggregate_daily(frames: list[tuple[pd.DataFrame, float]]) -> pd.Series:
+    starts = [frame["timestamp"].min() for frame, _ in frames]
+    ends = [frame["timestamp"].max() for frame, _ in frames]
+    start = min(starts).normalize()
+    end = max(ends).normalize()
+    index = pd.date_range(start=start, end=end, freq="D")
+    total = pd.Series(0.0, index=index, dtype=float)
+    for frame, initial in frames:
+        daily = (
+            frame.set_index("timestamp")["equity"]
+            .resample("1D")
+            .last()
+            .reindex(index)
+            .ffill()
+            .fillna(initial)
+        )
+        total = total.add(daily, fill_value=0.0)
+    return total
+
+
+def _aggregate_today(frames: list[tuple[pd.DataFrame, float]]) -> pd.Series:
+    end = max(frame["timestamp"].max() for frame, _ in frames)
+    start = end.normalize()
+    points = {start}
+    for frame, _ in frames:
+        points.update(
+            timestamp
+            for timestamp in frame["timestamp"]
+            if timestamp >= start
+        )
+    index = pd.DatetimeIndex(sorted(points))
+    index = (
+        index.tz_localize("UTC")
+        if index.tz is None
+        else index.tz_convert("UTC")
+    )
+    total = pd.Series(0.0, index=index, dtype=float)
+    for frame, initial in frames:
+        series = frame.set_index("timestamp")["equity"].sort_index()
+        series = (
+            series.reindex(series.index.union(index))
+            .ffill()
+            .reindex(index)
+            .fillna(initial)
+        )
+        total = total.add(series, fill_value=0.0)
+    return total
+
+
+def _performance_window(
+    range_key: str,
+) -> tuple[pd.DataFrame, float]:
+    frames = _performance_frames()
+    if not frames:
+        return pd.DataFrame(), 0.0
+    initial_total = float(sum(initial for _, initial in frames))
+    if initial_total <= 0:
+        return pd.DataFrame(), 0.0
+    if range_key == "Today":
+        equity = _aggregate_today(frames)
+    else:
+        equity = _aggregate_daily(frames)
+        if range_key in PERFORMANCE_RANGE_DAYS:
+            end = equity.index.max()
+            start = end - timedelta(
+                days=PERFORMANCE_RANGE_DAYS[range_key] - 1
+            )
+            equity = equity[equity.index >= start]
+    equity = equity.dropna()
+    if equity.empty:
+        return pd.DataFrame(), initial_total
+    base = float(equity.iloc[0])
+    pnl = equity.diff()
+    pnl.iloc[0] = 0.0
+    pnl_pct = pnl / equity.shift(1)
+    pnl_pct.iloc[0] = 0.0
+    data = pd.DataFrame(
+        {
+            "timestamp": equity.index,
+            "equity": equity.to_numpy(),
+            "pnl": pnl.to_numpy(),
+            "pnl_pct": pnl_pct.to_numpy(),
+            "cum_pct": (equity / base - 1.0).to_numpy(),
+        }
+    )
+    return data, initial_total
+
+
+def _render_daily_performance() -> None:
+    _section(
+        "Daily performance",
+        "Aggregate paper equity, daily P&L, and cumulative return",
+    )
+    range_key = st.radio(
+        "Range",
+        PERFORMANCE_RANGES,
+        index=1,
+        horizontal=True,
+        key="holdings_performance_range",
+    )
+    data, initial_total = _performance_window(range_key)
+    if data.empty:
+        st.warning("No performance history available yet.")
+        return
+
+    period_pnl = float(data["equity"].iloc[-1] - data["equity"].iloc[0])
+    period_pct = float(data["cum_pct"].iloc[-1])
+    changes = data["pnl"].iloc[1:]
+    best = float(changes.max()) if not changes.empty else 0.0
+    worst = float(changes.min()) if not changes.empty else 0.0
+    latest_equity = float(data["equity"].iloc[-1])
+    granularity = "intraday" if range_key == "Today" else "daily"
+
+    st.caption(
+        f"{range_key} · {len(data)} {granularity} observations · "
+        f"aggregate of {len(HOLDING_LANES)} independent paper accounts "
+        f"(starting cash ${initial_total:,.0f})."
+    )
+    requested_days = PERFORMANCE_RANGE_DAYS.get(range_key)
+    if requested_days and len(data) < requested_days:
+        st.caption(
+            f"Only {len(data)} daily sessions are available; this range shows "
+            "all available history."
+        )
+    st.markdown(
+        '<div class="tb-stat-grid">'
+        + _stat(
+            "Period P&L",
+            _signed_money(period_pnl),
+            "selected range",
+            tone=_pnl_tone(period_pnl),
+        )
+        + _stat(
+            "Period return",
+            _signed_pct(period_pct),
+            "selected range",
+            tone=_pnl_tone(period_pct),
+        )
+        + _stat(
+            "Best interval",
+            _signed_money(best),
+            "largest gain" if best > 0 else "least negative interval",
+            tone=_pnl_tone(best),
+        )
+        + _stat(
+            "Worst interval",
+            _signed_money(worst),
+            "largest drawdown" if worst < 0 else "smallest gain",
+            tone=_pnl_tone(worst),
+        )
+        + _stat(
+            "Latest equity",
+            f"${latest_equity:,.0f}",
+            "aggregate paper value",
+        )
+        + _stat(
+            "Observations",
+            str(len(data)),
+            f"{granularity} buckets",
+        )
+        + "</div>",
+        unsafe_allow_html=True,
+    )
+
+    colors = [
+        "#4ade80" if value >= 0 else "#fb7185" for value in data["pnl"]
+    ]
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
+    fig.add_trace(
+        go.Bar(
+            x=data["timestamp"],
+            y=data["pnl"],
+            name="P&L",
+            marker_color=colors,
+            customdata=data["pnl_pct"],
+            hovertemplate=(
+                "%{x|%d %b %H:%M}<br>P&L $%{y:,.2f}<br>"
+                "%{customdata:.2%}<extra></extra>"
+            ),
+        ),
+        secondary_y=False,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=data["timestamp"],
+            y=data["cum_pct"],
+            name="Cumulative return",
+            mode="lines+markers" if len(data) <= 10 else "lines",
+            line=dict(color="#38bdf8", width=2),
+            hovertemplate=(
+                "%{x|%d %b %H:%M}<br>Return %{y:.2%}<extra></extra>"
+            ),
+        ),
+        secondary_y=True,
+    )
+    fig.add_hline(y=0, line_color="rgba(148,163,184,0.45)", line_width=1)
+    fig.update_yaxes(title_text="P&L (USD)", secondary_y=False)
+    fig.update_yaxes(
+        title_text="Cumulative return",
+        tickformat=".2%",
+        secondary_y=True,
+    )
+    fig.update_xaxes(
+        tickformat="%H:%M" if range_key == "Today" else "%d %b"
+    )
+    fig.update_layout(
+        height=390,
+        margin=dict(l=20, r=20, t=20, b=20),
+        legend=dict(orientation="h", y=-0.2),
+        hovermode="x unified",
+    )
+    st.plotly_chart(fig, width="stretch")
+    st.caption(
+        "Aggregate sums independent paper accounts; it is illustrative, not a "
+        "single brokerage balance. Main campaign lanes were reset when SUI was "
+        "added to the 9-asset universe, so the forward history is short."
+    )
+
+
 def _render_holdings() -> None:
     holdings, _, as_of = _collect_spot_holdings()
 
@@ -1038,6 +1324,8 @@ def _render_holdings() -> None:
             + "</div>",
             unsafe_allow_html=True,
         )
+
+        _render_daily_performance()
 
         _section("Exposure by asset", "Gross size and signed net exposure in USD")
         asset_view = (
@@ -2726,6 +3014,64 @@ def _readiness_snapshot() -> dict[str, Any]:
     return _load_json(ROOT / "artifacts" / "READINESS.json") or {}
 
 
+def _summary_time(value: Any) -> str:
+    try:
+        parsed = datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+        return parsed.astimezone().strftime("%d %b %Y %H:%M %z")
+    except (TypeError, ValueError):
+        return str(value or "unknown")
+
+
+def _render_ai_gist() -> None:
+    summary = load_ai_summary(ROOT)
+    left, right = st.columns([5, 1])
+    with left:
+        if summary:
+            bullets = "".join(
+                f"<li>{html.escape(str(item))}</li>"
+                for item in (summary.get("bullets") or [])
+            )
+            confidence = summary.get("confidence")
+            confidence_text = (
+                f" · confidence {float(confidence):.0%}"
+                if isinstance(confidence, (int, float))
+                else ""
+            )
+            st.markdown(
+                '<div class="tb-ai-gist">'
+                '<div class="tb-ai-kicker">AI PAPER GIST · JEV</div>'
+                f'<div class="tb-ai-headline">{html.escape(str(summary.get("headline", "Paper state")))}</div>'
+                f'<div class="tb-ai-text">{html.escape(str(summary.get("summary", "")))}</div>'
+                f'<ul class="tb-ai-bullets">{bullets}</ul>'
+                '<div class="tb-ai-meta">'
+                f"Created {html.escape(_summary_time(summary.get('created_at')))}"
+                f" · paper data {html.escape(str(summary.get('data_as_of', '?')))}"
+                f" · {html.escape(str(summary.get('model', '?')))}"
+                f"{confidence_text} · typed classification, paper only"
+                "</div></div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info(
+                "No AI paper gist yet. Generate a concise summary from the "
+                "latest local paper state."
+            )
+    with right:
+        st.write("")
+        if st.button(
+            "Regenerate with latest data",
+            key="regenerate_ai_gist",
+            type="primary",
+        ):
+            try:
+                with st.spinner("Asking Jev for a fresh paper gist..."):
+                    build_ai_state_summary(ROOT)
+                st.toast("AI paper gist refreshed")
+                st.rerun()
+            except Exception as exc:
+                st.error(f"Could not refresh the AI gist: {type(exc).__name__}: {exc}")
+
+
 def _render_shell_header(readiness: dict[str, Any]) -> None:
     paper = "READY" if readiness.get("paper_ready") else "CHECK"
     host = readiness.get("host_status", "UNKNOWN")
@@ -2772,10 +3118,16 @@ def _render_sidebar(readiness: dict[str, Any]) -> tuple[str, str]:
             unsafe_allow_html=True,
         )
         st.markdown('<div class="tb-side-label">Workspace</div>', unsafe_allow_html=True)
+        requested_view = st.query_params.get("view")
+        default_index = (
+            _NAV_ITEMS.index(requested_view)
+            if isinstance(requested_view, str) and requested_view in _NAV_ITEMS
+            else 0
+        )
         view = st.radio(
             "Workspace",
             _NAV_ITEMS,
-            index=0,
+            index=default_index,
             label_visibility="collapsed",
         )
         st.markdown('<div class="tb-side-label">Session</div>', unsafe_allow_html=True)
@@ -2817,6 +3169,7 @@ if _expected_password and not st.session_state.get("dashboard_authenticated"):
 readiness = _readiness_snapshot()
 _render_shell_header(readiness)
 view, refresh_label = _render_sidebar(readiness)
+_render_ai_gist()
 if view != "Overview":
     _page_intro(view)
 
