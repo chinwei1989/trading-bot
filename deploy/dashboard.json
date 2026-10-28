@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T15:27:21.695652+00:00",
+  "generated_at": "2026-10-28T15:27:49.500435+00:00",
   "data_as_of": "2026-10-27",
   "source": "snapshot",
   "ai_gist": {
@@ -61,7 +61,7 @@
     "state_note": "Independent paper accounts; aggregate values are illustrative and not one brokerage balance. No live order path."
   },
   "readiness": {
-    "generated_at": "2026-10-28T15:27:19.905026+00:00",
+    "generated_at": "2026-10-28T15:27:47.730259+00:00",
     "generated_from": {
       "self_eval": true,
       "campaign_health": true,
@@ -1242,8 +1242,8 @@
     ]
   },
   "validation": {
-    "generated_at": "2026-10-28T15:21:47.962332+00:00",
-    "code_commit": "899c22f",
+    "generated_at": "2026-10-28T15:27:46.264367+00:00",
+    "code_commit": "8d3bef5",
     "data": {
       "rows": 20987,
       "n_assets": 9,
