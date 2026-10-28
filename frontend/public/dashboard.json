@@ -1,0 +1,1772 @@
+{
+  "generated_at": "2026-10-28T13:58:56.765611+00:00",
+  "data_as_of": "2026-10-27",
+  "source": "snapshot",
+  "ai_gist": {
+    "headline": "Cautious \u00b7 Review Before Adding",
+    "summary": "Jev reads the book as cautious and marks the next paper action as review before adding. The dominant risk is execution/data reliability. Across 9 independent spot accounts, gross is $23,679 and net is $14,679; open P&L is +$7.25 (+0.03%), while lane P&L is -$89.22 (-0.10%).",
+    "bullets": [
+      "35 open positions across 7 active spot lanes.",
+      "SUI: 4,347.5 (~$4,058), open P&L +$23.44.",
+      "Options: 0 open contracts; spot live NO_GO, options live NO_GO, host DEGRADED.",
+      "Paper data as of 2026-10-27."
+    ],
+    "provider": "jev",
+    "model": "jev-1.14.0",
+    "method": "Jev typed classification + deterministic paper facts",
+    "confidence": 0.4333,
+    "created_at": "2026-10-28T13:46:17.224030+00:00",
+    "data_as_of": "2026-10-27",
+    "paper_only": true,
+    "answers": {
+      "posture": {
+        "type": "choice",
+        "choice": "cautious",
+        "confidence": 0.52,
+        "probabilities": {
+          "constructive": 0.27,
+          "cautious": 0.68,
+          "defensive": 0.04
+        }
+      },
+      "next_action": {
+        "type": "choice",
+        "choice": "review",
+        "confidence": 0.43,
+        "probabilities": {
+          "hold": 0.35,
+          "trim": 0.07,
+          "review": 0.5700000000000001,
+          "add": 0.01
+        }
+      },
+      "top_risk": {
+        "type": "choice",
+        "choice": "execution",
+        "confidence": 0.35,
+        "probabilities": {
+          "market_reversal": 0.11,
+          "concentration": 0.3,
+          "volatility": 0.03,
+          "execution": 0.48,
+          "evidence": 0.08
+        }
+      }
+    },
+    "gates": {
+      "spot_live": "NO_GO",
+      "options_live": "NO_GO",
+      "host": "DEGRADED"
+    },
+    "state_note": "Independent paper accounts; aggregate values are illustrative and not one brokerage balance. No live order path."
+  },
+  "readiness": {
+    "generated_at": "2026-10-28T03:10:09.680951+00:00",
+    "generated_from": {
+      "self_eval": true,
+      "campaign_health": true,
+      "live_gate": true,
+      "options_evidence": true
+    },
+    "code_status": "PASS",
+    "health_status": "OK",
+    "live_gate": "NO_GO",
+    "options_live_gate": "NO_GO",
+    "host_status": "DEGRADED",
+    "host_ready": false,
+    "host_recommendations": [
+      "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
+    ],
+    "options_status": "insufficient",
+    "paper_days": 1,
+    "target_paper_days": 56,
+    "paper_ready": true,
+    "paper_evidence_ready": false,
+    "live_ready": false,
+    "blockers": [
+      "live gate is NO_GO",
+      "host readiness is DEGRADED",
+      "forward options evidence has 1 of 56 paper days",
+      "options live gate is NO_GO",
+      "no live options execution adapter or venue is configured"
+    ],
+    "live_gate_failed": [
+      "deflated Sharpe",
+      "PBO",
+      "paper campaign",
+      "live broker config",
+      "LIVE_TRADING",
+      "AI paper days",
+      "AI scorecard",
+      "AI live execution"
+    ],
+    "options_live_gate_failed": [
+      "options paper days",
+      "options paper fills",
+      "options live broker config",
+      "options live adapter",
+      "options credentials",
+      "options live confirmation",
+      "options evidence"
+    ],
+    "host_blockers": [
+      "Tasks use Interactive logon; keep the Windows user signed in, or install a service/credentialed task principal for unattended reboots."
+    ]
+  },
+  "portfolio": {
+    "gross_usd": 23679.17,
+    "net_usd": 14679.17,
+    "open_pnl_usd": 7.25,
+    "open_pnl_pct": 0.000306,
+    "lane_pnl_usd": -89.22,
+    "lane_pnl_pct": -0.000991,
+    "positions": 35,
+    "active_lanes": 7,
+    "paper_accounts": 9
+  },
+  "lanes": [
+    {
+      "lane": "Trend",
+      "equity": 9995.14,
+      "starting_cash": 10000.0,
+      "pnl": -4.86,
+      "pnl_pct": -0.000486,
+      "positions": 7,
+      "color": "#38bdf8"
+    },
+    {
+      "lane": "XSMOM",
+      "equity": 9986.5,
+      "starting_cash": 10000.0,
+      "pnl": -13.5,
+      "pnl_pct": -0.00135,
+      "positions": 6,
+      "color": "#2dd4bf"
+    },
+    {
+      "lane": "Breakout",
+      "equity": 9995.33,
+      "starting_cash": 10000.0,
+      "pnl": -4.67,
+      "pnl_pct": -0.000467,
+      "positions": 7,
+      "color": "#fbbf24"
+    },
+    {
+      "lane": "Reversal",
+      "equity": 9998.5,
+      "starting_cash": 10000.0,
+      "pnl": -1.5,
+      "pnl_pct": -0.00015,
+      "positions": 1,
+      "color": "#f472b6"
+    },
+    {
+      "lane": "Meta",
+      "equity": 9996.34,
+      "starting_cash": 10000.0,
+      "pnl": -3.66,
+      "pnl_pct": -0.000366,
+      "positions": 8,
+      "color": "#a78bfa"
+    },
+    {
+      "lane": "Intraday",
+      "equity": 9941.31,
+      "starting_cash": 10000.0,
+      "pnl": -58.69,
+      "pnl_pct": -0.005869,
+      "positions": 5,
+      "color": "#60a5fa"
+    },
+    {
+      "lane": "AI agent",
+      "equity": 10000.0,
+      "starting_cash": 10000.0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "positions": 0,
+      "color": "#c084fc"
+    },
+    {
+      "lane": "AI squad",
+      "equity": 10000.0,
+      "starting_cash": 10000.0,
+      "pnl": 0.0,
+      "pnl_pct": 0.0,
+      "positions": 0,
+      "color": "#fb7185"
+    },
+    {
+      "lane": "SUI lab",
+      "equity": 9997.66,
+      "starting_cash": 10000.0,
+      "pnl": -2.34,
+      "pnl_pct": -0.000234,
+      "positions": 1,
+      "color": "#22d3ee"
+    }
+  ],
+  "positions": [
+    {
+      "lane": "SUI lab",
+      "asset": "SUIUSDT",
+      "side": "long",
+      "qty": 1697.467992,
+      "entry": 0.918859,
+      "cost": 1559.73,
+      "last_price": 0.9334,
+      "value": 1584.42,
+      "weight": 0.15847873,
+      "pnl": 24.68,
+      "pnl_pct": 0.015825
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "BNBUSDT",
+      "side": "long",
+      "qty": 2.013585,
+      "entry": 745.31247,
+      "cost": 1500.75,
+      "last_price": 744.94,
+      "value": 1500.0,
+      "weight": 0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "DOGEUSDT",
+      "side": "short",
+      "qty": -18968.133536,
+      "entry": 0.07904,
+      "cost": 1499.25,
+      "last_price": 0.07908,
+      "value": -1500.0,
+      "weight": -0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "ETHUSDT",
+      "side": "short",
+      "qty": -0.6382,
+      "entry": 2349.18482,
+      "cost": 1499.25,
+      "last_price": 2350.36,
+      "value": -1500.0,
+      "weight": -0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "SOLUSDT",
+      "side": "long",
+      "qty": 14.800197,
+      "entry": 101.400675,
+      "cost": 1500.75,
+      "last_price": 101.35,
+      "value": 1500.0,
+      "weight": 0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "SUIUSDT",
+      "side": "long",
+      "qty": 1607.028069,
+      "entry": 0.933867,
+      "cost": 1500.75,
+      "last_price": 0.9334,
+      "value": 1500.0,
+      "weight": 0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "XRPUSDT",
+      "side": "short",
+      "qty": -1126.718245,
+      "entry": 1.330634,
+      "cost": 1499.25,
+      "last_price": 1.3313,
+      "value": -1500.0,
+      "weight": -0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Intraday",
+      "asset": "DOGEUSDT",
+      "side": "long",
+      "qty": 12988.441503,
+      "entry": 0.079504,
+      "cost": 1032.64,
+      "last_price": 0.07908,
+      "value": 1027.13,
+      "weight": 0.103319,
+      "pnl": -5.51,
+      "pnl_pct": -0.005338
+    },
+    {
+      "lane": "Reversal",
+      "asset": "SOLUSDT",
+      "side": "long",
+      "qty": 9.866798,
+      "entry": 101.400675,
+      "cost": 1000.5,
+      "last_price": 101.35,
+      "value": 1000.0,
+      "weight": 0.10001501,
+      "pnl": -0.5,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Intraday",
+      "asset": "XRPUSDT",
+      "side": "long",
+      "qty": 689.565749,
+      "entry": 1.321495,
+      "cost": 911.26,
+      "last_price": 1.3313,
+      "value": 918.02,
+      "weight": 0.09234388,
+      "pnl": 6.76,
+      "pnl_pct": 0.00742
+    },
+    {
+      "lane": "Meta",
+      "asset": "SOLUSDT",
+      "side": "long",
+      "qty": 7.905418,
+      "entry": 101.400675,
+      "cost": 801.61,
+      "last_price": 101.35,
+      "value": 801.21,
+      "weight": 0.08015079,
+      "pnl": -0.4,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Intraday",
+      "asset": "BNBUSDT",
+      "side": "long",
+      "qty": 0.722213,
+      "entry": 746.976045,
+      "cost": 539.48,
+      "last_price": 744.94,
+      "value": 538.01,
+      "weight": 0.05411817,
+      "pnl": -1.47,
+      "pnl_pct": -0.002726
+    },
+    {
+      "lane": "Trend",
+      "asset": "BNBUSDT",
+      "side": "long",
+      "qty": 0.669891,
+      "entry": 745.31247,
+      "cost": 499.28,
+      "last_price": 744.94,
+      "value": 499.03,
+      "weight": 0.04992714,
+      "pnl": -0.25,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Trend",
+      "asset": "BTCUSDT",
+      "side": "long",
+      "qty": 0.006168,
+      "entry": 80950.224885,
+      "cost": 499.28,
+      "last_price": 80909.77,
+      "value": 499.03,
+      "weight": 0.04992714,
+      "pnl": -0.25,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Trend",
+      "asset": "ETHUSDT",
+      "side": "long",
+      "qty": 0.21232,
+      "entry": 2351.53518,
+      "cost": 499.28,
+      "last_price": 2350.36,
+      "value": 499.03,
+      "weight": 0.04992714,
+      "pnl": -0.25,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Trend",
+      "asset": "SOLUSDT",
+      "side": "long",
+      "qty": 4.923817,
+      "entry": 101.400675,
+      "cost": 499.28,
+      "last_price": 101.35,
+      "value": 499.03,
+      "weight": 0.04992714,
+      "pnl": -0.25,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Trend",
+      "asset": "XRPUSDT",
+      "side": "long",
+      "qty": 374.843278,
+      "entry": 1.331966,
+      "cost": 499.28,
+      "last_price": 1.3313,
+      "value": 499.03,
+      "weight": 0.04992714,
+      "pnl": -0.25,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Breakout",
+      "asset": "BNBUSDT",
+      "side": "long",
+      "qty": 0.655125,
+      "entry": 745.31247,
+      "cost": 488.27,
+      "last_price": 744.94,
+      "value": 488.03,
+      "weight": 0.04882566,
+      "pnl": -0.24,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Breakout",
+      "asset": "BTCUSDT",
+      "side": "long",
+      "qty": 0.006032,
+      "entry": 80950.224885,
+      "cost": 488.27,
+      "last_price": 80909.77,
+      "value": 488.03,
+      "weight": 0.04882566,
+      "pnl": -0.24,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Breakout",
+      "asset": "ETHUSDT",
+      "side": "long",
+      "qty": 0.20764,
+      "entry": 2351.53518,
+      "cost": 488.27,
+      "last_price": 2350.36,
+      "value": 488.03,
+      "weight": 0.04882566,
+      "pnl": -0.24,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Breakout",
+      "asset": "SOLUSDT",
+      "side": "long",
+      "qty": 4.815281,
+      "entry": 101.400675,
+      "cost": 488.27,
+      "last_price": 101.35,
+      "value": 488.03,
+      "weight": 0.04882566,
+      "pnl": -0.24,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Breakout",
+      "asset": "LINKUSDT",
+      "side": "long",
+      "qty": 37.688526,
+      "entry": 11.588791,
+      "cost": 436.76,
+      "last_price": 11.583,
+      "value": 436.55,
+      "weight": 0.04367501,
+      "pnl": -0.22,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Trend",
+      "asset": "LINKUSDT",
+      "side": "long",
+      "qty": 37.043684,
+      "entry": 11.588791,
+      "cost": 429.29,
+      "last_price": 11.583,
+      "value": 429.08,
+      "weight": 0.04292856,
+      "pnl": -0.21,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Intraday",
+      "asset": "LINKUSDT",
+      "side": "long",
+      "qty": 36.75336,
+      "entry": 11.714999,
+      "cost": 430.57,
+      "last_price": 11.583,
+      "value": 425.71,
+      "weight": 0.04282275,
+      "pnl": -4.85,
+      "pnl_pct": -0.011268
+    },
+    {
+      "lane": "Intraday",
+      "asset": "BTCUSDT",
+      "side": "long",
+      "qty": 0.004876,
+      "entry": 81520.387675,
+      "cost": 397.51,
+      "last_price": 80909.77,
+      "value": 394.53,
+      "weight": 0.03968609,
+      "pnl": -2.98,
+      "pnl_pct": -0.00749
+    },
+    {
+      "lane": "Breakout",
+      "asset": "ADAUSDT",
+      "side": "long",
+      "qty": 1808.85366,
+      "entry": 0.206103,
+      "cost": 372.81,
+      "last_price": 0.206,
+      "value": 372.62,
+      "weight": 0.03727979,
+      "pnl": -0.19,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Meta",
+      "asset": "BNBUSDT",
+      "side": "long",
+      "qty": 0.497177,
+      "entry": 745.31247,
+      "cost": 370.55,
+      "last_price": 744.94,
+      "value": 370.37,
+      "weight": 0.03705025,
+      "pnl": -0.19,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Breakout",
+      "asset": "SUIUSDT",
+      "side": "long",
+      "qty": 374.657391,
+      "entry": 0.933867,
+      "cost": 349.88,
+      "last_price": 0.9334,
+      "value": 349.71,
+      "weight": 0.03498685,
+      "pnl": -0.17,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Trend",
+      "asset": "SUIUSDT",
+      "side": "long",
+      "qty": 336.091762,
+      "entry": 0.933867,
+      "cost": 313.86,
+      "last_price": 0.9334,
+      "value": 313.71,
+      "weight": 0.03138605,
+      "pnl": -0.16,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Meta",
+      "asset": "SUIUSDT",
+      "side": "long",
+      "qty": 332.205488,
+      "entry": 0.933867,
+      "cost": 310.24,
+      "last_price": 0.9334,
+      "value": 310.08,
+      "weight": 0.03101943,
+      "pnl": -0.16,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Meta",
+      "asset": "BTCUSDT",
+      "side": "long",
+      "qty": 0.003075,
+      "entry": 80950.224885,
+      "cost": 248.94,
+      "last_price": 80909.77,
+      "value": 248.82,
+      "weight": 0.02489064,
+      "pnl": -0.12,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Meta",
+      "asset": "ETHUSDT",
+      "side": "long",
+      "qty": 0.105863,
+      "entry": 2351.53518,
+      "cost": 248.94,
+      "last_price": 2350.36,
+      "value": 248.82,
+      "weight": 0.02489064,
+      "pnl": -0.12,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Meta",
+      "asset": "LINKUSDT",
+      "side": "long",
+      "qty": 20.561636,
+      "entry": 11.588791,
+      "cost": 238.28,
+      "last_price": 11.583,
+      "value": 238.17,
+      "weight": 0.02382527,
+      "pnl": -0.12,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Meta",
+      "asset": "XRPUSDT",
+      "side": "long",
+      "qty": 111.065203,
+      "entry": 1.331966,
+      "cost": 147.94,
+      "last_price": 1.3313,
+      "value": 147.86,
+      "weight": 0.01479153,
+      "pnl": -0.07,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Meta",
+      "asset": "ADAUSDT",
+      "side": "long",
+      "qty": 374.181022,
+      "entry": 0.206103,
+      "cost": 77.12,
+      "last_price": 0.206,
+      "value": 77.08,
+      "weight": 0.00771095,
+      "pnl": -0.04,
+      "pnl_pct": -0.0005
+    }
+  ],
+  "top_positions": [
+    {
+      "lane": "SUI lab",
+      "asset": "SUIUSDT",
+      "side": "long",
+      "qty": 1697.467992,
+      "entry": 0.918859,
+      "cost": 1559.73,
+      "last_price": 0.9334,
+      "value": 1584.42,
+      "weight": 0.15847873,
+      "pnl": 24.68,
+      "pnl_pct": 0.015825
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "BNBUSDT",
+      "side": "long",
+      "qty": 2.013585,
+      "entry": 745.31247,
+      "cost": 1500.75,
+      "last_price": 744.94,
+      "value": 1500.0,
+      "weight": 0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "DOGEUSDT",
+      "side": "short",
+      "qty": -18968.133536,
+      "entry": 0.07904,
+      "cost": 1499.25,
+      "last_price": 0.07908,
+      "value": -1500.0,
+      "weight": -0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "ETHUSDT",
+      "side": "short",
+      "qty": -0.6382,
+      "entry": 2349.18482,
+      "cost": 1499.25,
+      "last_price": 2350.36,
+      "value": -1500.0,
+      "weight": -0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "SOLUSDT",
+      "side": "long",
+      "qty": 14.800197,
+      "entry": 101.400675,
+      "cost": 1500.75,
+      "last_price": 101.35,
+      "value": 1500.0,
+      "weight": 0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    },
+    {
+      "lane": "XSMOM",
+      "asset": "SUIUSDT",
+      "side": "long",
+      "qty": 1607.028069,
+      "entry": 0.933867,
+      "cost": 1500.75,
+      "last_price": 0.9334,
+      "value": 1500.0,
+      "weight": 0.15020277,
+      "pnl": -0.75,
+      "pnl_pct": -0.0005
+    }
+  ],
+  "sui": {
+    "qty": 4347.450702,
+    "value_usd": 4057.92,
+    "pnl_usd": 23.44
+  },
+  "options_holdings": {
+    "open_contracts": 0,
+    "value_usd": 0
+  },
+  "options": {
+    "evidence": {
+      "generated_at": "2026-10-27T23:30:09.048421+00:00",
+      "status": "insufficient",
+      "target_paper_days": 56,
+      "paper": {
+        "paper_days": 1,
+        "cycles": 19,
+        "expected_cycles": 19,
+        "cycle_coverage": 1.0,
+        "flat_cycles": 19,
+        "risk_off_cycles": 3,
+        "orders": 0,
+        "fills": 0,
+        "fees": 0,
+        "settlements": 0,
+        "positions": 0,
+        "initial_equity": 10000.0,
+        "final_equity": 10000.0,
+        "return_pct": 0.0,
+        "max_drawdown": 0.0,
+        "first_timestamp": "2026-10-27T13:30:00+00:00",
+        "last_timestamp": "2026-10-27T22:30:00+00:00",
+        "cycle_rows": [
+          {
+            "timestamp": "2026-10-27T13:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "risk_off",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T14:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "risk_off",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T14:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "risk_off",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T15:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T15:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T16:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T16:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T17:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T17:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T18:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T18:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T19:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T19:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T20:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T20:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T21:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T21:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T22:00:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          },
+          {
+            "timestamp": "2026-10-27T22:30:00+00:00",
+            "equity": 10000.0,
+            "cash": 10000.0,
+            "regime": "neutral",
+            "confidence": 0.0,
+            "directions": {
+              "BTC": "flat",
+              "ETH": "flat"
+            },
+            "n_orders": 0,
+            "n_fills": 0,
+            "positions": 0
+          }
+        ],
+        "recent_fills": []
+      },
+      "squad": {
+        "runs": 19,
+        "runs_with_risk_veto": 19,
+        "runs_with_execution_block": 13,
+        "risk_veto_assets": 24,
+        "execution_block_assets": 14,
+        "macro_risk_off_runs": 0,
+        "chair_flat_runs": 19,
+        "latest": {
+          "run_id": "20261027T230106603679Z_7edabdc2",
+          "as_of": "2026-10-27T22:30:00+00:00",
+          "macro_regime": "risk_on",
+          "risk_regime": "neutral",
+          "execution_regime": "normal",
+          "chair_regime": "neutral",
+          "chair_confidence": 0.88,
+          "risk_choices": {
+            "BTCUSDT": "veto",
+            "ETHUSDT": "approve"
+          },
+          "execution_choices": {
+            "BTCUSDT": "block",
+            "ETHUSDT": "allow"
+          },
+          "chair_choices": {
+            "BTCUSDT": "flat",
+            "ETHUSDT": "flat"
+          }
+        }
+      },
+      "replay": {
+        "chain_date": "2026-10-01",
+        "snapshots": 47,
+        "underlying_bars": 2976,
+        "signal_source": "Binance public 30m klines",
+        "signal_timestamp": "bar close; 00:30 decision uses 00:00-00:30 bar",
+        "final_equity": 9968.163076132,
+        "total_return": -0.003183692386800052,
+        "max_drawdown": -0.0037932742855540935,
+        "total_fills": 5,
+        "total_fees": 0.114353868,
+        "cycles_blocked": 0,
+        "fills": [
+          {
+            "timestamp": "2026-10-01T05:00:00+00:00",
+            "instrument": "ETH-16OCT26-2750-C",
+            "side": "buy",
+            "contracts": 1,
+            "premium": 83.8428,
+            "fee": 0.02515284
+          },
+          {
+            "timestamp": "2026-10-01T07:30:00+00:00",
+            "instrument": "ETH-16OCT26-2750-C",
+            "side": "sell",
+            "contracts": 1,
+            "premium": 69.72601999999999,
+            "fee": 0.020917805999999997
+          },
+          {
+            "timestamp": "2026-10-01T11:00:00+00:00",
+            "instrument": "ETH-16OCT26-2750-C",
+            "side": "buy",
+            "contracts": 1,
+            "premium": 79.871545,
+            "fee": 0.0239614635
+          },
+          {
+            "timestamp": "2026-10-01T13:30:00+00:00",
+            "instrument": "ETH-16OCT26-2750-C",
+            "side": "sell",
+            "contracts": 1,
+            "premium": 68.514675,
+            "fee": 0.0205544025
+          },
+          {
+            "timestamp": "2026-10-01T17:30:00+00:00",
+            "instrument": "ETH-16OCT26-2750-C",
+            "side": "buy",
+            "contracts": 1,
+            "premium": 79.22452000000001,
+            "fee": 0.023767356000000003
+          }
+        ],
+        "limitations": "One free chain day only. Real bid/ask/Greeks/OI, but inverse premiums are converted to a USD approximation. The underlying signal is a simple SMA on Binance bars, not the AI squad. Long premium only; no expiry settlement occurs within a single day. This is a data and plumbing test, not evidence of edge."
+      },
+      "warnings": [
+        "Forward paper has 1 day(s); the target is 56.",
+        "Forward paper has no option fills yet.",
+        "The free replay is one day only and is not evidence of edge. Tardis is a paid vendor; only its first-day export was used."
+      ]
+    },
+    "live_gate": {
+      "status": "NO_GO",
+      "generated_at": "2026-10-28T05:40:49.793916+00:00",
+      "checks": [
+        {
+          "name": "options paper days",
+          "passed": false,
+          "detail": "2 vs required 56"
+        },
+        {
+          "name": "options paper fills",
+          "passed": false,
+          "detail": "0 fills"
+        },
+        {
+          "name": "options drawdown",
+          "passed": true,
+          "detail": "0.00% vs limit -25.00%"
+        },
+        {
+          "name": "options kill switch",
+          "passed": true,
+          "detail": "inactive"
+        },
+        {
+          "name": "options live broker config",
+          "passed": false,
+          "detail": "broker=paper paper=True"
+        },
+        {
+          "name": "options live venue",
+          "passed": true,
+          "detail": "exchange=deribit (allowed: ['bybit', 'deribit', 'okx'])"
+        },
+        {
+          "name": "options live adapter",
+          "passed": false,
+          "detail": "testnet execution/reconciliation exists; live submission is disabled"
+        },
+        {
+          "name": "options credentials",
+          "passed": false,
+          "detail": "live credentials missing; testnet credentials do not count"
+        },
+        {
+          "name": "options live confirmation",
+          "passed": false,
+          "detail": "DERIBIT_LIVE_CONFIRM not set"
+        },
+        {
+          "name": "options evidence",
+          "passed": false,
+          "detail": "status=insufficient"
+        }
+      ],
+      "failed": [
+        "options paper days",
+        "options paper fills",
+        "options live broker config",
+        "options live adapter",
+        "options credentials",
+        "options live confirmation",
+        "options evidence"
+      ]
+    },
+    "lanes": [
+      {
+        "lane": "AI options 30m",
+        "status": "ok",
+        "equity": 10000.0,
+        "as_of": "2026-10-28T13:00:00+00:00",
+        "directions": {
+          "BTC": "flat",
+          "ETH": "flat"
+        }
+      },
+      {
+        "lane": "Swing options",
+        "status": "ok",
+        "equity": 10000.0,
+        "as_of": "2026-10-26T00:00:00+00:00",
+        "directions": {}
+      },
+      {
+        "lane": "ETH options lab",
+        "status": "ok",
+        "equity": 10000.0,
+        "as_of": "2026-10-28T13:00:00+00:00",
+        "directions": {
+          "ETH": "flat"
+        }
+      },
+      {
+        "lane": "BTC options lab",
+        "status": "ok",
+        "equity": 100000.0,
+        "as_of": "2026-10-27T23:00:00+00:00",
+        "directions": {
+          "BTC": "flat"
+        }
+      }
+    ]
+  },
+  "performance": {
+    "ranges": {
+      "Today": {
+        "range": "Today",
+        "granularity": "intraday",
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 89953.06,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": 0.0
+          },
+          {
+            "timestamp": "2026-10-28T00:01:25.252490+00:00",
+            "equity": 89953.47,
+            "pnl": 0.42,
+            "pnl_pct": 4.62e-06,
+            "cum_pct": 4.62e-06
+          },
+          {
+            "timestamp": "2026-10-28T01:01:22.506762+00:00",
+            "equity": 89947.82,
+            "pnl": -5.66,
+            "pnl_pct": -6.288e-05,
+            "cum_pct": -5.825e-05
+          },
+          {
+            "timestamp": "2026-10-28T02:01:23.285299+00:00",
+            "equity": 89961.41,
+            "pnl": 13.6,
+            "pnl_pct": 0.00015117,
+            "cum_pct": 9.291e-05
+          },
+          {
+            "timestamp": "2026-10-28T03:01:23.010154+00:00",
+            "equity": 89960.33,
+            "pnl": -1.09,
+            "pnl_pct": -1.21e-05,
+            "cum_pct": 8.081e-05
+          },
+          {
+            "timestamp": "2026-10-28T03:05:34.217298+00:00",
+            "equity": 89955.47,
+            "pnl": -4.86,
+            "pnl_pct": -5.401e-05,
+            "cum_pct": 2.68e-05
+          },
+          {
+            "timestamp": "2026-10-28T03:05:39.617116+00:00",
+            "equity": 89941.97,
+            "pnl": -13.5,
+            "pnl_pct": -0.00015007,
+            "cum_pct": -0.00012328
+          },
+          {
+            "timestamp": "2026-10-28T03:05:53.465034+00:00",
+            "equity": 89937.3,
+            "pnl": -4.67,
+            "pnl_pct": -5.19e-05,
+            "cum_pct": -0.00017517
+          },
+          {
+            "timestamp": "2026-10-28T03:06:04.467409+00:00",
+            "equity": 89935.8,
+            "pnl": -1.5,
+            "pnl_pct": -1.668e-05,
+            "cum_pct": -0.00019185
+          },
+          {
+            "timestamp": "2026-10-28T03:06:32.855949+00:00",
+            "equity": 89932.13,
+            "pnl": -3.66,
+            "pnl_pct": -4.075e-05,
+            "cum_pct": -0.00023259
+          },
+          {
+            "timestamp": "2026-10-28T03:07:10.524676+00:00",
+            "equity": 89932.13,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": -0.00023259
+          },
+          {
+            "timestamp": "2026-10-28T03:07:12.625135+00:00",
+            "equity": 89932.13,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": -0.00023259
+          },
+          {
+            "timestamp": "2026-10-28T04:01:26.616193+00:00",
+            "equity": 89942.76,
+            "pnl": 10.63,
+            "pnl_pct": 0.00011818,
+            "cum_pct": -0.00011444
+          },
+          {
+            "timestamp": "2026-10-28T05:01:26.169413+00:00",
+            "equity": 89934.42,
+            "pnl": -8.34,
+            "pnl_pct": -9.275e-05,
+            "cum_pct": -0.00020718
+          },
+          {
+            "timestamp": "2026-10-28T06:01:24.310007+00:00",
+            "equity": 89926.64,
+            "pnl": -7.78,
+            "pnl_pct": -8.653e-05,
+            "cum_pct": -0.00029369
+          },
+          {
+            "timestamp": "2026-10-28T07:01:26.019155+00:00",
+            "equity": 89927.68,
+            "pnl": 1.04,
+            "pnl_pct": 1.156e-05,
+            "cum_pct": -0.00028214
+          },
+          {
+            "timestamp": "2026-10-28T08:01:25.400089+00:00",
+            "equity": 89936.46,
+            "pnl": 8.78,
+            "pnl_pct": 9.767e-05,
+            "cum_pct": -0.00018449
+          },
+          {
+            "timestamp": "2026-10-28T09:01:26.554900+00:00",
+            "equity": 89943.68,
+            "pnl": 7.21,
+            "pnl_pct": 8.022e-05,
+            "cum_pct": -0.00010429
+          },
+          {
+            "timestamp": "2026-10-28T10:01:26.716962+00:00",
+            "equity": 89953.07,
+            "pnl": 9.39,
+            "pnl_pct": 0.00010443,
+            "cum_pct": 1.3e-07
+          },
+          {
+            "timestamp": "2026-10-28T11:01:26.186191+00:00",
+            "equity": 89951.71,
+            "pnl": -1.36,
+            "pnl_pct": -1.512e-05,
+            "cum_pct": -1.499e-05
+          },
+          {
+            "timestamp": "2026-10-28T12:01:25.536768+00:00",
+            "equity": 89943.53,
+            "pnl": -8.18,
+            "pnl_pct": -9.09e-05,
+            "cum_pct": -0.00010589
+          },
+          {
+            "timestamp": "2026-10-28T13:01:24.965683+00:00",
+            "equity": 89910.78,
+            "pnl": -32.76,
+            "pnl_pct": -0.00036418,
+            "cum_pct": -0.00047003
+          }
+        ],
+        "period_pnl": -42.28,
+        "period_return": -0.00047003,
+        "best": 13.6,
+        "worst": -32.76,
+        "latest_equity": 89910.78,
+        "observations": 22,
+        "initial_total": 90000.0
+      },
+      "7D": {
+        "range": "7D",
+        "granularity": "daily",
+        "points": [
+          {
+            "timestamp": "2026-10-24T00:00:00+00:00",
+            "equity": 89976.75,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": 0.0
+          },
+          {
+            "timestamp": "2026-10-25T00:00:00+00:00",
+            "equity": 89970.63,
+            "pnl": -6.13,
+            "pnl_pct": -6.808e-05,
+            "cum_pct": -6.808e-05
+          },
+          {
+            "timestamp": "2026-10-26T00:00:00+00:00",
+            "equity": 89954.06,
+            "pnl": -16.57,
+            "pnl_pct": -0.00018414,
+            "cum_pct": -0.00025221
+          },
+          {
+            "timestamp": "2026-10-27T00:00:00+00:00",
+            "equity": 89953.06,
+            "pnl": -1.0,
+            "pnl_pct": -1.116e-05,
+            "cum_pct": -0.00026337
+          },
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 89910.78,
+            "pnl": -42.28,
+            "pnl_pct": -0.00047003,
+            "cum_pct": -0.00073327
+          }
+        ],
+        "period_pnl": -65.98,
+        "period_return": -0.00073327,
+        "best": -1.0,
+        "worst": -42.28,
+        "latest_equity": 89910.78,
+        "observations": 5,
+        "initial_total": 90000.0
+      },
+      "30D": {
+        "range": "30D",
+        "granularity": "daily",
+        "points": [
+          {
+            "timestamp": "2026-10-24T00:00:00+00:00",
+            "equity": 89976.75,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": 0.0
+          },
+          {
+            "timestamp": "2026-10-25T00:00:00+00:00",
+            "equity": 89970.63,
+            "pnl": -6.13,
+            "pnl_pct": -6.808e-05,
+            "cum_pct": -6.808e-05
+          },
+          {
+            "timestamp": "2026-10-26T00:00:00+00:00",
+            "equity": 89954.06,
+            "pnl": -16.57,
+            "pnl_pct": -0.00018414,
+            "cum_pct": -0.00025221
+          },
+          {
+            "timestamp": "2026-10-27T00:00:00+00:00",
+            "equity": 89953.06,
+            "pnl": -1.0,
+            "pnl_pct": -1.116e-05,
+            "cum_pct": -0.00026337
+          },
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 89910.78,
+            "pnl": -42.28,
+            "pnl_pct": -0.00047003,
+            "cum_pct": -0.00073327
+          }
+        ],
+        "period_pnl": -65.98,
+        "period_return": -0.00073327,
+        "best": -1.0,
+        "worst": -42.28,
+        "latest_equity": 89910.78,
+        "observations": 5,
+        "initial_total": 90000.0
+      },
+      "3M": {
+        "range": "3M",
+        "granularity": "daily",
+        "points": [
+          {
+            "timestamp": "2026-10-24T00:00:00+00:00",
+            "equity": 89976.75,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": 0.0
+          },
+          {
+            "timestamp": "2026-10-25T00:00:00+00:00",
+            "equity": 89970.63,
+            "pnl": -6.13,
+            "pnl_pct": -6.808e-05,
+            "cum_pct": -6.808e-05
+          },
+          {
+            "timestamp": "2026-10-26T00:00:00+00:00",
+            "equity": 89954.06,
+            "pnl": -16.57,
+            "pnl_pct": -0.00018414,
+            "cum_pct": -0.00025221
+          },
+          {
+            "timestamp": "2026-10-27T00:00:00+00:00",
+            "equity": 89953.06,
+            "pnl": -1.0,
+            "pnl_pct": -1.116e-05,
+            "cum_pct": -0.00026337
+          },
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 89910.78,
+            "pnl": -42.28,
+            "pnl_pct": -0.00047003,
+            "cum_pct": -0.00073327
+          }
+        ],
+        "period_pnl": -65.98,
+        "period_return": -0.00073327,
+        "best": -1.0,
+        "worst": -42.28,
+        "latest_equity": 89910.78,
+        "observations": 5,
+        "initial_total": 90000.0
+      },
+      "1Y": {
+        "range": "1Y",
+        "granularity": "daily",
+        "points": [
+          {
+            "timestamp": "2026-10-24T00:00:00+00:00",
+            "equity": 89976.75,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": 0.0
+          },
+          {
+            "timestamp": "2026-10-25T00:00:00+00:00",
+            "equity": 89970.63,
+            "pnl": -6.13,
+            "pnl_pct": -6.808e-05,
+            "cum_pct": -6.808e-05
+          },
+          {
+            "timestamp": "2026-10-26T00:00:00+00:00",
+            "equity": 89954.06,
+            "pnl": -16.57,
+            "pnl_pct": -0.00018414,
+            "cum_pct": -0.00025221
+          },
+          {
+            "timestamp": "2026-10-27T00:00:00+00:00",
+            "equity": 89953.06,
+            "pnl": -1.0,
+            "pnl_pct": -1.116e-05,
+            "cum_pct": -0.00026337
+          },
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 89910.78,
+            "pnl": -42.28,
+            "pnl_pct": -0.00047003,
+            "cum_pct": -0.00073327
+          }
+        ],
+        "period_pnl": -65.98,
+        "period_return": -0.00073327,
+        "best": -1.0,
+        "worst": -42.28,
+        "latest_equity": 89910.78,
+        "observations": 5,
+        "initial_total": 90000.0
+      },
+      "All": {
+        "range": "All",
+        "granularity": "daily",
+        "points": [
+          {
+            "timestamp": "2026-10-24T00:00:00+00:00",
+            "equity": 89976.75,
+            "pnl": 0.0,
+            "pnl_pct": 0.0,
+            "cum_pct": 0.0
+          },
+          {
+            "timestamp": "2026-10-25T00:00:00+00:00",
+            "equity": 89970.63,
+            "pnl": -6.13,
+            "pnl_pct": -6.808e-05,
+            "cum_pct": -6.808e-05
+          },
+          {
+            "timestamp": "2026-10-26T00:00:00+00:00",
+            "equity": 89954.06,
+            "pnl": -16.57,
+            "pnl_pct": -0.00018414,
+            "cum_pct": -0.00025221
+          },
+          {
+            "timestamp": "2026-10-27T00:00:00+00:00",
+            "equity": 89953.06,
+            "pnl": -1.0,
+            "pnl_pct": -1.116e-05,
+            "cum_pct": -0.00026337
+          },
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 89910.78,
+            "pnl": -42.28,
+            "pnl_pct": -0.00047003,
+            "cum_pct": -0.00073327
+          }
+        ],
+        "period_pnl": -65.98,
+        "period_return": -0.00073327,
+        "best": -1.0,
+        "worst": -42.28,
+        "latest_equity": 89910.78,
+        "observations": 5,
+        "initial_total": 90000.0
+      }
+    },
+    "lane_curves": [
+      {
+        "lane": "Trend",
+        "color": "#38bdf8",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 9995.14
+          }
+        ]
+      },
+      {
+        "lane": "XSMOM",
+        "color": "#2dd4bf",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 9986.5
+          }
+        ]
+      },
+      {
+        "lane": "Breakout",
+        "color": "#fbbf24",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 9995.33
+          }
+        ]
+      },
+      {
+        "lane": "Reversal",
+        "color": "#f472b6",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 9998.5
+          }
+        ]
+      },
+      {
+        "lane": "Meta",
+        "color": "#a78bfa",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 9996.34
+          }
+        ]
+      },
+      {
+        "lane": "Intraday",
+        "color": "#60a5fa",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-24T00:00:00+00:00",
+            "equity": 9976.75
+          },
+          {
+            "timestamp": "2026-10-25T00:00:00+00:00",
+            "equity": 9970.63
+          },
+          {
+            "timestamp": "2026-10-26T00:00:00+00:00",
+            "equity": 9954.06
+          },
+          {
+            "timestamp": "2026-10-27T00:00:00+00:00",
+            "equity": 9955.4
+          },
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 9941.31
+          }
+        ]
+      },
+      {
+        "lane": "AI agent",
+        "color": "#c084fc",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 10000.0
+          }
+        ]
+      },
+      {
+        "lane": "AI squad",
+        "color": "#fb7185",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-28T00:00:00+00:00",
+            "equity": 10000.0
+          }
+        ]
+      },
+      {
+        "lane": "SUI lab",
+        "color": "#22d3ee",
+        "initial": 10000.0,
+        "points": [
+          {
+            "timestamp": "2026-10-27T00:00:00+00:00",
+            "equity": 9997.66
+          }
+        ]
+      }
+    ]
+  }
+}

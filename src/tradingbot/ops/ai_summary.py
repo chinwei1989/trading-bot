@@ -208,7 +208,9 @@ def _state(root: Path) -> dict[str, Any]:
                     "qty": round(qty, 6),
                     "entry": round(entry, 6) if entry is not None else None,
                     "cost": round(abs(qty) * entry, 2) if entry is not None else None,
+                    "last_price": round(price, 8) if price is not None else None,
                     "value": round(value, 2),
+                    "weight": round(value / equity, 8) if equity else 0.0,
                     "pnl": round(pnl, 2) if pnl is not None else None,
                     "pnl_pct": round(pnl / (abs(qty) * entry), 6)
                     if pnl is not None and entry
@@ -271,6 +273,7 @@ def _state(root: Path) -> dict[str, Any]:
             "paper_accounts": len(lane_rows),
         },
         "spot_lanes": lane_rows,
+        "positions": position_rows,
         "top_positions": sorted(
             position_rows, key=lambda row: abs(row["value"]), reverse=True
         )[:6],
