@@ -58,5 +58,5 @@ still recommended as a second layer.
 - `/` — landing, AI gist, portfolio, lanes, 7D performance, readiness
 - `/holdings` — exposure, P&L, SUI, positions, option holdings
 - `/performance` — Today / 7D / 30D / 3M / 1Y / All
-- `/readiness` — paper health and live gates
+- `/readiness` — paper health, live gates, and 9-asset walk-forward evidence
 - `/options` — options lanes, evidence, and gate failures
