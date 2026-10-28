@@ -42,6 +42,12 @@ Deploy this `frontend` directory as a Next.js Vercel project **without**
 `NEXT_PUBLIC_API_URL`. The public page reads `dashboard.json` and the AI gist
 regenerate button is disabled because there is no live API.
 
+The Vercel project **Root Directory must be `frontend`**. If the project is
+still rooted at the repository root, Vercel runs the root `vercel.json` and
+tries `pip install -r requirements-vercel.txt`, which can fail with
+`externally-managed-environment`. This `frontend/vercel.json` explicitly tells
+Vercel to use Next.js, but it only applies when the project root is `frontend`.
+
 Set `DASHBOARD_PASSWORD` in the Vercel project before publishing. The
 `middleware.ts` gate redirects unauthenticated requests to `/login`; the
 snapshot JSON is protected by the same gate. Vercel Deployment Protection is
