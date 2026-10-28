@@ -329,6 +329,10 @@ _THEME_CSS = """
     .tb-warn { color: var(--tb-amber); border-color: rgba(251, 191, 36, 0.25); background: rgba(251, 191, 36, 0.08); }
     .tb-neutral { color: var(--tb-muted); }
     .tb-info { color: var(--tb-cyan); border-color: rgba(56, 189, 248, 0.25); background: rgba(56, 189, 248, 0.08); }
+    .tb-profit { color: var(--tb-green); }
+    .tb-loss { color: var(--tb-red); }
+    .tb-stat-value.tb-profit { color: var(--tb-green); }
+    .tb-stat-value.tb-loss { color: var(--tb-red); }
     .tb-stat-grid {
         display: grid;
         grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -432,6 +436,7 @@ _THEME_CSS = """
     @media (max-width: 1000px) {
         .tb-stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
         .tb-lane-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        [data-testid="stHorizontalBlock"] { flex-direction: column; gap: 0.75rem; }
     }
     @media (max-width: 650px) {
         .tb-hero { align-items: flex-start; flex-direction: column; padding: 1.2rem; }
@@ -460,14 +465,38 @@ def _chip(label: str, value: Any, tone: str | None = None) -> str:
     )
 
 
-def _stat(label: str, value: Any, detail: str = "") -> str:
+def _stat(
+    label: str,
+    value: Any,
+    detail: str = "",
+    *,
+    tone: str = "",
+) -> str:
+    value_class = f"tb-stat-value tb-{tone}" if tone else "tb-stat-value"
     return (
         '<div class="tb-stat">'
         f'<div class="tb-stat-label">{html.escape(str(label))}</div>'
-        f'<div class="tb-stat-value">{html.escape(str(value))}</div>'
+        f'<div class="{value_class}">{html.escape(str(value))}</div>'
         f'<div class="tb-stat-detail">{html.escape(str(detail))}</div>'
         "</div>"
     )
+
+
+def _signed_money(value: float) -> str:
+    sign = "+" if value >= 0 else "-"
+    return f"{sign}${abs(value):,.2f}"
+
+
+def _signed_pct(value: float) -> str:
+    return f"{value:+.2%}"
+
+
+def _pnl_tone(value: float) -> str:
+    if value > 0:
+        return "profit"
+    if value < 0:
+        return "loss"
+    return ""
 
 
 def _section(title: str, subtitle: str = "") -> None:
@@ -819,6 +848,7 @@ def _collect_spot_holdings() -> tuple[pd.DataFrame, dict[str, float], str]:
     for lane, spec in HOLDING_LANES.items():
         state = _load_json(ROOT / spec["state"]) or {}
         equity = _lane_equity(spec)
+        initial_cash = float(state.get("initial_cash", 10_000.0) or 10_000.0)
         positions = state.get("positions") or {}
         if equity is None:
             cash = float(state.get("cash", 0.0) or 0.0)
@@ -833,18 +863,34 @@ def _collect_spot_holdings() -> tuple[pd.DataFrame, dict[str, float], str]:
                 continue
             price = prices.get(asset)
             value = qty * price if price is not None else 0.0
+            raw_entry = pos.get("avg_entry_price")
+            entry = (
+                float(raw_entry)
+                if raw_entry is not None and float(raw_entry) > 0
+                else None
+            )
+            cost = abs(qty) * entry if entry is not None else None
+            pnl = (
+                (price - entry) * qty
+                if price is not None and entry is not None
+                else None
+            )
             rows.append(
                 {
                     "lane": lane,
                     "asset": asset,
                     "side": "Long" if qty > 0 else "Short",
                     "qty": qty,
-                    "avg_entry": pos.get("avg_entry_price"),
+                    "avg_entry": entry,
                     "last_price": price,
                     "value": value,
                     "gross": abs(value),
                     "weight": value / equity if equity else 0.0,
                     "lane_equity": equity,
+                    "initial_cash": initial_cash,
+                    "cost": cost,
+                    "pnl": pnl,
+                    "pnl_pct": pnl / cost if pnl is not None and cost else None,
                     "color": spec["color"],
                 }
             )
@@ -892,19 +938,106 @@ def _render_holdings() -> None:
         holdings = holdings.sort_values(["lane", "gross"], ascending=[True, False])
         total_gross = float(holdings["gross"].sum())
         net = float(holdings["value"].sum())
+        long_value = float(holdings.loc[holdings["value"] > 0, "value"].sum())
+        short_value = abs(
+            float(holdings.loc[holdings["value"] < 0, "value"].sum())
+        )
         total_equity = float(
             holdings.drop_duplicates("lane")["lane_equity"].sum()
         )
         sui = holdings[holdings["asset"] == "SUIUSDT"]
         sui_qty = float(sui["qty"].sum()) if not sui.empty else 0.0
         sui_value = float(sui["value"].sum()) if not sui.empty else 0.0
+        sui_pnl = float(sui["pnl"].dropna().sum()) if not sui.empty else 0.0
+        sui_cost = float(sui["cost"].dropna().sum()) if not sui.empty else 0.0
+        sui_pct = sui_pnl / sui_cost if sui_cost > 0 else 0.0
 
-        c1, c2, c3, c4, c5 = st.columns(5)
-        c1.metric("Gross exposure", f"${total_gross:,.0f}")
-        c2.metric("Net exposure", f"${net:,.0f}")
-        c3.metric("SUI holdings", f"{sui_qty:,.1f} SUI", f"${sui_value:,.0f}")
-        c4.metric("Open positions", f"{len(holdings)}", f"{holdings['lane'].nunique()} lanes")
-        c5.metric("Lane equity", f"${total_equity:,.0f}", "separate accounts")
+        pnl_values = holdings["pnl"].dropna()
+        unrealized_pnl = float(pnl_values.sum())
+        cost_basis = float(holdings["cost"].dropna().sum())
+        unrealized_pct = (
+            unrealized_pnl / cost_basis if cost_basis > 0 else 0.0
+        )
+        winners = int((pnl_values > 0).sum())
+        losers = int((pnl_values < 0).sum())
+
+        lane_pnl = (
+            holdings.drop_duplicates("lane")[
+                ["lane", "lane_equity", "initial_cash"]
+            ]
+            .copy()
+        )
+        lane_pnl["pnl"] = lane_pnl["lane_equity"] - lane_pnl["initial_cash"]
+        lane_pnl["pnl_pct"] = lane_pnl["pnl"] / lane_pnl["initial_cash"]
+        active_lane_pnl = float(lane_pnl["pnl"].sum())
+        active_lane_initial = float(lane_pnl["initial_cash"].sum())
+        active_lane_pct = (
+            active_lane_pnl / active_lane_initial
+            if active_lane_initial > 0
+            else 0.0
+        )
+
+        st.markdown(
+            '<div class="tb-stat-grid">'
+            + _stat(
+                "Gross exposure",
+                f"${total_gross:,.0f}",
+                f"{len(holdings)} positions · {holdings['lane'].nunique()} lanes",
+            )
+            + _stat("Net exposure", f"${net:,.0f}", "long minus short")
+            + _stat("Long exposure", f"${long_value:,.0f}", "signed long value")
+            + _stat("Short exposure", f"${short_value:,.0f}", "absolute short value")
+            + _stat(
+                "SUI holdings",
+                f"{sui_qty:,.1f} SUI",
+                f"${sui_value:,.0f} · {sui['lane'].nunique()} lanes"
+                if not sui.empty
+                else "no position",
+            )
+            + _stat(
+                "Tracked equity",
+                f"${total_equity:,.0f}",
+                "independent paper accounts",
+            )
+            + "</div>",
+            unsafe_allow_html=True,
+        )
+
+        _section(
+            "Profit & loss",
+            "Open-position P&L and lane equity versus starting cash",
+        )
+        st.markdown(
+            '<div class="tb-stat-grid">'
+            + _stat(
+                "Open P&L",
+                _signed_money(unrealized_pnl),
+                "unrealized on open spot positions",
+                tone=_pnl_tone(unrealized_pnl),
+            )
+            + _stat(
+                "Open P&L %",
+                _signed_pct(unrealized_pct),
+                "against entry cost",
+                tone=_pnl_tone(unrealized_pct),
+            )
+            + _stat(
+                "Lane P&L",
+                _signed_money(active_lane_pnl),
+                "equity vs starting cash",
+                tone=_pnl_tone(active_lane_pnl),
+            )
+            + _stat(
+                "Lane P&L %",
+                _signed_pct(active_lane_pct),
+                "active paper lanes",
+                tone=_pnl_tone(active_lane_pct),
+            )
+            + _stat("Winning positions", str(winners), "positive open P&L")
+            + _stat("Losing positions", str(losers), "negative open P&L")
+            + "</div>",
+            unsafe_allow_html=True,
+        )
 
         _section("Exposure by asset", "Gross size and signed net exposure in USD")
         asset_view = (
@@ -992,7 +1125,8 @@ def _render_holdings() -> None:
                     values=tree["value"],
                     branchvalues="total",
                     customdata=tree[["net", "qty", "weight"]].to_numpy(),
-                    textinfo="label+value",
+                    textinfo="label",
+                    textfont=dict(size=11),
                     marker=dict(colors=tree["color"].tolist()),
                     hovertemplate=(
                         "<b>%{label}</b><br>"
@@ -1050,10 +1184,103 @@ def _render_holdings() -> None:
             )
             st.plotly_chart(lane_fig, width="stretch")
 
+        _section(
+            "Profit & loss by lane",
+            "Equity versus starting cash; percentages are account-level",
+        )
+        pnl_view = lane_pnl.sort_values("pnl")
+        pnl_colors = [
+            "#4ade80" if value >= 0 else "#fb7185" for value in pnl_view["pnl"]
+        ]
+        pnl_fig = go.Figure(
+            go.Bar(
+                y=pnl_view["lane"],
+                x=pnl_view["pnl"],
+                orientation="h",
+                marker_color=pnl_colors,
+                text=pnl_view["pnl_pct"].map(_signed_pct),
+                textposition="auto",
+                hovertemplate=(
+                    "%{y}<br>P&L $%{x:,.2f}<br>%{text}<extra></extra>"
+                ),
+            )
+        )
+        pnl_fig.add_vline(
+            x=0, line_color="rgba(148,163,184,0.45)", line_width=1
+        )
+        pnl_fig.update_layout(
+            height=320,
+            xaxis_title="USD",
+            margin=dict(l=10, r=10, t=10, b=10),
+        )
+        st.plotly_chart(pnl_fig, width="stretch")
+
+        pnl_table = lane_pnl.copy()
+        pnl_table["positions"] = pnl_table["lane"].map(
+            holdings.groupby("lane").size()
+        )
+        pnl_table = pnl_table.sort_values("pnl", ascending=False)
+        pnl_table["lane_equity"] = pnl_table["lane_equity"].map(
+            lambda value: f"${value:,.2f}"
+        )
+        pnl_table["initial_cash"] = pnl_table["initial_cash"].map(
+            lambda value: f"${value:,.2f}"
+        )
+        pnl_table["pnl"] = pnl_table["pnl"].map(_signed_money)
+        pnl_table["pnl_pct"] = pnl_table["pnl_pct"].map(_signed_pct)
+        pnl_table = pnl_table[
+            ["lane", "initial_cash", "lane_equity", "pnl", "pnl_pct", "positions"]
+        ]
+        pnl_table.columns = [
+            "lane",
+            "starting cash",
+            "equity",
+            "P&L",
+            "P&L %",
+            "positions",
+        ]
+        st.dataframe(pnl_table, width="stretch", hide_index=True)
+
+        _section(
+            "Open position P&L",
+            "Unrealized profit/loss and return against entry",
+        )
+        position_pnl = holdings[
+            ["lane", "asset", "side", "pnl", "pnl_pct"]
+        ].copy()
+        position_pnl = position_pnl.sort_values("pnl", ascending=False)
+        position_pnl["pnl"] = position_pnl["pnl"].map(
+            lambda value: _signed_money(float(value))
+            if value is not None
+            else "—"
+        )
+        position_pnl["pnl_pct"] = position_pnl["pnl_pct"].map(
+            lambda value: _signed_pct(float(value))
+            if value is not None
+            else "—"
+        )
+        position_pnl.columns = [
+            "lane",
+            "asset",
+            "side",
+            "open P&L",
+            "open P&L %",
+        ]
+        st.dataframe(position_pnl, width="stretch", hide_index=True)
+
         _section("SUI focus", "Across the main campaign, AI lanes, and isolated lab")
         if sui.empty:
             st.info("No open SUI position.")
         else:
+            tone = _pnl_tone(sui_pnl) or "neutral"
+            st.markdown(
+                f'<div class="tb-callout">SUI open P&L: '
+                f'<span class="tb-{tone}">{_signed_money(sui_pnl)} '
+                f"({_signed_pct(sui_pct)})</span> across "
+                f"{sui['lane'].nunique()} lanes · {_signed_money(sui_value)} "
+                f"marked value</div>",
+                unsafe_allow_html=True,
+            )
             sui_view = sui.sort_values("value")
             sui_fig = go.Figure(
                 go.Bar(
@@ -1086,6 +1313,8 @@ def _render_holdings() -> None:
                 "side",
                 "qty",
                 "last_price",
+                "pnl",
+                "pnl_pct",
                 "value",
                 "weight",
                 "avg_entry",
@@ -1100,12 +1329,24 @@ def _render_holdings() -> None:
         table["avg_entry"] = table["avg_entry"].map(
             lambda value: f"${float(value):,.4f}" if value is not None else "?"
         )
+        table["pnl"] = table["pnl"].map(
+            lambda value: _signed_money(float(value))
+            if value is not None
+            else "—"
+        )
+        table["pnl_pct"] = table["pnl_pct"].map(
+            lambda value: _signed_pct(float(value))
+            if value is not None
+            else "—"
+        )
         table.columns = [
             "lane",
             "asset",
             "side",
             "qty",
             "last price",
+            "open P&L",
+            "open P&L %",
             "value",
             "lane weight",
             "avg entry",
