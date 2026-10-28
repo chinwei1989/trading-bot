@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T14:13:26.001728+00:00",
+  "generated_at": "2026-10-28T15:27:21.695652+00:00",
   "data_as_of": "2026-10-27",
   "source": "snapshot",
   "ai_gist": {
@@ -61,7 +61,7 @@
     "state_note": "Independent paper accounts; aggregate values are illustrative and not one brokerage balance. No live order path."
   },
   "readiness": {
-    "generated_at": "2026-10-28T03:10:09.680951+00:00",
+    "generated_at": "2026-10-28T15:27:19.905026+00:00",
     "generated_from": {
       "self_eval": true,
       "campaign_health": true,
@@ -114,12 +114,12 @@
     ]
   },
   "portfolio": {
-    "gross_usd": 23850.17,
-    "net_usd": 14850.17,
-    "open_pnl_usd": 4.88,
-    "open_pnl_pct": 0.000205,
-    "lane_pnl_usd": -96.02,
-    "lane_pnl_pct": -0.001067,
+    "gross_usd": 23856.56,
+    "net_usd": 14856.56,
+    "open_pnl_usd": 1.48,
+    "open_pnl_pct": 6.2e-05,
+    "lane_pnl_usd": -102.22,
+    "lane_pnl_pct": -0.001136,
     "positions": 35,
     "active_lanes": 7,
     "paper_accounts": 9
@@ -172,10 +172,10 @@
     },
     {
       "lane": "Intraday",
-      "equity": 9934.51,
+      "equity": 9928.31,
       "starting_cash": 10000.0,
-      "pnl": -65.49,
-      "pnl_pct": -0.006549,
+      "pnl": -71.69,
+      "pnl_pct": -0.007169,
       "positions": 5,
       "color": "#60a5fa"
     },
@@ -300,6 +300,19 @@
       "pnl_pct": -0.0005
     },
     {
+      "lane": "Intraday",
+      "asset": "DOGEUSDT",
+      "side": "long",
+      "qty": 16742.092877,
+      "entry": 0.07943,
+      "cost": 1329.82,
+      "last_price": 0.07908,
+      "value": 1323.96,
+      "weight": 0.13335246,
+      "pnl": -5.86,
+      "pnl_pct": -0.004407
+    },
+    {
       "lane": "Reversal",
       "asset": "SOLUSDT",
       "side": "long",
@@ -313,45 +326,6 @@
       "pnl_pct": -0.0005
     },
     {
-      "lane": "Intraday",
-      "asset": "DOGEUSDT",
-      "side": "long",
-      "qty": 12209.654861,
-      "entry": 0.079504,
-      "cost": 970.72,
-      "last_price": 0.07908,
-      "value": 965.54,
-      "weight": 0.09719047,
-      "pnl": -5.18,
-      "pnl_pct": -0.005338
-    },
-    {
-      "lane": "Intraday",
-      "asset": "BNBUSDT",
-      "side": "long",
-      "qty": 1.161348,
-      "entry": 748.4353,
-      "cost": 869.19,
-      "last_price": 744.94,
-      "value": 865.13,
-      "weight": 0.08708379,
-      "pnl": -4.06,
-      "pnl_pct": -0.00467
-    },
-    {
-      "lane": "Intraday",
-      "asset": "XRPUSDT",
-      "side": "long",
-      "qty": 644.836986,
-      "entry": 1.321495,
-      "cost": 852.15,
-      "last_price": 1.3313,
-      "value": 858.47,
-      "weight": 0.08641308,
-      "pnl": 6.32,
-      "pnl_pct": 0.00742
-    },
-    {
       "lane": "Meta",
       "asset": "SOLUSDT",
       "side": "long",
@@ -363,6 +337,45 @@
       "weight": 0.08015079,
       "pnl": -0.4,
       "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Intraday",
+      "asset": "BNBUSDT",
+      "side": "long",
+      "qty": 1.018459,
+      "entry": 748.4353,
+      "cost": 762.25,
+      "last_price": 744.94,
+      "value": 758.69,
+      "weight": 0.07641688,
+      "pnl": -3.56,
+      "pnl_pct": -0.00467
+    },
+    {
+      "lane": "Intraday",
+      "asset": "LINKUSDT",
+      "side": "long",
+      "qty": 48.5826,
+      "entry": 11.673321,
+      "cost": 567.12,
+      "last_price": 11.583,
+      "value": 562.73,
+      "weight": 0.05667956,
+      "pnl": -4.39,
+      "pnl_pct": -0.007737
+    },
+    {
+      "lane": "Intraday",
+      "asset": "BTCUSDT",
+      "side": "long",
+      "qty": 0.006388,
+      "entry": 81279.678271,
+      "cost": 519.2,
+      "last_price": 80909.77,
+      "value": 516.84,
+      "weight": 0.05205694,
+      "pnl": -2.36,
+      "pnl_pct": -0.004551
     },
     {
       "lane": "Trend",
@@ -508,32 +521,6 @@
       "pnl_pct": -0.0005
     },
     {
-      "lane": "Intraday",
-      "asset": "LINKUSDT",
-      "side": "long",
-      "qty": 35.367627,
-      "entry": 11.714999,
-      "cost": 414.33,
-      "last_price": 11.583,
-      "value": 409.66,
-      "weight": 0.04123639,
-      "pnl": -4.67,
-      "pnl_pct": -0.011268
-    },
-    {
-      "lane": "Intraday",
-      "asset": "BTCUSDT",
-      "side": "long",
-      "qty": 0.004642,
-      "entry": 81520.387675,
-      "cost": 378.43,
-      "last_price": 80909.77,
-      "value": 375.6,
-      "weight": 0.03780725,
-      "pnl": -2.83,
-      "pnl_pct": -0.00749
-    },
-    {
       "lane": "Breakout",
       "asset": "ADAUSDT",
       "side": "long",
@@ -571,6 +558,19 @@
       "weight": 0.03498685,
       "pnl": -0.17,
       "pnl_pct": -0.0005
+    },
+    {
+      "lane": "Intraday",
+      "asset": "XRPUSDT",
+      "side": "long",
+      "qty": 239.295599,
+      "entry": 1.321495,
+      "cost": 316.23,
+      "last_price": 1.3313,
+      "value": 318.57,
+      "weight": 0.03208745,
+      "pnl": 2.35,
+      "pnl_pct": 0.00742
     },
     {
       "lane": "Trend",
@@ -1140,7 +1140,7 @@
     },
     "live_gate": {
       "status": "NO_GO",
-      "generated_at": "2026-10-28T05:40:49.793916+00:00",
+      "generated_at": "2026-10-28T15:27:18.585221+00:00",
       "checks": [
         {
           "name": "options paper days",
@@ -1208,7 +1208,7 @@
         "lane": "AI options 30m",
         "status": "ok",
         "equity": 10000.0,
-        "as_of": "2026-10-28T13:30:00+00:00",
+        "as_of": "2026-10-28T14:30:00+00:00",
         "directions": {
           "BTC": "flat",
           "ETH": "flat"
@@ -1225,7 +1225,7 @@
         "lane": "ETH options lab",
         "status": "ok",
         "equity": 10000.0,
-        "as_of": "2026-10-28T13:00:00+00:00",
+        "as_of": "2026-10-28T14:30:00+00:00",
         "directions": {
           "ETH": "flat"
         }
@@ -1240,6 +1240,130 @@
         }
       }
     ]
+  },
+  "validation": {
+    "generated_at": "2026-10-28T15:21:47.962332+00:00",
+    "code_commit": "899c22f",
+    "data": {
+      "rows": 20987,
+      "n_assets": 9,
+      "start": "2020-01-01 00:00:00+00:00",
+      "end": "2026-10-27 00:00:00+00:00",
+      "sha256": "01bfda9ab096bb2b2afceff51ce5af3b1d43487143c86a140ac68c49ec9599e0"
+    },
+    "method": {
+      "train_days": 900,
+      "test_days": 365,
+      "step_days": 365,
+      "warmup_days": 260,
+      "min_dsr": 0.95,
+      "max_pbo": 0.2
+    },
+    "strategies": [
+      {
+        "strategy": "trend",
+        "folds": 3,
+        "trials": 72,
+        "dsr": 0.01632851666124125,
+        "pbo": 0.267,
+        "oos_sharpe": 0.4462831196550011,
+        "oos_cagr": 0.06235977186606112,
+        "oos_max_dd": -0.2056490989285431,
+        "passed": false
+      },
+      {
+        "strategy": "xsmom",
+        "folds": 3,
+        "trials": 36,
+        "dsr": 0.2986852861884478,
+        "pbo": 0.7068,
+        "oos_sharpe": 1.1487807499011504,
+        "oos_cagr": 0.2612262346368932,
+        "oos_max_dd": -0.25562933131396215,
+        "passed": false
+      },
+      {
+        "strategy": "breakout",
+        "folds": 3,
+        "trials": 72,
+        "dsr": 0.31047404495344516,
+        "pbo": 0.104,
+        "oos_sharpe": 1.0843412984947103,
+        "oos_cagr": 0.13647230847885794,
+        "oos_max_dd": -0.20417732624878582,
+        "passed": false
+      },
+      {
+        "strategy": "reversal",
+        "folds": 3,
+        "trials": 72,
+        "dsr": 0.07825370034463569,
+        "pbo": 0.7834,
+        "oos_sharpe": -0.21907890730257573,
+        "oos_cagr": -0.024942729181937517,
+        "oos_max_dd": -0.1883789433876495,
+        "passed": false
+      },
+      {
+        "strategy": "meta",
+        "folds": 3,
+        "trials": 9,
+        "dsr": 0.6710769120040236,
+        "pbo": 0.5974,
+        "oos_sharpe": 0.9300495696477721,
+        "oos_cagr": 0.12376029255337562,
+        "oos_max_dd": -0.13012739123645478,
+        "passed": false
+      }
+    ],
+    "sensitivity": [
+      {
+        "strategy": "trend",
+        "folds": 7,
+        "trials": 168,
+        "dsr": 0.013759248650738354,
+        "pbo": 0.2484,
+        "oos_sharpe": 0.666077280399528,
+        "oos_cagr": 0.09588878327547601,
+        "oos_max_dd": -0.1823691722722791,
+        "passed": false
+      },
+      {
+        "strategy": "xsmom",
+        "folds": 7,
+        "trials": 84,
+        "dsr": 0.044143806105527005,
+        "pbo": 0.7194,
+        "oos_sharpe": 0.8165454416389171,
+        "oos_cagr": 0.16152011824783696,
+        "oos_max_dd": -0.35575199336819185,
+        "passed": false
+      },
+      {
+        "strategy": "breakout",
+        "folds": 7,
+        "trials": 168,
+        "dsr": 0.06280553582975144,
+        "pbo": 0.076,
+        "oos_sharpe": 0.9284337639327919,
+        "oos_cagr": 0.11475909194568623,
+        "oos_max_dd": -0.19839229261593916,
+        "passed": false
+      },
+      {
+        "strategy": "meta",
+        "folds": 7,
+        "trials": 21,
+        "dsr": 0.3414651838587567,
+        "pbo": 0.485,
+        "oos_sharpe": 0.8411626540533453,
+        "oos_cagr": 0.10314005776677493,
+        "oos_max_dd": -0.13556554195448367,
+        "passed": false
+      }
+    ],
+    "passing": [],
+    "verdict": "NO STRATEGY PASSES the DSR/PBO gate. Live capital remains NO_GO."
   },
   "performance": {
     "ranges": {
@@ -1407,14 +1531,21 @@
             "pnl": -6.8,
             "pnl_pct": -7.562e-05,
             "cum_pct": -0.00054561
+          },
+          {
+            "timestamp": "2026-10-28T15:01:26.436333+00:00",
+            "equity": 89897.78,
+            "pnl": -6.2,
+            "pnl_pct": -6.894e-05,
+            "cum_pct": -0.00061451
           }
         ],
-        "period_pnl": -49.08,
-        "period_return": -0.00054561,
+        "period_pnl": -55.28,
+        "period_return": -0.00061451,
         "best": 13.6,
         "worst": -32.76,
-        "latest_equity": 89903.98,
-        "observations": 23,
+        "latest_equity": 89897.78,
+        "observations": 24,
         "initial_total": 90000.0
       },
       "7D": {
@@ -1451,17 +1582,17 @@
           },
           {
             "timestamp": "2026-10-28T00:00:00+00:00",
-            "equity": 89903.98,
-            "pnl": -49.08,
-            "pnl_pct": -0.00054561,
-            "cum_pct": -0.00080884
+            "equity": 89897.78,
+            "pnl": -55.28,
+            "pnl_pct": -0.00061451,
+            "cum_pct": -0.00087772
           }
         ],
-        "period_pnl": -72.78,
-        "period_return": -0.00080884,
+        "period_pnl": -78.97,
+        "period_return": -0.00087772,
         "best": -1.0,
-        "worst": -49.08,
-        "latest_equity": 89903.98,
+        "worst": -55.28,
+        "latest_equity": 89897.78,
         "observations": 5,
         "initial_total": 90000.0
       },
@@ -1499,17 +1630,17 @@
           },
           {
             "timestamp": "2026-10-28T00:00:00+00:00",
-            "equity": 89903.98,
-            "pnl": -49.08,
-            "pnl_pct": -0.00054561,
-            "cum_pct": -0.00080884
+            "equity": 89897.78,
+            "pnl": -55.28,
+            "pnl_pct": -0.00061451,
+            "cum_pct": -0.00087772
           }
         ],
-        "period_pnl": -72.78,
-        "period_return": -0.00080884,
+        "period_pnl": -78.97,
+        "period_return": -0.00087772,
         "best": -1.0,
-        "worst": -49.08,
-        "latest_equity": 89903.98,
+        "worst": -55.28,
+        "latest_equity": 89897.78,
         "observations": 5,
         "initial_total": 90000.0
       },
@@ -1547,17 +1678,17 @@
           },
           {
             "timestamp": "2026-10-28T00:00:00+00:00",
-            "equity": 89903.98,
-            "pnl": -49.08,
-            "pnl_pct": -0.00054561,
-            "cum_pct": -0.00080884
+            "equity": 89897.78,
+            "pnl": -55.28,
+            "pnl_pct": -0.00061451,
+            "cum_pct": -0.00087772
           }
         ],
-        "period_pnl": -72.78,
-        "period_return": -0.00080884,
+        "period_pnl": -78.97,
+        "period_return": -0.00087772,
         "best": -1.0,
-        "worst": -49.08,
-        "latest_equity": 89903.98,
+        "worst": -55.28,
+        "latest_equity": 89897.78,
         "observations": 5,
         "initial_total": 90000.0
       },
@@ -1595,17 +1726,17 @@
           },
           {
             "timestamp": "2026-10-28T00:00:00+00:00",
-            "equity": 89903.98,
-            "pnl": -49.08,
-            "pnl_pct": -0.00054561,
-            "cum_pct": -0.00080884
+            "equity": 89897.78,
+            "pnl": -55.28,
+            "pnl_pct": -0.00061451,
+            "cum_pct": -0.00087772
           }
         ],
-        "period_pnl": -72.78,
-        "period_return": -0.00080884,
+        "period_pnl": -78.97,
+        "period_return": -0.00087772,
         "best": -1.0,
-        "worst": -49.08,
-        "latest_equity": 89903.98,
+        "worst": -55.28,
+        "latest_equity": 89897.78,
         "observations": 5,
         "initial_total": 90000.0
       },
@@ -1643,17 +1774,17 @@
           },
           {
             "timestamp": "2026-10-28T00:00:00+00:00",
-            "equity": 89903.98,
-            "pnl": -49.08,
-            "pnl_pct": -0.00054561,
-            "cum_pct": -0.00080884
+            "equity": 89897.78,
+            "pnl": -55.28,
+            "pnl_pct": -0.00061451,
+            "cum_pct": -0.00087772
           }
         ],
-        "period_pnl": -72.78,
-        "period_return": -0.00080884,
+        "period_pnl": -78.97,
+        "period_return": -0.00087772,
         "best": -1.0,
-        "worst": -49.08,
-        "latest_equity": 89903.98,
+        "worst": -55.28,
+        "latest_equity": 89897.78,
         "observations": 5,
         "initial_total": 90000.0
       }
@@ -1737,7 +1868,7 @@
           },
           {
             "timestamp": "2026-10-28T00:00:00+00:00",
-            "equity": 9934.51
+            "equity": 9928.31
           }
         ]
       },

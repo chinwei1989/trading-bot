@@ -60,6 +60,35 @@ export interface GateFailure {
   [key: string]: unknown;
 }
 
+export interface ValidationStrategy {
+  strategy: string;
+  folds: number;
+  trials: number;
+  dsr: number;
+  pbo: number;
+  oos_sharpe: number;
+  oos_cagr: number;
+  oos_max_dd: number;
+  passed: boolean;
+}
+
+export interface ValidationReport {
+  generated_at?: string;
+  code_commit?: string;
+  data?: {
+    rows?: number;
+    n_assets?: number;
+    start?: string;
+    end?: string;
+    sha256?: string;
+  };
+  method?: Record<string, unknown>;
+  strategies?: ValidationStrategy[];
+  sensitivity?: ValidationStrategy[];
+  passing?: string[];
+  verdict?: string;
+}
+
 export interface Readiness {
   status?: string;
   paper_ready?: boolean;
@@ -110,6 +139,7 @@ export interface DashboardData {
       directions: Record<string, string>;
     }>;
   };
+  validation?: ValidationReport;
   performance: {
     ranges: Record<RangeKey, PerformanceRange>;
     lane_curves: Array<{

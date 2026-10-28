@@ -216,6 +216,9 @@ def cmd_paper_replay(args: argparse.Namespace) -> int:
 
 def cmd_walkforward(args: argparse.Namespace) -> int:
     config = _load_strategy_config(args)
+    suffix = str(getattr(args, "output_suffix", "") or "")
+    if suffix and not all(ch.isalnum() or ch in "_-" for ch in suffix):
+        raise SystemExit("--output-suffix may only contain letters, digits, '_' and '-'")
     bars_path = _path(config, config.data.bars_path)
     if not bars_path.exists():
         raise SystemExit(f"missing {bars_path}; run `download` first")
@@ -288,10 +291,11 @@ def cmd_walkforward(args: argparse.Namespace) -> int:
             net_exposure=result.oos_net_exposure,
         ),
     }
-    (out_dir / f"walkforward_{config.strategy.name}.json").write_text(
+    output_path = out_dir / f"walkforward_{config.strategy.name}{suffix}.json"
+    output_path.write_text(
         json.dumps(payload, indent=2, default=str), encoding="utf-8"
     )
-    print(f"\nSaved: {out_dir / f'walkforward_{config.strategy.name}.json'}")
+    print(f"\nSaved: {output_path}")
     return 0
 
 
@@ -888,6 +892,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--test-days", type=int, default=365)
     p.add_argument("--step-days", type=int, default=365)
     p.add_argument("--warmup-days", type=int, default=260)
+    p.add_argument(
+        "--output-suffix",
+        default="",
+        help="suffix for the result file, e.g. _180d (keeps the gate artifact intact)",
+    )
     p.set_defaults(func=cmd_walkforward)
 
     p = sub.add_parser("paper", help="simulate one rebalance against the paper broker")

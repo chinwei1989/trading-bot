@@ -65,13 +65,23 @@ critic vetoed SUI. No trade was forced.
 ## 3. Validation caveat
 
 The previous spot DSR/PBO and walk-forward figures were computed on the
-8-asset universe. They are **stale for the new 9-asset strategy** and must be
-rerun before any live-capital decision. This change does not promote the spot
-lane.
+8-asset universe. They are **stale for the new 9-asset strategy** and must not
+be used for a live-capital decision.
 
-- Spot live gate: still **NO_GO**
-- Options live gate: still **NO_GO**
-- Live trading remains disabled
+The 9-asset rerun is complete in `docs/37_VALIDATION_9_ASSET.md`. No sleeve
+clears the gate:
+
+| Strategy | DSR | PBO | OOS Sharpe | Result |
+|---|---:|---:|---:|---|
+| Trend | 0.016 | 0.267 | 0.45 | FAIL |
+| XSMOM | 0.299 | 0.707 | 1.15 | FAIL |
+| Breakout | 0.310 | 0.104 | 1.08 | FAIL |
+| Reversal | 0.078 | 0.783 | -0.22 | FAIL |
+| Meta | 0.671 | 0.597 | 0.93 | FAIL |
+
+The trend DSR collapsed from the old 8-asset 0.264 to 0.016. The live gate is
+still **NO_GO**, options live is still **NO_GO**, and live trading remains
+disabled. The 9-asset forward paper window continues to rebuild evidence.
 
 ## 4. Running the new universe
 

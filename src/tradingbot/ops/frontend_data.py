@@ -221,6 +221,54 @@ def _performance_ranges(root: Path) -> tuple[dict[str, Any], list[dict[str, Any]
     return ranges, curves
 
 
+def _validation_payload(root: Path) -> dict[str, Any]:
+    report = _json(root / "artifacts" / "validation_report.json") or {}
+    if not report:
+        return {}
+
+    def _strategy_rows(rows: Any) -> list[dict[str, Any]]:
+        result: list[dict[str, Any]] = []
+        for row in rows if isinstance(rows, list) else []:
+            if not isinstance(row, dict):
+                continue
+            pbo = row.get("pbo")
+            result.append(
+                {
+                    "strategy": str(row.get("strategy", "")),
+                    "folds": int(row.get("folds", 0) or 0),
+                    "trials": int(row.get("trials", 0) or 0),
+                    "dsr": float(row.get("dsr", 0.0) or 0.0),
+                    "pbo": 1.0 if pbo is None else float(pbo),
+                    "oos_sharpe": float(row.get("oos_sharpe", 0.0) or 0.0),
+                    "oos_cagr": float(row.get("oos_cagr", 0.0) or 0.0),
+                    "oos_max_dd": float(row.get("oos_max_dd", 0.0) or 0.0),
+                    "passed": bool(row.get("passed")),
+                }
+            )
+        return result
+
+    data_raw = report.get("data")
+    method_raw = report.get("method")
+    data: dict[str, Any] = data_raw if isinstance(data_raw, dict) else {}
+    method: dict[str, Any] = method_raw if isinstance(method_raw, dict) else {}
+    return {
+        "generated_at": report.get("generated_at"),
+        "code_commit": report.get("code_commit"),
+        "data": {
+            "rows": int(data.get("rows", 0) or 0),
+            "n_assets": int(data.get("n_assets", 0) or 0),
+            "start": data.get("start"),
+            "end": data.get("end"),
+            "sha256": data.get("sha256"),
+        },
+        "method": method,
+        "strategies": _strategy_rows(report.get("strategies")),
+        "sensitivity": _strategy_rows(report.get("sensitivity")),
+        "passing": report.get("passing") or [],
+        "verdict": report.get("verdict", ""),
+    }
+
+
 def _option_payload(root: Path) -> dict[str, Any]:
     evidence = _json(root / "artifacts" / "options_evidence" / "latest.json") or {}
     gate = _json(root / "artifacts" / "OPTIONS_LIVE_GATE.json") or {}
@@ -280,6 +328,7 @@ def build_dashboard_payload(root: Path) -> dict[str, Any]:
         "sui": state.get("sui") or {},
         "options_holdings": state.get("options") or {},
         "options": _option_payload(root),
+        "validation": _validation_payload(root),
         "performance": {
             "ranges": ranges,
             "lane_curves": curves,

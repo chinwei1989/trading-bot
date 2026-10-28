@@ -225,7 +225,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
-- **183 tests passing**, `ruff` pass, `mypy src` pass
+- **185 tests passing**, `ruff` pass, `mypy src` pass
 - **Gated live command exists** — requires `--confirm-live`, `LIVE_TRADING=YES`, and a non-paper broker with `sandbox=false`; it is not validated for capital
 - **Long-history paper replay:** 12.1-year BTC/LTC and 9.2-year 8-asset tests; see `docs/13_LONG_HISTORY.md`
 - **Execution state machine:** persistent order intents, partial-fill handling, startup reconciliation; see `docs/15_EXECUTION_STATE.md`
@@ -237,9 +237,10 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **SUI in the main universe:** SUIUSDT added to the daily trend/XSMOM/breakout/reversal/meta campaign and the AI agent/squad universe on 28 Oct 2026; the prior 8-asset paper results were archived and the main paper books were reset. See `docs/36_SUI_UNIVERSE.md`.
 - **Isolated SUI trend lane:** separate $10,000 SUIUSDT paper account, 200-day long-only trend with volatility targeting, own data/state/heartbeat, daily 07:10 task; it does not share the main campaign's state or evidence; see `docs/35_SUI_TREND.md`
 - **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, persistent testnet order/fill state, restart reconciliation, idempotency and canary guards, a scheduled daily testnet canary with health validation, separate testnet/live credential namespaces and live confirmation, a deterministic BTC/ETH swing-options paper lane with explicit profit/stop/DTE exits, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, `docs/31_DERIBIT_EXECUTION.md`, and `docs/32_DERIBIT_TESTNET_EXECUTION.md`
-- **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
-- **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
-- **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; OOS Sharpe 1.120, DSR 0.867, PBO 0.038
+- **9-asset validation rerun:** the 8-asset DSR/PBO figures were stale after SUI was added. The 9-asset walk-forward gives trend DSR 0.016 / PBO 0.267, XSMOM 0.299 / 0.707, breakout 0.310 / 0.104, reversal 0.078 / 0.783, and meta 0.671 / 0.597; no sleeve passes. See `docs/37_VALIDATION_9_ASSET.md`.
+- **Breakout sleeve:** Donchian/ATR/volume, 9-asset walk-forward DSR 0.310, PBO 0.104; DSR still fails the 0.95 gate
+- **Reversal sleeve:** research-only; 9-asset walk-forward OOS Sharpe -0.219, PBO 0.783
+- **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; 9-asset OOS Sharpe 0.930, DSR 0.671, PBO 0.597
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
 - **Landing + navigation:** the Next.js **Home** landing page has workspace cards, the AI gist, lane overview, 7D performance, and readiness gates. Desktop has top tabs (Home / Holdings / Performance / Readiness / Options); mobile has a Workspace menu. The legacy Streamlit fallback keeps its full sidebar.
@@ -259,7 +260,7 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Funding data:** public Binance funding-rate downloader + summary; 58,193 events through 23 Oct 2026
 - **Hard live gate:** `live-gate` returns NO_GO until DSR/PBO, paper days, TCA, data, keys, and environment all pass
 
-Engineering checks pass, but the strategies are **not validated for live capital** (trend DSR ≈ 0.26, XSMOM PBO ≈ 0.39). See `docs/10_SELF_EVAL.md` and `artifacts/SELF_EVAL.md`.
+Engineering checks pass, but the strategies are **not validated for live capital** (9-asset trend DSR 0.016, XSMOM PBO 0.707). See `docs/37_VALIDATION_9_ASSET.md` and `artifacts/SELF_EVAL.md`.
 
 Jev is configured and returned real typed decisions (`jev-1.14.0`) in 10 historical dry runs. The single-Jev AI paper account was reset to a clean **$10,000** on 23 Oct 2026, and `TradingBotAIPaper` runs at 07:15 daily. The eight-agent squad is a separate **$10,000** paper account; `TradingBotAISquad` runs at 07:25 daily and writes to `artifacts/ai_squad/`. Both AI scorecards are still `insufficient_data`; the hard live gate is `NO_GO`. See `artifacts/LIVE_GATE.md`.
 
@@ -541,6 +542,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/34_OPTIONS_SCOPE_LABS.md` | Isolated ETH-only $10k and BTC-only $100k paper labs; boundaries, schedules, and commands |
 | `docs/35_SUI_TREND.md` | Isolated SUIUSDT trend paper lane, backtest, first fill, schedule, and limits |
 | `docs/36_SUI_UNIVERSE.md` | SUI added to the 9-asset campaign/AI universe, archive path, resets, and validation caveats |
+| `docs/37_VALIDATION_9_ASSET.md` | 9-asset walk-forward rerun: DSR/PBO, fold details, old-vs-new comparison, live-config gap, and verdict |
 
 ---
 

@@ -18,6 +18,11 @@ export default function ReadinessPage() {
   const hostBlockers = asArray(readiness.host_blockers);
   const spotFailed = asArray(readiness.live_gate_failed);
   const optionsFailed = asArray(readiness.options_live_gate_failed);
+  const validation = data.validation;
+  const validationRows = validation?.strategies ?? [];
+  const stressRows = validation?.sensitivity ?? [];
+  const dataStart = validation?.data?.start?.slice(0, 10) ?? "unknown";
+  const dataEnd = validation?.data?.end?.slice(0, 10) ?? "unknown";
 
   return (
     <>
@@ -64,6 +69,92 @@ export default function ReadinessPage() {
           tone="info"
         />
       </div>
+
+      {validationRows.length ? (
+        <>
+          <Section
+            title="9-asset walk-forward"
+            subtitle="DSR/PBO evidence; a failed row cannot be promoted by another sleeve passing"
+          />
+          <div className="table-wrap">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Strategy</th>
+                  <th>Folds</th>
+                  <th>Trials</th>
+                  <th>DSR</th>
+                  <th>PBO</th>
+                  <th>OOS Sharpe</th>
+                  <th>OOS CAGR</th>
+                  <th>OOS Max DD</th>
+                  <th>Gate</th>
+                </tr>
+              </thead>
+              <tbody>
+                {validationRows.map((row) => (
+                  <tr key={row.strategy}>
+                    <td>{row.strategy}</td>
+                    <td>{row.folds}</td>
+                    <td>{row.trials}</td>
+                    <td>{row.dsr.toFixed(3)}</td>
+                    <td>{row.pbo.toFixed(3)}</td>
+                    <td>{row.oos_sharpe.toFixed(2)}</td>
+                    <td>{(row.oos_cagr * 100).toFixed(1)}%</td>
+                    <td>{(row.oos_max_dd * 100).toFixed(1)}%</td>
+                    <td className={row.passed ? "good" : "bad"}>
+                      {row.passed ? "PASS" : "FAIL"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="fine">
+            {validation?.data?.n_assets ?? 0} assets,{" "}
+            {(validation?.data?.rows ?? 0).toLocaleString()} bars, {dataStart} to{" "}
+            {dataEnd}. {validation?.verdict}
+          </p>
+          {stressRows.length ? (
+            <>
+              <Section
+                title="180-day stress check"
+                subtitle="Seven shorter OOS folds; same 900-day training window"
+              />
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>Strategy</th>
+                      <th>Folds</th>
+                      <th>Trials</th>
+                      <th>DSR</th>
+                      <th>PBO</th>
+                      <th>OOS Sharpe</th>
+                      <th>Gate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {stressRows.map((row) => (
+                      <tr key={`stress-${row.strategy}`}>
+                        <td>{row.strategy}</td>
+                        <td>{row.folds}</td>
+                        <td>{row.trials}</td>
+                        <td>{row.dsr.toFixed(3)}</td>
+                        <td>{row.pbo.toFixed(3)}</td>
+                        <td>{row.oos_sharpe.toFixed(2)}</td>
+                        <td className={row.passed ? "good" : "bad"}>
+                          {row.passed ? "PASS" : "FAIL"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : null}
+        </>
+      ) : null}
 
       <Section title="Blockers" subtitle="Conditions preventing live capital" />
       <div className="list-panel">
