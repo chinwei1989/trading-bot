@@ -221,7 +221,7 @@ This is **not** a validated strategy — it has no walk-forward, DSR/PBO, fundin
 
 The repo now contains a working research/backtest/paper + gated live-execution system:
 
-- 8 crypto assets, 2020–2026, 19,673 daily bars (through 22 Oct 2026), clean data audit
+- 9 crypto assets, 2020–2026, 20,987 daily bars (through 27 Oct 2026), clean data audit
 - Trend + cross-sectional momentum strategies
 - Next-open cost-aware backtester, risk limits, walk-forward, DSR, PBO
 - Paper broker, order planning, SQLite journal
@@ -234,7 +234,8 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **AI scorecard:** paper days, fallback rate, TCA, benchmarks, confidence calibration; see `docs/18_AI_EVALUATION.md`
 - **Eight-agent AI squad:** separate paper account; macro → trend → breakout → XSMOM → sentiment → risk → execution → chair, typed memos on a shared blackboard, deterministic risk/execution vetoes; see `docs/24_AI_SQUAD.md`
 - **Hourly intraday paper lane:** separate $10,000 crypto account, completed 1h bars, trend/breakout/reversal/XSMOM through the meta allocator, hourly Windows task; unvalidated and paper-only; see `docs/26_INTRADAY_TRADING.md`
-- **Isolated SUI trend lane:** separate $10,000 SUIUSDT paper account, 200-day long-only trend with volatility targeting, own data/state/heartbeat, daily 07:10 task; deliberately not mixed into the 8-asset campaign or AI/options evidence; see `docs/35_SUI_TREND.md`
+- **SUI in the main universe:** SUIUSDT added to the daily trend/XSMOM/breakout/reversal/meta campaign and the AI agent/squad universe on 28 Oct 2026; the prior 8-asset paper results were archived and the main paper books were reset. See `docs/36_SUI_UNIVERSE.md`.
+- **Isolated SUI trend lane:** separate $10,000 SUIUSDT paper account, 200-day long-only trend with volatility targeting, own data/state/heartbeat, daily 07:10 task; it does not share the main campaign's state or evidence; see `docs/35_SUI_TREND.md`
 - **Crypto options core:** 30m AI options paper lane, read-only readiness and options evidence scorecards, options live gate, fill/settlement audit journal, drawdown auto-kill, animated data flow, deterministic pre-selector account gate, post-selector contract gate, call/put selector, paper options broker, Deribit public-chain adapter, Deribit testnet execution/reconciliation primitives, persistent testnet order/fill state, restart reconciliation, idempotency and canary guards, a scheduled daily testnet canary with health validation, separate testnet/live credential namespaces and live confirmation, a deterministic BTC/ETH swing-options paper lane with explicit profit/stop/DTE exits, synthetic chain generator, historical snapshot loader, event-driven replay, and a free one-day Tardis first-day chain replay; live execution is deliberately disabled; see `docs/28_CRYPTO_OPTIONS_FLOW.md`, `docs/29_OPTIONS_TESTING_AND_BACKTEST.md`, `docs/31_DERIBIT_EXECUTION.md`, and `docs/32_DERIBIT_TESTNET_EXECUTION.md`
 - **Breakout sleeve:** Donchian/ATR/volume, walk-forward DSR 0.354, PBO 0.190
 - **Reversal sleeve:** research-only; walk-forward OOS Sharpe −0.367, PBO 0.792
@@ -306,7 +307,7 @@ uv run python scripts/export_deploy_status.py
 # Daily paper campaign (trend + XSMOM + reports); scheduled at 07:00 local
 powershell -ExecutionPolicy Bypass -File scripts/run_campaign.ps1
 
-# Isolated SUIUSDT trend paper lane ($10k; separate data/state; not the 8-asset book)
+# Isolated SUIUSDT trend paper lane ($10k; separate data/state; not the 9-asset campaign)
 uv run python -m tradingbot --config config/sui.yaml download
 uv run python -m tradingbot --config config/sui.yaml backtest --strategy trend
 uv run python -m tradingbot --config config/sui.yaml run --mode paper --once --strategy trend --no-evaluate
@@ -518,6 +519,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/33_OPTIONS_SWING.md` | Deterministic BTC/ETH swing-options paper lane, trend/momentum signal, and exit rules |
 | `docs/34_OPTIONS_SCOPE_LABS.md` | Isolated ETH-only $10k and BTC-only $100k paper labs; boundaries, schedules, and commands |
 | `docs/35_SUI_TREND.md` | Isolated SUIUSDT trend paper lane, backtest, first fill, schedule, and limits |
+| `docs/36_SUI_UNIVERSE.md` | SUI added to the 9-asset campaign/AI universe, archive path, resets, and validation caveats |
 
 ---
 

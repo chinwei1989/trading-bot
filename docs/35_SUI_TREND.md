@@ -7,10 +7,17 @@
 **Universe:** `config/sui_universe.csv`  
 **Task:** `TradingBotSui`, daily at 07:10 local
 
-SUI is deliberately **not** added to the existing 8-asset campaign, the AI
-accounts, or any options account. Adding it to those books would change their
-universe and invalidate their existing forward evidence. This lane tests SUI in
-isolation with its own data, state, risk state, and performance history.
+SUI has two separate roles in the bot:
+
+1. **This isolated lane:** a standalone $10k SUI-only trend account.
+2. **The main universe:** since 28 Oct 2026, SUIUSDT is also a member of the
+   daily 9-asset campaign and the AI agent/squad universe. That universe change
+   is documented in `docs/36_SUI_UNIVERSE.md`; prior 8-asset evidence was
+   archived and the main paper books were reset.
+
+This lane still keeps its own data, state, risk state, and performance history.
+It is not the main campaign, and it does not use the main campaign's paper
+account.
 
 ---
 
@@ -60,7 +67,7 @@ powershell -ExecutionPolicy Bypass -File scripts/register_sui.ps1
 ```
 
 `--no-evaluate` is intentional. The shared evaluation writer keys reports by
-strategy name, so a SUI `trend` evaluation would overwrite the 8-asset trend
+strategy name, so a SUI `trend` evaluation would overwrite the 9-asset trend
 report. The SUI dashboard computes its own view from the SUI state and
 performance files instead.
 
@@ -108,5 +115,6 @@ No live order was sent. The position and all future SUI fills remain paper-only.
 
 - One asset only; this is not a cross-sectional SUI allocation strategy.
 - SUI has a shorter history than BTC/ETH and higher idiosyncratic risk.
-- The lane is not part of the 56-day options evidence or the 8-asset campaign.
+- The lane is not part of the 56-day options evidence. It is separate from the
+  9-asset campaign even though both may hold SUI.
 - Live spot remains **NO_GO**; this config cannot place live orders.

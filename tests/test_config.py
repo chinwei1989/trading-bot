@@ -13,7 +13,8 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_load_base_config() -> None:
     config = load_config(ROOT / "config" / "base.yaml")
     assert config.strategy.name == "trend"
-    assert len(config.data.symbols) == 8
+    assert len(config.data.symbols) == 9
+    assert "SUIUSDT" in config.data.symbols
     assert config.backtest.initial_capital == 10_000
     assert config.risk.max_gross == 1.0
 

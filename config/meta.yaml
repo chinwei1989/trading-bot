@@ -12,6 +12,7 @@ data:
     - ADAUSDT
     - DOGEUSDT
     - LINKUSDT
+    - SUIUSDT
   start: "2020-01"
   end: null
   universe_path: config/pit_universe_crypto.csv

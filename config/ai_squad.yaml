@@ -26,6 +26,7 @@ data:
     - ADAUSDT
     - DOGEUSDT
     - LINKUSDT
+    - SUIUSDT
   start: "2020-01"
   end: null
   bars_path: data/normalized/bars.parquet

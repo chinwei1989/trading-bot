@@ -837,8 +837,8 @@ def _render_sui() -> None:
 
     st.caption(
         "Isolated $10k SUIUSDT trend sleeve. Separate data, paper state, risk "
-        "state, and task; it does not change the 8-asset campaign or any "
-        "AI/options account. Paper only."
+        "state, and task from the 9-asset campaign and every AI/options account. "
+        "Paper only."
     )
     if task:
         st.caption(
@@ -973,8 +973,9 @@ def _render_sui() -> None:
         else:
             st.info("No open SUI position.")
     st.caption(
-        "Paper-only. SUI is not in the active 8-asset campaign, AI accounts, or "
-        "options evidence; live trading remains disabled."
+        "Paper-only. This is a separate SUI-only lab; SUI is also a member of "
+        "the 9-asset campaign. Options evidence is separate and live trading "
+        "remains disabled."
     )
 
 
