@@ -10,6 +10,7 @@ const NAV = [
   { href: "/performance", label: "Performance" },
   { href: "/readiness", label: "Readiness" },
   { href: "/options", label: "Options" },
+  { href: "/logs", label: "Logs" },
 ];
 
 export function SiteNav() {

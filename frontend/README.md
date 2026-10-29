@@ -21,7 +21,8 @@ Open <http://127.0.0.1:3000>.
 The frontend uses `NEXT_PUBLIC_API_URL=http://127.0.0.1:8000` in local mode.
 The API is read-only except for `POST /api/ai-gist/regenerate`, which asks Jev
 for a new paper gist and writes the existing `artifacts/ai_summary/latest.json`.
-It has no broker or order access.
+It has no broker or order access. The payload includes bounded, redacted
+operations-log tails; the browser never reads raw log files directly.
 
 ## Static Vercel snapshot
 
@@ -56,7 +57,8 @@ still recommended as a second layer.
 ## Routes
 
 - `/` — landing, AI gist, portfolio, lanes, 7D performance, readiness
-- `/holdings` — exposure, P&L, SUI, positions, option holdings
+- `/holdings` — exposure, P&L, SUI, positions, trade decisions/reasoning, recent orders, option holdings
 - `/performance` — Today / 7D / 30D / 3M / 1Y / All
 - `/readiness` — paper health, live gates, and 9-asset walk-forward evidence
 - `/options` — options lanes, evidence, and gate failures
+- `/logs` — allowlisted, bounded, redacted operations log tails

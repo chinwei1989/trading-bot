@@ -12,6 +12,11 @@ if ($uvCommand) {
     throw "uv not found. Run scripts/bootstrap.ps1 first."
 }
 
+$decisionSnapshot = Join-Path $root "artifacts\decisions\latest.json"
+if (-not (Test-Path $decisionSnapshot)) {
+    & $uv run python scripts/build_decisions.py
+}
+
 & $uv run uvicorn dashboard_api:app `
     --app-dir scripts `
     --host 127.0.0.1 `

@@ -14,6 +14,7 @@ from tradingbot.ops.ai_summary import (
     _json,
     _state,
 )
+from tradingbot.ops.logs import build_logs_payload
 from tradingbot.ops.readiness import build_readiness
 
 LANE_COLORS = {
@@ -269,6 +270,17 @@ def _validation_payload(root: Path) -> dict[str, Any]:
     }
 
 
+def _decisions_payload(root: Path) -> dict[str, Any]:
+    payload = _json(root / "artifacts" / "decisions" / "latest.json") or {}
+    if not payload:
+        return {}
+    lanes = payload.get("lanes")
+    return {
+        "generated_at": payload.get("generated_at"),
+        "lanes": lanes if isinstance(lanes, list) else [],
+    }
+
+
 def _option_payload(root: Path) -> dict[str, Any]:
     evidence = _json(root / "artifacts" / "options_evidence" / "latest.json") or {}
     gate = _json(root / "artifacts" / "OPTIONS_LIVE_GATE.json") or {}
@@ -329,6 +341,8 @@ def build_dashboard_payload(root: Path) -> dict[str, Any]:
         "options_holdings": state.get("options") or {},
         "options": _option_payload(root),
         "validation": _validation_payload(root),
+        "decisions": _decisions_payload(root),
+        "logs": build_logs_payload(root),
         "performance": {
             "ranges": ranges,
             "lane_curves": curves,

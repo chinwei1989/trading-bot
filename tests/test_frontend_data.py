@@ -3,7 +3,37 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from tradingbot.ops.frontend_data import _validation_payload
+from tradingbot.ops.frontend_data import _decisions_payload, _validation_payload
+
+
+def test_decisions_payload_reads_latest_snapshot(tmp_path: Path) -> None:
+    decisions = tmp_path / "artifacts" / "decisions"
+    decisions.mkdir(parents=True)
+    (decisions / "latest.json").write_text(
+        json.dumps(
+            {
+                "generated_at": "2026-10-29T00:00:00+00:00",
+                "lanes": [
+                    {
+                        "lane": "Trend",
+                        "decisions": [{"asset": "BTCUSDT", "decision": "HOLD"}],
+                        "recent_orders": [],
+                    }
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    payload = _decisions_payload(tmp_path)
+
+    assert payload["generated_at"] == "2026-10-29T00:00:00+00:00"
+    assert payload["lanes"][0]["lane"] == "Trend"
+
+
+def test_decisions_payload_missing_file(tmp_path: Path) -> None:
+    assert _decisions_payload(tmp_path) == {}
+
 
 
 def test_validation_payload_preserves_zero_pbo(tmp_path: Path) -> None:

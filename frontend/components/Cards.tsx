@@ -81,6 +81,7 @@ export function WorkspaceLinks() {
     { href: "/performance", title: "Performance", detail: "Daily range graph" },
     { href: "/readiness", title: "Readiness", detail: "Live gates and host" },
     { href: "/options", title: "Options", detail: "Premium lanes and evidence" },
+    { href: "/logs", title: "Logs", detail: "Redacted operations tail" },
   ];
   return (
     <div className="workspace-grid">

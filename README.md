@@ -243,8 +243,10 @@ The repo now contains a working research/backtest/paper + gated live-execution s
 - **Meta allocator:** trend + breakout + reversal + XSMOM, one risk budget; 9-asset OOS Sharpe 0.930, DSR 0.671, PBO 0.597
 - **Execution hardening:** terminal partial-fill completion and order chunking; true TWAP is not implemented
 - **3D agent office:** two 51 x 36 m floors - a people-free quant workflow floor and a partitioned agent office floor - with glass-front trading bullpen, cubicle dividers, labs, meeting/director/risk/guest/WC rooms, reception, phone booths, pantry/fun spaces, daylight windows, Singapore time/weather, black-background toggle, collapsible Agent Office panel, camera tilt slider, managers, idle wander, and a Quant vs Agents paper competition scoreboard; see `docs/20_OFFICE3D.md`
-- **Landing + navigation:** the Next.js **Home** landing page has workspace cards, the AI gist, lane overview, 7D performance, and readiness gates. Desktop has top tabs (Home / Holdings / Performance / Readiness / Options); mobile has a Workspace menu. The legacy Streamlit fallback keeps its full sidebar.
-- **Holdings dashboard:** read-only aggregate spot exposure by asset, long/short treemap by lane, SUI focus, profit/loss in dollars and percent (open-position and lane-level), per-position detail, and option holdings; values are marked from the latest daily close and aggregate independent paper accounts.
+- **Landing + navigation:** the Next.js **Home** landing page has workspace cards, the AI gist, lane overview, 7D performance, and readiness gates. Desktop has top tabs (Home / Holdings / Performance / Readiness / Options / Logs); mobile has a Workspace menu. The legacy Streamlit fallback keeps its full sidebar.
+- **Holdings dashboard:** read-only aggregate spot exposure by asset, long/short treemap by lane, SUI focus, profit/loss in dollars and percent (open-position and lane-level), per-position detail, option holdings, a **trade decisions & reasoning** section for every open position, and a recent-order table with decision context; values are marked from the latest daily close and aggregate independent paper accounts.
+- **Logs page:** read-only, password-gated operations log viewer with allowlisted files, bounded tails, line filtering, and conservative secret redaction. It does not expose raw log paths or order controls.
+- **Decision snapshot:** `scripts/build_decisions.py` records the latest strategy/AI target versus the held weight, classifies the stance as HOLD / ADD / TRIM / EXIT / ENTER, and writes the reasons to `artifacts/decisions/latest.json`; the health task refreshes it after the evidence builds. Legacy orders are labelled as reconstructed, not as a stored original rationale.
 - **Performance page:** dedicated daily-performance graph with Today / 7D / 30D / 3M / 1Y / All ranges, daily P&L bars, cumulative return, period return, best/worst interval, latest equity, and observations.
 - **AI paper gist:** compact banner on the Home landing page with the creation timestamp, data date, Jev classification, confidence, and a **Regenerate with latest data** button. Jev is typed, not a prose model, so the banner combines its posture/action/risk classifications with deterministic paper facts. It never places or changes an order; `TYPESAFE_API_KEY` is required only for regeneration.
 - **Next.js frontend:** primary dark, mobile-first dashboard in `frontend/`; local mode reads a read-only FastAPI JSON API, Vercel mode reads `frontend/public/dashboard.json`. Streamlit remains as a fallback during migration. No order controls in either frontend.
@@ -297,10 +299,12 @@ uv run python -m tradingbot.cli --config config/alpaca.yaml backtest --strategy 
 uv run python -m tradingbot run --mode paper --once
 uv run python -m tradingbot run --mode paper --interval 3600
 
-# Evaluation + primary Next.js dashboard (Home / Holdings / Performance / Readiness / Options)
+# Evaluation + primary Next.js dashboard (Home / Holdings / Performance / Readiness / Options / Logs)
 uv run python -m tradingbot evaluate --strategy trend
 # Regenerate the top AI paper gist (requires TYPESAFE_API_KEY; no order access)
 uv run python scripts/build_ai_summary.py
+# Refresh the read-only trade decision snapshot used by Holdings
+uv run python scripts/build_decisions.py
 
 # Prerequisite: Node.js LTS (Next.js 16 frontend).
 # One command: starts the Python JSON API if needed, builds and starts Next.js.
@@ -543,6 +547,7 @@ The validation protocol in `docs/05_VALIDATION_PROTOCOL.md` is designed around t
 | `docs/35_SUI_TREND.md` | Isolated SUIUSDT trend paper lane, backtest, first fill, schedule, and limits |
 | `docs/36_SUI_UNIVERSE.md` | SUI added to the 9-asset campaign/AI universe, archive path, resets, and validation caveats |
 | `docs/37_VALIDATION_9_ASSET.md` | 9-asset walk-forward rerun: DSR/PBO, fold details, old-vs-new comparison, live-config gap, and verdict |
+| `docs/38_TRADE_DECISIONS_AND_LOGS.md` | Read-only trade decision snapshot, reasoning fields, bounded/redacted logs |
 
 ---
 

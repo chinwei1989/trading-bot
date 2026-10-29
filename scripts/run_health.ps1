@@ -28,6 +28,8 @@ $code = $LASTEXITCODE
     Out-File -Append -Encoding utf8 "logs/health.log"
 & $uv run python scripts/build_readiness.py 2>&1 |
     Out-File -Append -Encoding utf8 "logs/health.log"
+& $uv run python scripts/build_decisions.py 2>&1 |
+    Out-File -Append -Encoding utf8 "logs/health.log"
 & $uv run python scripts/check_testnet_canary.py 2>&1 |
     Out-File -Append -Encoding utf8 "logs/health.log"
 $canaryCode = $LASTEXITCODE

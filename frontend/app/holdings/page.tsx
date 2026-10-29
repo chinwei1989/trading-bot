@@ -4,7 +4,7 @@ import { ExposureChart, LanePnlChart } from "@/components/HoldingsCharts";
 import { PageHeader, Section, StatCard } from "@/components/Cards";
 import { ErrorPanel, LoadingPanel } from "@/components/States";
 import { useDashboard } from "@/lib/api";
-import { money, signedMoney, signedPct, tone } from "@/lib/format";
+import { dateTime, money, pct, signedMoney, signedPct, tone } from "@/lib/format";
 
 export default function HoldingsPage() {
   const { data, error, loading, refresh } = useDashboard();
@@ -25,6 +25,17 @@ export default function HoldingsPage() {
   const short = Math.abs(
     positions.filter((position) => position.value < 0).reduce((s, p) => s + p.value, 0),
   );
+  const decisionLanes = (data.decisions?.lanes || []).filter(
+    (lane) =>
+      lane.decisions.length > 0 ||
+      lane.recent_orders.length > 0 ||
+      lane.mode === "ai" ||
+      lane.error,
+  );
+  const recentOrders = decisionLanes
+    .flatMap((lane) => lane.recent_orders)
+    .sort((a, b) => String(b.timestamp).localeCompare(String(a.timestamp)))
+    .slice(0, 50);
 
   return (
     <>
@@ -172,6 +183,131 @@ export default function HoldingsPage() {
           </div>
         ))}
       </div>
+
+      <Section
+        title="Trade decisions & reasoning"
+        subtitle="Current stance for every open position, reconstructed from the latest strategy or AI target"
+      />
+      {data.decisions?.generated_at ? (
+        <p className="fine">
+          Decision snapshot generated {dateTime(data.decisions.generated_at)}.
+          These are read-only paper decisions, not order instructions.
+        </p>
+      ) : null}
+      {decisionLanes.length ? (
+        decisionLanes.map((lane) => (
+          <div className="decision-lane" key={lane.lane}>
+            <div className="decision-lane-head">
+              <div>
+                <strong>{lane.lane}</strong>
+                <span>
+                  {lane.basis || lane.target_source} · as of {lane.as_of || "—"}
+                </span>
+              </div>
+              <span className="decision-lane-summary">{lane.summary}</span>
+            </div>
+            {lane.error ? <p className="error-text">{lane.error}</p> : null}
+            {lane.decisions.length ? (
+              <div className="decision-grid">
+                {lane.decisions.map((decision) => (
+                  <div className="decision-card" key={`${lane.lane}-${decision.asset}`}>
+                    <div className="decision-card-top">
+                      <strong>
+                        {decision.asset}{" "}
+                        <span className={decision.side === "long" ? "decision-side good" : "decision-side bad"}>
+                          {decision.side}
+                        </span>
+                      </strong>
+                      <span className={`decision-badge ${decision.decision.toLowerCase()}`}>
+                        {decision.decision}
+                      </span>
+                    </div>
+                    <p className="decision-reason">{decision.reason}</p>
+                    <div className="decision-metrics">
+                      <span>
+                        Target
+                        <b>{pct(decision.target_weight)}</b>
+                      </span>
+                      <span>
+                        Held
+                        <b>{pct(decision.current_weight)}</b>
+                      </span>
+                      <span>
+                        Drift
+                        <b className={tone(decision.drift)}>{signedPct(decision.drift)}</b>
+                      </span>
+                    </div>
+                    {decision.facts.length ? (
+                      <ul className="decision-facts">
+                        {decision.facts.map((fact) => (
+                          <li key={fact}>{fact}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                    {decision.last_order ? (
+                      <div className="decision-order">
+                        Last order: {decision.last_order.side}{" "}
+                        {decision.last_order.qty?.toLocaleString(undefined, {
+                          maximumFractionDigits: 4,
+                        })}{" "}
+                        {decision.last_order.asset} · {decision.last_order.status} ·{" "}
+                        {decision.last_order.avg_price
+                          ? `@ ${money(decision.last_order.avg_price, 4)} · `
+                          : ""}
+                        {dateTime(decision.last_order.timestamp)}
+                      </div>
+                    ) : null}
+                  </div>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        ))
+      ) : (
+        <div className="empty-panel">
+          No decision snapshot is available yet. Run the decision snapshot
+          builder to populate this section.
+        </div>
+      )}
+
+      <Section
+        title="Recent paper orders"
+        subtitle="Executed orders with their current decision context"
+      />
+      {recentOrders.length ? (
+        <div className="table-wrap">
+          <table className="data-table">
+            <thead>
+              <tr>
+                <th>Lane</th>
+                <th>Time</th>
+                <th>Asset</th>
+                <th>Side</th>
+                <th>Qty</th>
+                <th>Fill</th>
+                <th>Status</th>
+                <th>Decision context</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recentOrders.map((order, index) => (
+                <tr key={`${order.lane}-${order.timestamp}-${order.asset}-${index}`}>
+                  <td>{order.lane}</td>
+                  <td>{dateTime(order.timestamp)}</td>
+                  <td>{order.asset}</td>
+                  <td className={order.side === "buy" ? "good" : "bad"}>{order.side}</td>
+                  <td>{order.qty?.toLocaleString(undefined, { maximumFractionDigits: 4 }) ?? "—"}</td>
+                  <td>{order.avg_price ? money(order.avg_price, 4) : "—"}</td>
+                  <td>{order.status}</td>
+                  <td className="wrap-cell">{order.reason || "Paper rebalance order."}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="empty-panel">No recent paper orders.</div>
+      )}
 
       <Section
         title="Option holdings"

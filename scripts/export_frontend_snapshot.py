@@ -4,12 +4,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from tradingbot.ops.decisions import write_decision_snapshots
 from tradingbot.ops.frontend_data import write_dashboard_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
 
 
 def main() -> int:
+    write_decision_snapshots(ROOT)
     payload = write_dashboard_snapshot(ROOT, ROOT / "frontend" / "public" / "dashboard.json")
     # Also expose it to the existing Vercel/FastAPI lite surface.
     write_dashboard_snapshot(ROOT, ROOT / "deploy" / "dashboard.json")

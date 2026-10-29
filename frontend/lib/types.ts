@@ -106,6 +106,80 @@ export interface Readiness {
   [key: string]: unknown;
 }
 
+export type TradeDecisionKind = "HOLD" | "ADD" | "TRIM" | "EXIT" | "ENTER" | "FLAT";
+
+export interface TradeOrder {
+  lane: string;
+  timestamp: string;
+  asset: string;
+  side: string;
+  qty: number | null;
+  status: string;
+  avg_price: number | null;
+  reference_price: number | null;
+  reason?: string;
+}
+
+export interface TradeDecision {
+  asset: string;
+  side: "long" | "short";
+  decision: TradeDecisionKind;
+  reason: string;
+  target_weight: number | null;
+  current_weight: number;
+  drift: number | null;
+  qty: number | null;
+  entry: number | null;
+  last_price: number | null;
+  value: number | null;
+  pnl: number | null;
+  pnl_pct: number | null;
+  signal_as_of: string | null;
+  facts: string[];
+  last_order: TradeOrder | null;
+}
+
+export interface DecisionLane {
+  lane: string;
+  strategy: string;
+  mode: "strategy" | "ai" | string;
+  as_of: string | null;
+  target_source: string;
+  basis?: string;
+  regime?: string | null;
+  confidence?: number | null;
+  provider?: string | null;
+  model?: string | null;
+  equity?: number | null;
+  target_gross?: number | null;
+  current_gross?: number | null;
+  summary: string;
+  decisions: TradeDecision[];
+  recent_orders: TradeOrder[];
+  error?: string;
+}
+
+export interface DecisionPayload {
+  generated_at?: string;
+  lanes: DecisionLane[];
+}
+
+export interface LogFile {
+  name: string;
+  label: string;
+  updated_at: string;
+  size_bytes: number;
+  truncated: boolean;
+  lines: string[];
+}
+
+export interface LogsPayload {
+  generated_at?: string;
+  max_lines?: number;
+  redacted?: boolean;
+  files: LogFile[];
+}
+
 export interface DashboardData {
   generated_at: string;
   data_as_of: string;
@@ -140,6 +214,8 @@ export interface DashboardData {
     }>;
   };
   validation?: ValidationReport;
+  decisions?: DecisionPayload;
+  logs?: LogsPayload;
   performance: {
     ranges: Record<RangeKey, PerformanceRange>;
     lane_curves: Array<{
