@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { DashboardData } from "./types";
 
 const CONFIGURED_API = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") || "";
+const AUTO_REFRESH_MS = 60_000;
 
 function apiBase(): string {
   if (CONFIGURED_API) return CONFIGURED_API;
@@ -74,6 +75,10 @@ export function useDashboard() {
 
   useEffect(() => {
     void refresh();
+    const timer = window.setInterval(() => {
+      void refresh();
+    }, AUTO_REFRESH_MS);
+    return () => window.clearInterval(timer);
   }, [refresh]);
 
   return useMemo(

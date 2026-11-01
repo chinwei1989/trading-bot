@@ -35,7 +35,7 @@ models/
 !config/sui_universe.csv
 
 # Logs and secrets
-logs/
+/logs/
 *.log
 *.pem
 *.key
